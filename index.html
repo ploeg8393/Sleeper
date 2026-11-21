@@ -177,36 +177,6 @@
       min-width: 125px;
     }
 
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .kpi-box {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 10px;
-      text-align: center;
-    }
-
-    .kpi-label {
-      font-size: 11px;
-      color: var(--text-secondary);
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .kpi-val {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-top: 2px;
-      font-variant-numeric: tabular-nums;
-    }
-
     .table-wrap {
       overflow-x: auto;
       margin: 0 -14px;
@@ -837,21 +807,6 @@
     <div id="errorBanner" class="error-banner hidden"></div>
 
     <div id="dashboardRoot">
-      <div class="kpi-grid">
-        <div class="kpi-box">
-          <div class="kpi-label">Seasons</div>
-          <div class="kpi-val" id="kpiSeasons">-</div>
-        </div>
-        <div class="kpi-box">
-          <div class="kpi-label">Trades</div>
-          <div class="kpi-val" id="kpiTrades">-</div>
-        </div>
-        <div class="kpi-box">
-          <div class="kpi-label">All-Time High</div>
-          <div class="kpi-val" id="kpiHigh">-</div>
-        </div>
-      </div>
-
       <!-- TAB 1: STANDINGS & LINEUP EFFICIENCY -->
       <section id="tab-standings" class="tab-panel">
         <div class="card">
@@ -1405,7 +1360,7 @@
 
   <script>
     /* ==========================================================================
-       1. HARDCODED LEAGUE ID & CACHE KEYS
+       1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
     const HARDCODED_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
@@ -2712,11 +2667,6 @@
     }
 
     function renderAll() {
-      const allTime = computeStatsForSeasons("ALL");
-      document.getElementById("kpiSeasons").textContent = appData.seasons.length;
-      document.getElementById("kpiTrades").textContent = allTime.totalTrades;
-      document.getElementById("kpiHigh").textContent = allTime.highestScore.pts.toFixed(1);
-
       renderStandings();
       renderPlayoffHistory();
       renderPositions();
