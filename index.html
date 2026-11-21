@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#dfe3e8" />
+  <meta name="theme-color" id="themeColorMeta" content="#dfe3e8" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="League Vault" />
   <title>Sleeper League Vault — Multi-Season Analytics</title>
   <style>
     :root {
+      /* Muted Light-Grey Theme (Default) */
       --bg-canvas: #dfe3e8;
       --bg-surface: #eceff2;
       --bg-subtle: #e3e7ec;
@@ -30,6 +31,29 @@
       --nav-height: 62px;
       --header-height: 56px;
       --radius: 10px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        /* Muted Dark-Slate Theme (Automatic when OS is in Dark Mode) */
+        --bg-canvas: #161a1f;
+        --bg-surface: #1f242b;
+        --bg-subtle: #272d36;
+        --bg-hover: #303742;
+        --border: #363e4a;
+        --border-strong: #475261;
+        --text-primary: #e6ebf0;
+        --text-secondary: #a2aebc;
+        --text-muted: #7b8896;
+        --accent: #63a4db;
+        --accent-soft: #223547;
+        --win: #4cc38a;
+        --win-bg: #1c382b;
+        --loss: #e57373;
+        --loss-bg: #3b2124;
+        --gold: #e0b354;
+        --gold-bg: #382f1d;
+      }
     }
 
     * {
@@ -87,12 +111,6 @@
       text-overflow: ellipsis;
     }
 
-    .topbar-actions {
-      display: flex;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
     .btn-icon {
       background: var(--bg-subtle);
       border: 1px solid var(--border);
@@ -114,7 +132,7 @@
     .btn-primary {
       background: var(--accent);
       border: 1px solid var(--accent);
-      color: #f4f7fa;
+      color: #ffffff;
       border-radius: 8px;
       padding: 8px 14px;
       font-size: 13px;
@@ -317,7 +335,7 @@
     .count-pill-btn {
       background: var(--loss-bg);
       color: var(--loss);
-      border: 1px solid rgba(150, 45, 45, 0.35);
+      border: 1px solid var(--loss);
       border-radius: 6px;
       padding: 2px 8px;
       font-size: 12px;
@@ -564,17 +582,15 @@
       font-size: 11px;
     }
 
-    /* ==========================================================================
-       ALWAYS-ON-TOP FLOATING AI CHATBOT FAB & EXPANDABLE DRAWER
-       ========================================================================== */
+    /* Always-on-top Floating AI Chatbot */
     .ai-fab {
       position: fixed;
       right: 14px;
       bottom: calc(var(--nav-height) + 12px);
       z-index: 55;
       background: var(--accent);
-      color: #f4f7fa;
-      border: 1px solid #1e4263;
+      color: #ffffff;
+      border: 1px solid var(--border-strong);
       border-radius: 999px;
       padding: 10px 15px;
       font-size: 13px;
@@ -583,7 +599,7 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      box-shadow: 0 4px 12px rgba(29, 36, 43, 0.25);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
     }
 
     .ai-fab:active {
@@ -599,7 +615,7 @@
       background: var(--bg-surface);
       border: 1px solid var(--border-strong);
       border-radius: 14px;
-      box-shadow: 0 10px 28px rgba(29, 36, 43, 0.32);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
       display: flex;
       flex-direction: column;
       max-height: 76vh;
@@ -666,7 +682,7 @@
     .chat-msg.user {
       align-self: flex-end;
       background: var(--accent);
-      color: #f4f7fa;
+      color: #ffffff;
     }
 
     .chat-msg.bot {
@@ -708,7 +724,7 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(29, 36, 43, 0.55);
+      background: rgba(0, 0, 0, 0.58);
       z-index: 60;
       display: flex;
       align-items: flex-end;
@@ -833,11 +849,6 @@
       <div class="brand-title" id="headerTitle">Sleeper League Vault</div>
       <div class="brand-sub" id="headerSub">League 1389754082821947392</div>
     </div>
-    <div class="topbar-actions">
-      <button class="btn-icon" onclick="syncNow(false)" title="Refresh active season">↻ Sync</button>
-      <button class="btn-icon" onclick="syncNow(true)" title="Wipe cache and re-download all seasons">Full</button>
-      <button class="btn-icon" onclick="exportJSON()" title="Download clean JSON">JSON</button>
-    </div>
   </header>
 
   <main class="container">
@@ -868,10 +879,7 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">Standings & Lineup Efficiency</div>
-            <div style="display:flex; gap:6px;">
-              <select id="standingsSeasonFilter" onchange="renderStandings()"></select>
-              <button class="btn-icon" onclick="exportStandingsCSV()">CSV</button>
-            </div>
+            <select id="standingsSeasonFilter" onchange="renderStandings()"></select>
           </div>
           <div class="table-wrap">
             <table>
@@ -1044,8 +1052,9 @@
         </div>
       </section>
 
-      <!-- TAB 5: DRAFT ANALYSIS -->
+      <!-- TAB 5: COMPREHENSIVE DRAFT ANALYSIS -->
       <section id="tab-draft" class="tab-panel hidden">
+        <!-- Card 1: Manager Draft Retention & No-Transactions Simulation -->
         <div class="card">
           <div class="card-header">
             <div class="card-title">Draft Retention & No-Transactions Sim</div>
@@ -1073,6 +1082,73 @@
           </div>
         </div>
 
+        <!-- Card 2: Worst 1st, 2nd & 3rd Round Picks of All Time (Ignoring Injuries) -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Worst 1st, 2nd & 3rd Round Picks of All Time</div>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            All-time lowest-scoring healthy picks in Rounds 1, 2, and 3. Excludes players sidelined by season-ending injuries (requires 10+ active games or 65%+ of played weeks).
+          </p>
+          <div id="worstTop3RoundsArea"></div>
+        </div>
+
+        <!-- Card 3: Best Drafted Players -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Best Drafted Players</div>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            Highest total fantasy points produced in a single season by drafted players.
+          </p>
+          <div id="bestDraftedPlayersList"></div>
+        </div>
+
+        <!-- Card 4: Late-Round Sleeper Picks (Ignore K & DEF) -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Best Late-Round Sleeper Picks (Rd 9+, Excl. K & DEF)</div>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            Highest-scoring RB, WR, QB, and TE steals drafted in Round 9 or later.
+          </p>
+          <div id="sleeperManagerStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+          <div id="lateRoundSleepersList"></div>
+        </div>
+
+        <!-- Card 5: Terrible Early Selections (Rounds 1–5, Healthy) -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Terrible Early Selections (Rounds 1–5, Healthy)</div>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            Lowest-scoring healthy picks drafted in the first 5 rounds (injuries excluded).
+          </p>
+          <div id="terribleEarlyPicksList"></div>
+        </div>
+
+        <!-- Card 6: Average Player Totals per Round -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Average Player Totals per Draft Round</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Round</th>
+                  <th class="num">Picks</th>
+                  <th class="num">Avg Season Pts</th>
+                  <th>Best Pick in Round</th>
+                  <th>Lowest Healthy Pick</th>
+                </tr>
+              </thead>
+              <tbody id="roundAveragesBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Card 7: Drafted Players Kept at Season End -->
         <div class="card">
           <div class="card-header">
             <div class="card-title">Drafted Players Kept at Season End</div>
@@ -1240,14 +1316,14 @@
 
       <div class="chat-chips">
         <button class="chip-btn" onclick="askSample('Who had the highest ever score for an RB?')">Highest RB score?</button>
+        <button class="chip-btn" onclick="askSample('Worst 1st round picks of all time')">Worst 1st rd picks?</button>
+        <button class="chip-btn" onclick="askSample('Best late round sleeper picks')">Best sleepers?</button>
         <button class="chip-btn" onclick="askSample('Best waiver wire pickups of all time')">Best waiver bargains?</button>
         <button class="chip-btn" onclick="askSample('Who left the most points on their bench?')">Most bench left?</button>
-        <button class="chip-btn" onclick="askSample('Who has won the most championships?')">Most titles?</button>
-        <button class="chip-btn" onclick="askSample('Who lost the most drafted players to IR?')">Worst IR luck?</button>
       </div>
 
       <div id="chatMessages" class="chat-box">
-        <div class="chat-msg bot">Ask me anything about your league while browsing any tab—like <strong>"Who had the highest ever score for an RB?"</strong>, <strong>"Best waiver wire pickups"</strong>, or <strong>"Who left the most points on their bench?"</strong></div>
+        <div class="chat-msg bot">Ask me anything about your league while browsing any tab—like <strong>"Who had the highest ever score for an RB?"</strong>, <strong>"Worst 1st round picks"</strong>, <strong>"Best late-round sleepers"</strong>, or <strong>"Best waiver wire pickups"</strong>.</div>
       </div>
 
       <div style="display:flex; gap:6px;">
@@ -1351,7 +1427,7 @@
 
   <script>
     /* ==========================================================================
-       1. HARDCODED LEAGUE ID & CACHE KEYS
+       1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
     const HARDCODED_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
@@ -1359,6 +1435,16 @@
     const PLAYERS_CACHE_KEY = "sleeper_vault_players_compact_v3";
     const PLAYERS_TS_KEY = "sleeper_vault_players_ts_v3";
     const GEMINI_KEY_STORAGE = "sleeper_vault_gemini_api_key";
+
+    (function syncThemeColorWithOS() {
+      const mq = window.matchMedia("(prefers-color-scheme: dark)");
+      const apply = () => {
+        const meta = document.getElementById("themeColorMeta");
+        if (meta) meta.setAttribute("content", mq.matches ? "#1f242b" : "#dfe3e8");
+      };
+      apply();
+      if (mq.addEventListener) mq.addEventListener("change", apply);
+    })();
 
     let appData = {
       nflState: null,
@@ -1377,6 +1463,7 @@
        2. INLINE PWA MANIFEST & SERVICE WORKER
        ========================================================================== */
     (function initPWA() {
+      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="36" fill="#295982"/><text x="96" y="122" font-size="92" text-anchor="middle" fill="#eceff2" font-family="sans-serif" font-weight="bold">LV</text></svg>`;
       const iconUrl = "data:image/svg+xml;base64," + btoa(svgIcon);
       const manifest = {
@@ -1384,8 +1471,8 @@
         short_name: "League Vault",
         start_url: ".",
         display: "standalone",
-        background_color: "#dfe3e8",
-        theme_color: "#dfe3e8",
+        background_color: isDark ? "#161a1f" : "#dfe3e8",
+        theme_color: isDark ? "#1f242b" : "#dfe3e8",
         icons: [{ src: iconUrl, sizes: "192x192", type: "image/svg+xml" }]
       };
       const manifestBlob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
@@ -1396,7 +1483,7 @@
 
       if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
         const swCode = `
-          const CACHE = 'sleeper-vault-shell-v8';
+          const CACHE = 'sleeper-vault-shell-v9';
           self.addEventListener('install', e => {
             e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./'])));
             self.skipWaiting();
@@ -1670,7 +1757,7 @@
 
     async function syncNow(forceFull = false) {
       hideError();
-      showStatus(forceFull ? "Performing full multi-season resync..." : "Syncing active season & cached history...");
+      showStatus("Syncing active season & cached history...");
 
       try {
         const [nflState] = await Promise.all([
@@ -1738,7 +1825,7 @@
     }
 
     /* ==========================================================================
-       4. OPTIMAL LINEUP, STANDINGS, PLAYOFFS, WAIVER BARGAINS, DRAFT & INJURIES
+       4. OPTIMAL LINEUP, STANDINGS, PLAYOFFS, WAIVER, DRAFT & INJURY METRICS
        ========================================================================== */
     function getManagerMeta(uid) {
       return appData.managers[uid] || { user_id: uid, name: String(uid).slice(0, 8), avatar: null, teamsBySeason: {} };
@@ -2101,10 +2188,8 @@
 
       for (const s of targetSeasons) {
         const ownerMap = s.roster_owner_map || {};
-        // Ensure all season managers appear even if 0 claims
         for (const uid of Object.values(ownerMap)) ensure(uid);
 
-        // Deduplicate by (roster_id, player_id, week) so re-adds don't double-count full season
         const claims = [];
         for (const wtx of (s.wire_transactions || [])) {
           for (const [pid, rid] of Object.entries(wtx.adds || {})) {
@@ -2127,7 +2212,6 @@
           const mRec = ensure(c.uid);
           mRec.faabSpent += c.bid;
 
-          // Find if same roster re-claimed the same player later so we bound the window
           const nextSameClaim = claims.slice(i + 1).find(n => n.rid === c.rid && n.pid === c.pid);
           const endWeek = nextSameClaim ? nextSameClaim.week - 1 : 18;
 
@@ -2179,12 +2263,24 @@
       return { managerRows, bargains };
     }
 
+    /**
+     * Comprehensive Draft Analysis:
+     * - Retention & Draft-Only Lineup Simulation
+     * - Average Player Totals per Round
+     * - Best Drafted Players
+     * - Late-Round Sleepers (Round 9+, excluding K & DEF)
+     * - Worst Healthy Early Picks (Rounds 1-5) & All-Time Worst 1st, 2nd, 3rd Round Picks (ignoring injuries)
+     */
     function computeDraftAnalysis(seasonFilter) {
       const targetSeasons = seasonFilter === "ALL"
         ? appData.seasons
         : appData.seasons.filter(s => s.season === seasonFilter);
 
+      const currentSeasonYear = String(appData.nflState?.season || "");
       const managersMap = {};
+      const roundBuckets = {}; // round -> { round, picks: [] }
+      const allEvaluatedPicks = [];
+
       const ensure = (uid) => {
         if (!managersMap[uid]) {
           const meta = getManagerMeta(uid);
@@ -2203,69 +2299,198 @@
         return managersMap[uid];
       };
 
-      for (const s of targetSeasons) {
-        if (!Array.isArray(s.draft_picks) || s.draft_picks.length === 0) continue;
+      const evaluateSeasons = (seasonsList, collectIntoMain) => {
+        const evalPicks = [];
+        for (const s of seasonsList) {
+          if (!Array.isArray(s.draft_picks) || s.draft_picks.length === 0) continue;
 
-        const leagueWeeklyPts = {};
-        const actualPfByOwner = {};
+          const isCurrentSeason = s.season === currentSeasonYear;
+          const playedWeekNums = Object.keys(s.matchups_by_week)
+            .map(Number)
+            .filter(w => (s.matchups_by_week[String(w)] || []).some(e => e.points > 0))
+            .sort((a, b) => a - b);
 
-        for (const [wkStr, entries] of Object.entries(s.matchups_by_week)) {
-          leagueWeeklyPts[wkStr] = {};
-          for (const e of entries) {
-            if (e.matchup_id === null || e.matchup_id === undefined) continue;
-            if (e.points > 0) {
-              actualPfByOwner[e.owner_id] = (actualPfByOwner[e.owner_id] || 0) + e.points;
-            }
-            for (const [pid, pts] of Object.entries(e.players_points || {})) {
-              leagueWeeklyPts[wkStr][pid] = Number(pts || 0);
-            }
-          }
-        }
+          const totalPlayedWeeks = playedWeekNums.length;
+          const leagueWeeklyPts = {};
+          const actualPfByOwner = {};
 
-        const finalRosterByOwner = {};
-        for (const rf of (s.rosters_final || [])) {
-          finalRosterByOwner[rf.owner_id] = new Set(rf.players || []);
-        }
-
-        const picksByOwner = {};
-        for (const pk of s.draft_picks) {
-          if (!pk.owner_id || !pk.player_id) continue;
-          if (!picksByOwner[pk.owner_id]) picksByOwner[pk.owner_id] = [];
-          picksByOwner[pk.owner_id].push(pk);
-        }
-
-        for (const [uid, picks] of Object.entries(picksByOwner)) {
-          const rec = ensure(uid);
-          const finalSet = finalRosterByOwner[uid] || new Set();
-          const draftedIds = picks.map(p => p.player_id);
-
-          rec.draftedCount += draftedIds.length;
-          rec.actualPf += (actualPfByOwner[uid] || 0);
-
-          for (const pk of picks) {
-            if (finalSet.has(pk.player_id)) {
-              rec.retainedCount += 1;
-              rec.retainedNames.push(`${pk.player_name} (${s.season} Rd ${pk.round})`);
-            }
-            for (const wkPtsMap of Object.values(leagueWeeklyPts)) {
-              rec.draftTotalPts += Number(wkPtsMap[pk.player_id] || 0);
+          for (const wk of playedWeekNums) {
+            const wkStr = String(wk);
+            leagueWeeklyPts[wk] = {};
+            for (const e of (s.matchups_by_week[wkStr] || [])) {
+              if (e.matchup_id === null || e.matchup_id === undefined) continue;
+              if (e.points > 0 && collectIntoMain) {
+                actualPfByOwner[e.owner_id] = (actualPfByOwner[e.owner_id] || 0) + e.points;
+              }
+              for (const [pid, pts] of Object.entries(e.players_points || {})) {
+                leagueWeeklyPts[wk][pid] = Number(pts || 0);
+              }
             }
           }
 
-          for (const [wkStr, wkPtsMap] of Object.entries(leagueWeeklyPts)) {
-            const entries = s.matchups_by_week[wkStr] || [];
-            const playedThisWeek = entries.some(e => e.owner_id === uid && e.points > 0);
-            if (!playedThisWeek) continue;
-            rec.draftOnlyPf += computeOptimalLineupPoints(draftedIds, s.roster_positions || [], wkPtsMap);
+          const finalRosterByOwner = {};
+          const reserveSetByOwner = {};
+          for (const rf of (s.rosters_final || [])) {
+            finalRosterByOwner[rf.owner_id] = new Set(rf.players || []);
+            reserveSetByOwner[rf.owner_id] = new Set(rf.reserve || []);
+          }
+
+          const picksByOwner = {};
+          for (const pk of s.draft_picks) {
+            if (!pk.owner_id || !pk.player_id) continue;
+            if (!picksByOwner[pk.owner_id]) picksByOwner[pk.owner_id] = [];
+            picksByOwner[pk.owner_id].push(pk);
+
+            // Evaluate individual pick performance & health status
+            const pid = pk.player_id;
+            const pos = pk.pos || getPlayerPos(pid);
+            const round = Number(pk.round || 99);
+            const pickNo = Number(pk.pick_no || 999);
+            const ownerName = getManagerMeta(pk.owner_id).name;
+
+            let totalPts = 0;
+            let activeWeeks = 0;
+            let lastActiveWeek = 0;
+            for (const wk of playedWeekNums) {
+              const pts = leagueWeeklyPts[wk][pid];
+              if (pts !== undefined && pts !== 0) {
+                totalPts += pts;
+                activeWeeks++;
+                lastActiveWeek = wk;
+              }
+            }
+
+            const endedOnIR = (reserveSetByOwner[pk.owner_id] || new Set()).has(pid);
+            const liveInj = isCurrentSeason ? getPlayerLiveInjury(pid) : null;
+            const missedFinalStreak = totalPlayedWeeks > 0 ? (playedWeekNums[totalPlayedWeeks - 1] - lastActiveWeek) : 0;
+
+            // Consider pick "healthy" (not derailed by major injury) if they played >= 10 games (or >= 65% of played weeks)
+            // and did not suffer a season-ending IR stint
+            const minHealthyGames = Math.min(10, Math.ceil(totalPlayedWeeks * 0.65));
+            const isHealthyEnough =
+              totalPlayedWeeks > 0 &&
+              activeWeeks >= minHealthyGames &&
+              !endedOnIR &&
+              liveInj !== "IR" &&
+              liveInj !== "PUP" &&
+              !(totalPlayedWeeks >= 5 && missedFinalStreak >= 4);
+
+            const pickRecord = {
+              season: s.season,
+              round,
+              pickNo,
+              ownerId: pk.owner_id,
+              ownerName,
+              pid,
+              playerName: pk.player_name || getPlayerLabel(pid),
+              pos,
+              totalPts,
+              activeWeeks,
+              ppg: activeWeeks > 0 ? totalPts / activeWeeks : 0,
+              isHealthyEnough
+            };
+
+            evalPicks.push(pickRecord);
+
+            if (collectIntoMain) {
+              allEvaluatedPicks.push(pickRecord);
+              if (!roundBuckets[round]) {
+                roundBuckets[round] = { round, picks: [] };
+              }
+              roundBuckets[round].picks.push(pickRecord);
+            }
+          }
+
+          if (collectIntoMain) {
+            for (const [uid, picks] of Object.entries(picksByOwner)) {
+              const rec = ensure(uid);
+              const finalSet = finalRosterByOwner[uid] || new Set();
+              const draftedIds = picks.map(p => p.player_id);
+
+              rec.draftedCount += draftedIds.length;
+              rec.actualPf += (actualPfByOwner[uid] || 0);
+
+              for (const pk of picks) {
+                if (finalSet.has(pk.player_id)) {
+                  rec.retainedCount += 1;
+                  rec.retainedNames.push(`${pk.player_name} (${s.season} Rd ${pk.round})`);
+                }
+                for (const wkPtsMap of Object.values(leagueWeeklyPts)) {
+                  rec.draftTotalPts += Number(wkPtsMap[pk.player_id] || 0);
+                }
+              }
+
+              for (const wk of playedWeekNums) {
+                const entries = s.matchups_by_week[String(wk)] || [];
+                const playedThisWeek = entries.some(e => e.owner_id === uid && e.points > 0);
+                if (!playedThisWeek) continue;
+                rec.draftOnlyPf += computeOptimalLineupPoints(draftedIds, s.roster_positions || [], leagueWeeklyPts[wk]);
+              }
+            }
           }
         }
-      }
+        return evalPicks;
+      };
 
-      return Object.values(managersMap).map(r => ({
+      evaluateSeasons(targetSeasons, true);
+      const allTimePicks = seasonFilter === "ALL"
+        ? allEvaluatedPicks
+        : evaluateSeasons(appData.seasons, false);
+
+      const managerRows = Object.values(managersMap).map(r => ({
         ...r,
         retainedPct: r.draftedCount > 0 ? (r.retainedCount / r.draftedCount) * 100 : 0,
         moveNet: r.actualPf - r.draftOnlyPf
       }));
+
+      // Round averages
+      const roundRows = Object.values(roundBuckets)
+        .sort((a, b) => a.round - b.round)
+        .map(rb => {
+          const avgPts = rb.picks.length
+            ? rb.picks.reduce((sum, p) => sum + p.totalPts, 0) / rb.picks.length
+            : 0;
+          const bestPick = [...rb.picks].sort((a, b) => b.totalPts - a.totalPts)[0] || null;
+          const healthyInRound = rb.picks.filter(p => p.isHealthyEnough);
+          const worstPick = (healthyInRound.length > 0 ? healthyInRound : rb.picks)
+            .sort((a, b) => a.totalPts - b.totalPts)[0] || null;
+          return {
+            round: rb.round,
+            count: rb.picks.length,
+            avgPts,
+            bestPick,
+            worstPick
+          };
+        });
+
+      // Best drafted players
+      const bestDrafted = [...allEvaluatedPicks].sort((a, b) => b.totalPts - a.totalPts);
+
+      // Late-round sleeper picks (Round 9+, excluding K and DEF)
+      const sleepers = allEvaluatedPicks
+        .filter(p => p.round >= 9 && !["K", "DEF"].includes(p.pos) && p.totalPts > 0)
+        .sort((a, b) => b.totalPts - a.totalPts);
+
+      // Terrible early selections (Rounds 1-5, healthy only)
+      const terribleEarly = allEvaluatedPicks
+        .filter(p => p.round <= 5 && p.isHealthyEnough)
+        .sort((a, b) => a.totalPts - b.totalPts);
+
+      // All-Time Worst 1st, 2nd & 3rd Round Picks (ignoring injuries)
+      const worstByRoundAllTime = {
+        1: allTimePicks.filter(p => p.round === 1 && p.isHealthyEnough).sort((a, b) => a.totalPts - b.totalPts).slice(0, 3),
+        2: allTimePicks.filter(p => p.round === 2 && p.isHealthyEnough).sort((a, b) => a.totalPts - b.totalPts).slice(0, 3),
+        3: allTimePicks.filter(p => p.round === 3 && p.isHealthyEnough).sort((a, b) => a.totalPts - b.totalPts).slice(0, 3)
+      };
+
+      return {
+        managerRows,
+        roundRows,
+        bestDrafted,
+        sleepers,
+        terribleEarly,
+        worstByRoundAllTime
+      };
     }
 
     function formatWeekRanges(weekNumbers) {
@@ -2836,7 +3061,6 @@
         </tr>
       `).join("");
 
-      // Waiver Wire & FAAB Bargains
       const { managerRows, bargains } = computeWaiverBargains(filter);
 
       if (bargains.length > 0) {
@@ -3042,31 +3266,39 @@
 
     function renderDraftAnalysis() {
       const filter = document.getElementById("draftSeasonFilter").value || "ALL";
-      const rows = computeDraftAnalysis(filter);
+      const {
+        managerRows,
+        roundRows,
+        bestDrafted,
+        sleepers,
+        terribleEarly,
+        worstByRoundAllTime
+      } = computeDraftAnalysis(filter);
+
       const { col, dir } = appData.draftSort;
       const mult = dir === "desc" ? -1 : 1;
 
-      rows.sort((a, b) => {
+      managerRows.sort((a, b) => {
         if (col === "name") return mult * a.name.localeCompare(b.name);
         return mult * ((a[col] || 0) - (b[col] || 0));
       });
 
-      if (rows.length === 0) {
+      if (managerRows.length === 0) {
         document.getElementById("draftBody").innerHTML =
           `<tr><td colspan="7" style="color:var(--text-secondary);">No draft pick records available for this selection.</td></tr>`;
         document.getElementById("draftKeptCards").innerHTML = "";
         return;
       }
 
-      const topRetainer = [...rows].sort((a, b) => b.retainedCount - a.retainedCount)[0];
-      const topDrafter = [...rows].sort((a, b) => b.draftOnlyPf - a.draftOnlyPf)[0];
+      const topRetainer = [...managerRows].sort((a, b) => b.retainedCount - a.retainedCount)[0];
+      const topDrafter = [...managerRows].sort((a, b) => b.draftOnlyPf - a.draftOnlyPf)[0];
 
       document.getElementById("draftHighlightStrip").innerHTML = `
         <span class="badge badge-gold">Most Drafted Kept: ${topRetainer.name} (${topRetainer.retainedCount}/${topRetainer.draftedCount})</span>
         <span class="badge badge-win">Best Draft-Only Lineup: ${topDrafter.name} (${topDrafter.draftOnlyPf.toFixed(1)} pts)</span>
       `;
 
-      document.getElementById("draftBody").innerHTML = rows.map(r => {
+      document.getElementById("draftBody").innerHTML = managerRows.map(r => {
         const netSign = r.moveNet >= 0 ? "+" : "";
         const netBadge = r.moveNet >= 5 ? "badge-win" : r.moveNet <= -5 ? "badge-loss" : "badge-neutral";
         return `
@@ -3087,7 +3319,116 @@
         `;
       }).join("");
 
-      document.getElementById("draftKeptCards").innerHTML = [...rows]
+      // 1. Worst 1st, 2nd & 3rd Round Picks of All Time (Ignoring Injuries)
+      document.getElementById("worstTop3RoundsArea").innerHTML = [1, 2, 3].map(rdNum => {
+        const list = worstByRoundAllTime[rdNum] || [];
+        const rdLabel = rdNum === 1 ? "1st Round" : rdNum === 2 ? "2nd Round" : "3rd Round";
+        if (list.length === 0) return "";
+        const worst = list[0];
+        const runners = list.slice(1).map(p =>
+          `${p.playerName} (${p.pos}, ${p.ownerName} ${p.season} #${p.pickNo} — ${p.totalPts.toFixed(1)} pts)`
+        ).join(" • ");
+
+        return `
+          <div class="inj-detail-card">
+            <div class="inj-detail-top">
+              <div>
+                <span class="badge badge-loss" style="margin-right:6px;">Worst ${rdLabel}</span>
+                <strong style="font-size:13px;">${worst.playerName}</strong>
+                <span style="font-size:12px; color:var(--text-secondary);">(${worst.pos})</span>
+              </div>
+              <span class="badge badge-neutral">${worst.totalPts.toFixed(1)} pts (${worst.ppg.toFixed(1)} PPG)</span>
+            </div>
+            <div style="font-size:11.5px; color:var(--text-secondary);">
+              Drafted by <strong>${worst.ownerName}</strong> in <strong>${worst.season}</strong> (Pick #${worst.pickNo} • ${worst.activeWeeks} healthy wks)
+            </div>
+            ${runners ? `<div style="font-size:11px; color:var(--text-muted); margin-top:5px; padding-top:5px; border-top:1px dashed var(--border);">Next worst: ${runners}</div>` : ""}
+          </div>
+        `;
+      }).join("");
+
+      // 2. Best Drafted Players
+      document.getElementById("bestDraftedPlayersList").innerHTML = bestDrafted.slice(0, 10).map((p, i) => `
+        <div class="versus-game-row">
+          <div>
+            <strong>#${i + 1} ${p.playerName}</strong> <span style="color:var(--text-secondary);">(${p.pos})</span>
+            <div style="font-size:11px; color:var(--text-secondary);">
+              Drafted by <strong>${p.ownerName}</strong> • ${p.season} Rd ${p.round} (#${p.pickNo})
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <span class="badge badge-win">${p.totalPts.toFixed(1)} pts</span>
+            <div style="font-size:10.5px; color:var(--text-secondary); margin-top:2px;">${p.ppg.toFixed(1)} PPG</div>
+          </div>
+        </div>
+      `).join("");
+
+      // 3. Late-Round Sleeper Picks (Rd 9+, Excl. K & DEF)
+      const sleeperCounts = {};
+      sleepers.slice(0, 15).forEach(s => {
+        sleeperCounts[s.ownerName] = (sleeperCounts[s.ownerName] || 0) + 1;
+      });
+      const topSleeperHunters = Object.entries(sleeperCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+      document.getElementById("sleeperManagerStrip").innerHTML = topSleeperHunters.map(([name, cnt]) =>
+        `<span class="badge badge-gold">${name}: ${cnt} top-15 sleeper${cnt === 1 ? "" : "s"}</span>`
+      ).join("");
+
+      document.getElementById("lateRoundSleepersList").innerHTML = sleepers.length > 0
+        ? sleepers.slice(0, 10).map((p, i) => `
+            <div class="versus-game-row">
+              <div>
+                <strong>#${i + 1} ${p.playerName}</strong> <span style="color:var(--text-secondary);">(${p.pos})</span>
+                <div style="font-size:11px; color:var(--text-secondary);">
+                  Drafted by <strong>${p.ownerName}</strong> • ${p.season} Rd ${p.round} (#${p.pickNo})
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <span class="badge badge-win">${p.totalPts.toFixed(1)} pts</span>
+                <div style="font-size:10.5px; color:var(--text-secondary); margin-top:2px;">${p.ppg.toFixed(1)} PPG</div>
+              </div>
+            </div>
+          `).join("")
+        : `<p style="font-size:13px; color:var(--text-secondary);">No late-round (Rd 9+) skill position data found.</p>`;
+
+      // 4. Terrible Early Selections (Rounds 1–5, Healthy)
+      document.getElementById("terribleEarlyPicksList").innerHTML = terribleEarly.length > 0
+        ? terribleEarly.slice(0, 10).map((p, i) => `
+            <div class="versus-game-row">
+              <div>
+                <strong>#${i + 1} ${p.playerName}</strong> <span style="color:var(--text-secondary);">(${p.pos})</span>
+                <div style="font-size:11px; color:var(--text-secondary);">
+                  Drafted by <strong>${p.ownerName}</strong> • ${p.season} Rd ${p.round} (#${p.pickNo} • ${p.activeWeeks} healthy wks)
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <span class="badge badge-loss">${p.totalPts.toFixed(1)} pts</span>
+                <div style="font-size:10.5px; color:var(--text-secondary); margin-top:2px;">${p.ppg.toFixed(1)} PPG</div>
+              </div>
+            </div>
+          `).join("")
+        : `<p style="font-size:13px; color:var(--text-secondary);">Not enough completed healthy weeks yet to evaluate early-round busts.</p>`;
+
+      // 5. Average Player Totals per Round
+      document.getElementById("roundAveragesBody").innerHTML = roundRows.map(rr => {
+        const bestTxt = rr.bestPick
+          ? `${rr.bestPick.playerName} (${rr.bestPick.totalPts.toFixed(1)})`
+          : "-";
+        const worstTxt = rr.worstPick
+          ? `${rr.worstPick.playerName} (${rr.worstPick.totalPts.toFixed(1)})`
+          : "-";
+        return `
+          <tr>
+            <td><strong>Round ${rr.round}</strong></td>
+            <td class="num">${rr.count}</td>
+            <td class="num"><strong>${rr.avgPts.toFixed(1)}</strong></td>
+            <td style="font-size:12px; color:var(--win);">${bestTxt}</td>
+            <td style="font-size:12px; color:var(--loss);">${worstTxt}</td>
+          </tr>
+        `;
+      }).join("");
+
+      // 6. Drafted Players Kept at Season End
+      document.getElementById("draftKeptCards").innerHTML = [...managerRows]
         .sort((a, b) => b.retainedCount - a.retainedCount)
         .map(r => `
           <div class="h2h-card" style="flex-direction:column; align-items:flex-start; gap:6px;">
@@ -3340,34 +3681,20 @@
           .map(p => `${p.player} (${p.pts.toFixed(2)} pts, ${p.owner}, ${p.season} Wk ${p.week}${p.started ? "" : " [Bench]"})`);
       }
 
-      const teamWeeks = [];
-      for (const s of appData.seasons) {
-        for (const [wkStr, entries] of Object.entries(s.matchups_by_week)) {
-          for (const e of entries) {
-            if (e.points > 0) {
-              teamWeeks.push({
-                season: s.season,
-                week: wkStr,
-                owner: getManagerMeta(e.owner_id).name,
-                pts: e.points
-              });
-            }
-          }
-        }
-      }
-      teamWeeks.sort((a, b) => b.pts - a.pts);
+      const draftData = computeDraftAnalysis("ALL");
+      const worstTop3 = {
+        round_1: draftData.worstByRoundAllTime[1].map(p => `${p.playerName} (${p.pos}, ${p.ownerName}, ${p.season} #${p.pickNo}, ${p.totalPts.toFixed(1)} pts)`),
+        round_2: draftData.worstByRoundAllTime[2].map(p => `${p.playerName} (${p.pos}, ${p.ownerName}, ${p.season} #${p.pickNo}, ${p.totalPts.toFixed(1)} pts)`),
+        round_3: draftData.worstByRoundAllTime[3].map(p => `${p.playerName} (${p.pos}, ${p.ownerName}, ${p.season} #${p.pickNo}, ${p.totalPts.toFixed(1)} pts)`)
+      };
+
+      const topSleepers = draftData.sleepers.slice(0, 8).map(p =>
+        `${p.playerName} (${p.pos}, Rd ${p.round}, ${p.totalPts.toFixed(1)} pts, ${p.ownerName}, ${p.season})`
+      );
 
       const waiverData = computeWaiverBargains("ALL");
       const topWaivers = waiverData.bargains.slice(0, 8).map(b =>
         `${b.playerLabel} (${b.starterPts.toFixed(1)} starter pts, $${b.bid} bid, ${b.ownerName}, ${b.season} Wk ${b.week})`
-      );
-
-      const activity = computePositionsAndActivity("ALL").map(a =>
-        `${a.name}: ${a.tradesCount} trades (top partner: ${a.topPartnerLabel}), ${a.waiversCount} waivers, ${a.faCount} FA`
-      );
-
-      const injuries = computeInjuryAnalysis("ALL").rows.map(i =>
-        `${i.name}: ${i.seasonEndingCount} lost for yr (${i.earlyRoundLost} in Rds 1-5), ${i.weeksMissed} total wks missed`
       );
 
       return JSON.stringify({
@@ -3379,17 +3706,36 @@
         })),
         all_time_standings_and_efficiency: standings,
         top_5_player_weeks_by_position: topByPos,
-        top_5_team_weeks: teamWeeks.slice(0, 5),
-        lowest_3_team_weeks: teamWeeks.slice(-3),
-        top_waiver_pickups: topWaivers,
-        trades_and_wire: activity,
-        drafted_injuries: injuries
+        worst_healthy_picks_rounds_1_to_3: worstTop3,
+        best_late_round_sleepers: topSleepers,
+        top_waiver_pickups: topWaivers
       });
     }
 
     function runLocalLeagueAnalyst(query) {
       const q = query.toLowerCase();
       const allPerf = collectAllPlayerWeekPerformances();
+
+      // Draft busts / worst 1st, 2nd, 3rd round picks
+      if (q.includes("worst") && (q.includes("round") || q.includes("pick") || q.includes("1st") || q.includes("2nd") || q.includes("3rd") || q.includes("bust"))) {
+        const { worstByRoundAllTime } = computeDraftAnalysis("ALL");
+        const lines = [1, 2, 3].map(rd => {
+          const top = worstByRoundAllTime[rd]?.[0];
+          if (!top) return `Round ${rd}: N/A`;
+          return `• Worst Round ${rd}: ${top.playerName} (${top.pos}) — ${top.totalPts.toFixed(1)} pts (${top.ownerName}, ${top.season} Pick #${top.pickNo}, ${top.activeWeeks} healthy wks)`;
+        }).join("\n");
+        return `Worst Healthy 1st, 2nd & 3rd Round Picks of All Time (Injuries Excluded):\n\n${lines}`;
+      }
+
+      // Late-round sleepers
+      if (q.includes("sleeper") || q.includes("late round") || q.includes("late-round") || q.includes("steal")) {
+        const { sleepers } = computeDraftAnalysis("ALL");
+        if (sleepers.length === 0) return "No late-round sleeper data found yet.";
+        const top5 = sleepers.slice(0, 5).map((p, i) =>
+          `${i + 1}. ${p.playerName} (${p.pos}) — ${p.totalPts.toFixed(1)} pts (Rd ${p.round}, ${p.ownerName}, ${p.season})`
+        ).join("\n");
+        return `Top 5 Late-Round Sleeper Picks (Rd 9+, Excl. K & DEF):\n${top5}`;
+      }
 
       // Waiver bargains / pickups
       if (q.includes("waiver") || q.includes("bargain") || q.includes("pickup") || q.includes("faab") || q.includes("free agent")) {
@@ -3493,7 +3839,7 @@
       }
 
       if (q.includes("draft") || q.includes("kept") || q.includes("retain")) {
-        const dr = computeDraftAnalysis("ALL").sort((a, b) => b.draftOnlyPf - a.draftOnlyPf);
+        const dr = computeDraftAnalysis("ALL").managerRows.sort((a, b) => b.draftOnlyPf - a.draftOnlyPf);
         return `All-Time Draft-Only Lineup Simulation:\n` + dr.map((d, i) =>
           `${i + 1}. ${d.name}: ${d.draftOnlyPf.toFixed(1)} Draft-Only PF (${d.retainedCount}/${d.draftedCount} drafted players kept)`
         ).join("\n");
@@ -3506,7 +3852,7 @@
         ).join("\n");
       }
 
-      return `I can answer questions about player highs by position (QB, RB, WR, TE, K, DEF), waiver wire bargains, lineup efficiency & bench points left, highest/lowest team scores, championships, trades, draft grades, injuries/IR, and schedule luck.\n\nTip: Tap "🔑 Key" above if you want to connect a free Gemini key for open-ended questions.`;
+      return `I can answer questions about player highs by position (QB, RB, WR, TE, K, DEF), worst 1st/2nd/3rd round picks, late-round sleepers, waiver wire bargains, lineup efficiency & bench points left, championships, trades, injuries/IR, and schedule luck.\n\nTip: Tap "🔑 Key" above if you want to connect a free Gemini key for open-ended questions.`;
     }
 
     async function sendChat() {
@@ -3863,7 +4209,7 @@
     }
 
     /* ==========================================================================
-       10. NAVIGATION & EXPORTS
+       10. TAB NAVIGATION & STATUS HELPERS
        ========================================================================== */
     function switchTab(tabName) {
       document.querySelectorAll(".tab-panel").forEach(el => el.classList.add("hidden"));
@@ -3871,35 +4217,6 @@
       document.querySelectorAll(".nav-btn").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.tab === tabName);
       });
-    }
-
-    function exportJSON() {
-      const payload = {
-        exported_at: new Date().toISOString(),
-        root_league_id: HARDCODED_LEAGUE_ID,
-        managers: appData.managers,
-        seasons: appData.seasons
-      };
-      downloadFile(`sleeper_${HARDCODED_LEAGUE_ID}_history.json`, JSON.stringify(payload, null, 2), "application/json");
-    }
-
-    function exportStandingsCSV() {
-      const filter = document.getElementById("standingsSeasonFilter").value || "ALL";
-      const { rows } = computeStatsForSeasons(filter);
-      const header = ["Manager,User_ID,Titles,Wins,Losses,Ties,Win_Pct,PF,Max_PF,Bench_Left,Efficiency_Pct,PA,AllPlay_Wins,AllPlay_Losses,Luck_Index"];
-      const lines = rows.map(r =>
-        `"${r.name.replace(/"/g, '""')}",${r.user_id},${r.titles},${r.wins},${r.losses},${r.ties},${(r.winPct * 100).toFixed(2)},${r.pf.toFixed(2)},${r.maxPf.toFixed(2)},${r.benchLeft.toFixed(2)},${r.efficiencyPct.toFixed(2)},${r.pa.toFixed(2)},${r.apWins},${r.apLosses},${r.luck.toFixed(2)}`
-      );
-      downloadFile(`sleeper_standings_${filter}.csv`, header.concat(lines).join("\n"), "text/csv");
-    }
-
-    function downloadFile(filename, content, mime) {
-      const blob = new Blob([content], { type: mime });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(a.href);
     }
 
     function showStatus(msg, badge = "") {
