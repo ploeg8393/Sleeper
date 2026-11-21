@@ -1,0 +1,3929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#dfe3e8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="League Vault" />
+  <title>Sleeper League Vault — Multi-Season Analytics</title>
+  <style>
+    :root {
+      --bg-canvas: #dfe3e8;
+      --bg-surface: #eceff2;
+      --bg-subtle: #e3e7ec;
+      --bg-hover: #d8dee6;
+      --border: #c5cdd6;
+      --border-strong: #aeb8c4;
+      --text-primary: #1d242b;
+      --text-secondary: #4c5866;
+      --text-muted: #6c7988;
+      --accent: #295982;
+      --accent-soft: #d7e2ec;
+      --win: #1e6b47;
+      --win-bg: #d7e8df;
+      --loss: #962d2d;
+      --loss-bg: #ebd8d8;
+      --gold: #8a6214;
+      --gold-bg: #ece3cf;
+      --nav-height: 62px;
+      --header-height: 56px;
+      --radius: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      line-height: 1.4;
+      padding-top: var(--header-height);
+      padding-bottom: calc(var(--nav-height) + 68px);
+      min-height: 100vh;
+    }
+
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-height);
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      z-index: 40;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-icon {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-icon:active {
+      background: var(--bg-hover);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      color: #f4f7fa;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 940px;
+      margin: 0 auto;
+      padding: 12px;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .controls-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+
+    select, input[type="text"], input[type="password"] {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 500;
+      outline: none;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--accent);
+    }
+
+    .grow {
+      flex: 1;
+      min-width: 125px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .kpi-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px;
+      text-align: center;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .kpi-val {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin: 0 -14px;
+      padding: 0 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    th {
+      background: var(--bg-subtle);
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      text-align: left;
+      padding: 8px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th.num, td.num {
+      text-align: right;
+    }
+
+    td {
+      padding: 9px 8px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr.clickable-row {
+      cursor: pointer;
+    }
+
+    tr.clickable-row:hover td {
+      background: var(--bg-hover);
+    }
+
+    tr.summary-row td {
+      background: var(--bg-subtle);
+      font-weight: 700;
+      border-top: 1px solid var(--border-strong);
+    }
+
+    .manager-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 165px;
+    }
+
+    .avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .manager-name {
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .badge-win { background: var(--win-bg); color: var(--win); }
+    .badge-loss { background: var(--loss-bg); color: var(--loss); }
+    .badge-gold { background: var(--gold-bg); color: var(--gold); }
+    .badge-neutral { background: var(--bg-subtle); color: var(--text-secondary); border: 1px solid var(--border); }
+
+    .count-pill-btn {
+      background: var(--loss-bg);
+      color: var(--loss);
+      border: 1px solid rgba(150, 45, 45, 0.35);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: underline;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .count-pill-btn.zero {
+      background: var(--bg-subtle);
+      color: var(--text-secondary);
+      border-color: var(--border);
+      text-decoration: none;
+    }
+
+    .luck-bar-track {
+      width: 72px;
+      height: 8px;
+      background: var(--bg-subtle);
+      border-radius: 4px;
+      position: relative;
+      display: inline-block;
+      vertical-align: middle;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .luck-bar-fill {
+      height: 100%;
+      position: absolute;
+      top: 0;
+    }
+
+    .h2h-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (min-width: 600px) {
+      .h2h-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .h2h-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .versus-summary {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .versus-scoreboard {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .versus-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .versus-game-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 10px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      margin-bottom: 6px;
+      font-size: 12px;
+      gap: 8px;
+    }
+
+    .matchup-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+
+    .matchup-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    .matchup-row.winner .m-team,
+    .matchup-row.winner .m-score {
+      font-weight: 700;
+      color: var(--win);
+    }
+
+    .matchup-meta {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed var(--border);
+      font-size: 11px;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .podium-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    @media (min-width: 600px) {
+      .podium-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .podium-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .podium-card.champ {
+      border-color: var(--gold);
+      background: var(--gold-bg);
+    }
+
+    .trade-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 12px;
+      margin-bottom: 10px;
+    }
+
+    .trade-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-secondary);
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .trade-sides {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (min-width: 600px) {
+      .trade-sides {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .trade-side {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 8px 10px;
+    }
+
+    .trade-side.edge {
+      border-color: var(--win);
+    }
+
+    .trade-side-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      gap: 6px;
+    }
+
+    .trade-asset {
+      font-size: 12px;
+      padding: 3px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px dashed var(--border);
+    }
+
+    .trade-asset:first-of-type {
+      border-top: none;
+    }
+
+    .asset-pts {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .inj-detail-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+
+    .inj-detail-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .inj-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed var(--border);
+      font-size: 11px;
+    }
+
+    /* ==========================================================================
+       ALWAYS-ON-TOP FLOATING AI CHATBOT FAB & EXPANDABLE DRAWER
+       ========================================================================== */
+    .ai-fab {
+      position: fixed;
+      right: 14px;
+      bottom: calc(var(--nav-height) + 12px);
+      z-index: 55;
+      background: var(--accent);
+      color: #f4f7fa;
+      border: 1px solid #1e4263;
+      border-radius: 999px;
+      padding: 10px 15px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(29, 36, 43, 0.25);
+    }
+
+    .ai-fab:active {
+      transform: scale(0.97);
+    }
+
+    .ai-drawer {
+      position: fixed;
+      right: 12px;
+      left: 12px;
+      bottom: calc(var(--nav-height) + 10px);
+      z-index: 75;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      box-shadow: 0 10px 28px rgba(29, 36, 43, 0.32);
+      display: flex;
+      flex-direction: column;
+      max-height: 76vh;
+      overflow: hidden;
+    }
+
+    @media (min-width: 600px) {
+      .ai-drawer {
+        left: auto;
+        width: 440px;
+      }
+    }
+
+    .ai-drawer.fullscreen {
+      top: calc(var(--header-height) + 8px);
+      left: 12px;
+      right: 12px;
+      bottom: calc(var(--nav-height) + 10px);
+      width: auto;
+      max-height: none;
+    }
+
+    .ai-drawer-head {
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ai-drawer-body {
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .chat-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 210px;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chat-msg {
+      max-width: 90%;
+      padding: 8px 11px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+    .chat-msg.user {
+      align-self: flex-end;
+      background: var(--accent);
+      color: #f4f7fa;
+    }
+
+    .chat-msg.bot {
+      align-self: flex-start;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+
+    .chat-chips {
+      display: flex;
+      gap: 5px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+
+    .chat-chips::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip-btn {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+      border-radius: 14px;
+      padding: 4px 9px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .chip-btn:hover {
+      background: var(--bg-hover);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(29, 36, 43, 0.55);
+      z-index: 60;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    @media (min-width: 640px) {
+      .modal-backdrop {
+        align-items: center;
+        padding: 16px;
+      }
+    }
+
+    .modal-window {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px 14px 0 0;
+      width: 100%;
+      max-width: 720px;
+      max-height: 86vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    @media (min-width: 640px) {
+      .modal-window {
+        border-radius: 12px;
+      }
+    }
+
+    .modal-head {
+      padding: 12px 14px;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-body {
+      padding: 14px;
+      overflow-y: auto;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      overflow-x: auto;
+      z-index: 40;
+      scrollbar-width: none;
+    }
+
+    .bottom-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .nav-btn {
+      flex: 1 0 64px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+
+    .nav-btn.active {
+      color: var(--accent);
+      background: var(--bg-subtle);
+    }
+
+    .nav-icon {
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .status-banner {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .error-banner {
+      background: var(--loss-bg);
+      color: var(--loss);
+      border: 1px solid var(--loss);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-title" id="headerTitle">Sleeper League Vault</div>
+      <div class="brand-sub" id="headerSub">League 1389754082821947392</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-icon" onclick="syncNow(false)" title="Refresh active season">↻ Sync</button>
+      <button class="btn-icon" onclick="syncNow(true)" title="Wipe cache and re-download all seasons">Full</button>
+      <button class="btn-icon" onclick="exportJSON()" title="Download clean JSON">JSON</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="statusBanner" class="status-banner">
+      <span id="statusText">Initializing league sync...</span>
+      <span id="cacheBadge" class="badge badge-neutral"></span>
+    </div>
+    <div id="errorBanner" class="error-banner hidden"></div>
+
+    <div id="dashboardRoot">
+      <div class="kpi-grid">
+        <div class="kpi-box">
+          <div class="kpi-label">Seasons</div>
+          <div class="kpi-val" id="kpiSeasons">-</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-label">Trades</div>
+          <div class="kpi-val" id="kpiTrades">-</div>
+        </div>
+        <div class="kpi-box">
+          <div class="kpi-label">All-Time High</div>
+          <div class="kpi-val" id="kpiHigh">-</div>
+        </div>
+      </div>
+
+      <!-- TAB 1: STANDINGS & LINEUP EFFICIENCY -->
+      <section id="tab-standings" class="tab-panel">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Standings & Lineup Efficiency</div>
+            <div style="display:flex; gap:6px;">
+              <select id="standingsSeasonFilter" onchange="renderStandings()"></select>
+              <button class="btn-icon" onclick="exportStandingsCSV()">CSV</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th onclick="sortStandings('rank')">#</th>
+                  <th onclick="sortStandings('name')">Manager</th>
+                  <th class="num" onclick="sortStandings('titles')">🏆</th>
+                  <th class="num" onclick="sortStandings('wins')">W-L-T</th>
+                  <th class="num" onclick="sortStandings('winPct')">Win%</th>
+                  <th class="num" onclick="sortStandings('pf')">PF</th>
+                  <th class="num" onclick="sortStandings('maxPf')">Max PF</th>
+                  <th class="num" onclick="sortStandings('benchLeft')">Bench</th>
+                  <th class="num" onclick="sortStandings('efficiencyPct')">Eff%</th>
+                </tr>
+              </thead>
+              <tbody id="standingsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: PLAYOFF & CHAMPIONSHIP HISTORY -->
+      <section id="tab-playoffs" class="tab-panel hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">All-Time Playoff & Championship Leaderboard</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Manager</th>
+                  <th class="num">🏆 Titles</th>
+                  <th class="num">🥈 2nd</th>
+                  <th class="num">🥉 3rd</th>
+                  <th class="num">Apps</th>
+                  <th class="num">Playoff W-L</th>
+                  <th class="num">Avg PF</th>
+                </tr>
+              </thead>
+              <tbody id="playoffLeaderboardBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Season Trophy Case & Bracket</div>
+            <select id="playoffSeasonSelect" onchange="renderSeasonBracket()"></select>
+          </div>
+          <div id="seasonPodiumArea" class="podium-grid"></div>
+          <div id="seasonBracketList"></div>
+        </div>
+      </section>
+
+      <!-- TAB 3: POSITIONS & LINEUP EFFICIENCY DEEP DIVE -->
+      <section id="tab-positions" class="tab-panel hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Avg Weekly Starter Score by Slot</div>
+            <select id="posSeasonFilter" onchange="renderPositions()"></select>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            Average weekly starter points by lineup slot (QB, RB, WR, FLEX, K, DEF).
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th onclick="sortPositions('name')">Manager</th>
+                  <th class="num" onclick="sortPositions('QB')">QB</th>
+                  <th class="num" onclick="sortPositions('RB')">RB</th>
+                  <th class="num" onclick="sortPositions('WR')">WR</th>
+                  <th class="num" onclick="sortPositions('FLEX')">FLEX</th>
+                  <th class="num" onclick="sortPositions('K')">K</th>
+                  <th class="num" onclick="sortPositions('DEF')">DEF</th>
+                </tr>
+              </thead>
+              <tbody id="positionsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Lineup Efficiency & Bench Blunders</div>
+            <select id="effSeasonFilter" onchange="renderEfficiencyCard()"></select>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            Compares <strong>Actual PF</strong> against <strong>Optimal Max PF</strong> (best legal starting lineup possible from each week's roster) to measure points left on the bench.
+          </p>
+          <div id="effHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th onclick="sortEfficiency('name')">Manager</th>
+                  <th class="num" onclick="sortEfficiency('efficiencyPct')">Eff%</th>
+                  <th class="num" onclick="sortEfficiency('pf')">Actual PF</th>
+                  <th class="num" onclick="sortEfficiency('maxPf')">Max PF</th>
+                  <th class="num" onclick="sortEfficiency('benchLeft')">Bench Left</th>
+                  <th class="num" onclick="sortEfficiency('avgBenchLeft')">Avg/Wk</th>
+                  <th class="num" onclick="sortEfficiency('perfectWeeks')">Perfect Wks</th>
+                  <th>Worst Bench Wk</th>
+                </tr>
+              </thead>
+              <tbody id="efficiencyBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: TRADES, PARTNERS & WAIVER WIRE BARGAINS -->
+      <section id="tab-activity" class="tab-panel hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Trades, Partners & Waiver Activity</div>
+            <select id="activitySeasonFilter" onchange="renderActivityAndWaivers()"></select>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            Tap any manager row to open a window showing all trades between that owner and their trade partners.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Manager</th>
+                  <th class="num">Trades</th>
+                  <th>Top Trade Partner</th>
+                  <th class="num">Waivers</th>
+                  <th class="num">FA Adds</th>
+                  <th class="num">Total Wire</th>
+                </tr>
+              </thead>
+              <tbody id="activityBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Waiver Wire & FAAB ROI Leaderboard</div>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            Measures total starting-lineup points scored by waiver and free-agent pickups after claiming, plus efficiency per FAAB dollar spent.
+          </p>
+          <div id="waiverHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Manager</th>
+                  <th class="num">FAAB Spent</th>
+                  <th class="num">Wire Start Pts</th>
+                  <th class="num">Pts / $</th>
+                  <th>Best Pickup Bargain</th>
+                </tr>
+              </thead>
+              <tbody id="waiverRoiBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Top Waiver & Free-Agent Bargains</div>
+          </div>
+          <div id="topWaiverBargainsList"></div>
+        </div>
+      </section>
+
+      <!-- TAB 5: DRAFT ANALYSIS -->
+      <section id="tab-draft" class="tab-panel hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Draft Retention & No-Transactions Sim</div>
+            <select id="draftSeasonFilter" onchange="renderDraftAnalysis()"></select>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            <strong>Retained:</strong> Drafted players still on roster at season end. <strong>Draft-Only PF:</strong> Optimal weekly starting lineup score if the team made <em>zero</em> trades or waiver moves all year.
+          </p>
+          <div id="draftHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th onclick="sortDraft('name')">Manager</th>
+                  <th class="num" onclick="sortDraft('retainedCount')">Retained</th>
+                  <th class="num" onclick="sortDraft('retainedPct')">Retain%</th>
+                  <th class="num" onclick="sortDraft('draftOnlyPf')">Draft-Only PF</th>
+                  <th class="num" onclick="sortDraft('actualPf')">Actual PF</th>
+                  <th class="num" onclick="sortDraft('moveNet')">Move Net</th>
+                  <th class="num" onclick="sortDraft('draftTotalPts')">All Picks Pts</th>
+                </tr>
+              </thead>
+              <tbody id="draftBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Drafted Players Kept at Season End</div>
+          </div>
+          <div id="draftKeptCards" class="h2h-grid"></div>
+        </div>
+      </section>
+
+      <!-- TAB 6: INJURIES & SEASON-ENDING IR -->
+      <section id="tab-injuries" class="tab-panel hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Drafted Player Injuries & Season Losses</div>
+            <select id="injurySeasonFilter" onchange="renderInjuries()"></select>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            Click any manager's <strong>Lost for Yr</strong> number to open a sortable popup showing the drafted players who went on IR, their draft round, week lost, and weeks missed.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Manager</th>
+                  <th class="num">Lost for Yr</th>
+                  <th class="num">Rds 1–5 Lost</th>
+                  <th class="num">Wks Missed</th>
+                  <th class="num">Active IR/Out</th>
+                  <th class="num">Actual Win%</th>
+                </tr>
+              </thead>
+              <tbody id="injuryBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Season-Ending & Active Injury Log</div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <select id="injuryLogSortSelect" onchange="renderInjuries()">
+                <option value="round">Sort: Draft Round</option>
+                <option value="weekLost">Sort: Week Lost</option>
+                <option value="weeksLostCount">Sort: # Weeks Lost</option>
+                <option value="season">Sort: Season</option>
+              </select>
+              <button class="btn-icon" id="injuryLogDirBtn" onclick="toggleInjuryLogDir()">↑ Asc</button>
+            </div>
+          </div>
+          <div id="injuryLogList"></div>
+        </div>
+      </section>
+
+      <!-- TAB 7: ALL-PLAY & LUCK INDEX -->
+      <section id="tab-luck" class="tab-panel hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">All-Play & Schedule Luck</div>
+            <select id="luckSeasonFilter" onchange="renderLuck()"></select>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            <strong>Luck Index</strong> = Actual Wins minus Expected All-Play Wins (your record if you played every team every week).
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Manager</th>
+                  <th class="num">Actual</th>
+                  <th class="num">All-Play</th>
+                  <th class="num">AP%</th>
+                  <th class="num">Luck</th>
+                  <th>Index</th>
+                </tr>
+              </thead>
+              <tbody id="luckBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 8: HEAD-TO-HEAD -->
+      <section id="tab-h2h" class="tab-panel hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Two-Team Matchup Inspector</div>
+            <select id="versusScopeSelect" onchange="renderTwoTeamMatchup()">
+              <option value="all">All Games</option>
+              <option value="regular">Regular Season</option>
+              <option value="playoffs">Playoffs Only</option>
+            </select>
+          </div>
+          <div class="controls-row">
+            <select id="versusTeamASelect" class="grow" onchange="renderTwoTeamMatchup()"></select>
+            <span style="font-weight:700; font-size:12px; color:var(--text-secondary);">VS</span>
+            <select id="versusTeamBSelect" class="grow" onchange="renderTwoTeamMatchup()"></select>
+          </div>
+          <div id="versusResultArea"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Full Rivalry Matrix</div>
+          </div>
+          <div class="controls-row">
+            <select id="h2hManagerSelect" class="grow" onchange="renderH2H()"></select>
+            <select id="h2hScopeSelect" onchange="renderH2H()">
+              <option value="all">All Games</option>
+              <option value="regular">Regular Season</option>
+              <option value="playoffs">Playoffs Only</option>
+            </select>
+          </div>
+          <div id="h2hGrid" class="h2h-grid"></div>
+        </div>
+      </section>
+
+      <!-- TAB 9: WEEKLY MATCHUPS -->
+      <section id="tab-matchups" class="tab-panel hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Weekly Scoreboard</div>
+          </div>
+          <div class="controls-row">
+            <select id="matchupSeasonSelect" class="grow" onchange="populateWeekDropdown()"></select>
+            <select id="matchupWeekSelect" onchange="renderMatchups()"></select>
+          </div>
+          <div id="weekSummaryStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+          <div id="matchupsList"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ALWAYS-ON-TOP FLOATING AI ANALYST BUTTON & EXPANDABLE DRAWER -->
+  <button id="aiFabBtn" class="ai-fab" onclick="toggleAiDrawer(true)" title="Open League AI Analyst">
+    <span>🤖</span>
+    <span>AI Analyst</span>
+  </button>
+
+  <aside id="aiDrawer" class="ai-drawer hidden">
+    <div class="ai-drawer-head">
+      <div>
+        <div class="card-title" style="font-size:13px;">🤖 League AI Analyst</div>
+        <div style="font-size:10.5px; color:var(--text-secondary);" id="aiModeSubtitle">Instant Local Engine (No Key Needed)</div>
+      </div>
+      <div style="display:flex; gap:5px;">
+        <button class="btn-icon" onclick="toggleApiKeyBar()" title="Optional Gemini API Key">🔑 Key</button>
+        <button class="btn-icon" id="aiExpandBtn" onclick="toggleAiExpand()" title="Expand or compact window">⤢</button>
+        <button class="btn-icon" onclick="toggleAiDrawer(false)" title="Minimize chat">✕</button>
+      </div>
+    </div>
+
+    <div class="ai-drawer-body">
+      <div id="apiKeyBar" class="hidden" style="background:var(--bg-subtle); border:1px solid var(--border); border-radius:8px; padding:9px;">
+        <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:6px; line-height:1.4;">
+          <strong>Works without a key!</strong> For complex open-ended questions, get a free Gemini key in 3 clicks (no credit card):<br/>
+          1. Open <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--accent); font-weight:700;">aistudio.google.com/apikey</a> &amp; sign in with Gmail.<br/>
+          2. Tap <strong>Create API key</strong> → Copy &amp; paste below:
+        </div>
+        <div style="display:flex; gap:6px;">
+          <input type="password" id="geminiKeyInput" class="grow" placeholder="Paste AIzaSy... key here" />
+          <button class="btn-primary" onclick="saveGeminiKey()">Save</button>
+          <button class="btn-icon" onclick="clearGeminiKey()">Clear</button>
+        </div>
+      </div>
+
+      <div class="chat-chips">
+        <button class="chip-btn" onclick="askSample('Who had the highest ever score for an RB?')">Highest RB score?</button>
+        <button class="chip-btn" onclick="askSample('Best waiver wire pickups of all time')">Best waiver bargains?</button>
+        <button class="chip-btn" onclick="askSample('Who left the most points on their bench?')">Most bench left?</button>
+        <button class="chip-btn" onclick="askSample('Who has won the most championships?')">Most titles?</button>
+        <button class="chip-btn" onclick="askSample('Who lost the most drafted players to IR?')">Worst IR luck?</button>
+      </div>
+
+      <div id="chatMessages" class="chat-box">
+        <div class="chat-msg bot">Ask me anything about your league while browsing any tab—like <strong>"Who had the highest ever score for an RB?"</strong>, <strong>"Best waiver wire pickups"</strong>, or <strong>"Who left the most points on their bench?"</strong></div>
+      </div>
+
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="chatInput" class="grow" placeholder="Ask about your league..." onkeydown="if(event.key==='Enter') sendChat()" />
+        <button class="btn-primary" onclick="sendChat()">Ask</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MODAL WINDOW 1: TRADES BETWEEN TWO SPECIFIC OWNERS -->
+  <div id="tradeModalBackdrop" class="modal-backdrop hidden" onclick="closeTradeModalOnBackdrop(event)">
+    <div class="modal-window" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div>
+          <div class="card-title" id="tradeModalTitle">Owner Trade History</div>
+          <div style="font-size:11px; color:var(--text-secondary);" id="tradeModalSub">Head-to-head deal ledger</div>
+        </div>
+        <button class="btn-icon" onclick="closeTradeModal()">✕ Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="controls-row">
+          <select id="modalOwnerASelect" class="grow" onchange="renderModalTrades()"></select>
+          <span style="font-size:12px; font-weight:700; color:var(--text-secondary);">WITH</span>
+          <select id="modalOwnerBSelect" class="grow" onchange="renderModalTrades()"></select>
+        </div>
+        <div id="modalTradeSummary" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+        <div id="modalTradesContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL WINDOW 2: DRAFTED PLAYERS LOST TO IR / SEASON-ENDING INJURY (SORTABLE) -->
+  <div id="injuryModalBackdrop" class="modal-backdrop hidden" onclick="closeInjuryModalOnBackdrop(event)">
+    <div class="modal-window" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div>
+          <div class="card-title" id="injuryModalTitle">Drafted Players Lost</div>
+          <div style="font-size:11px; color:var(--text-secondary);" id="injuryModalSub">IR & Season-Ending Casualties</div>
+        </div>
+        <button class="btn-icon" onclick="closeInjuryModal()">✕ Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="controls-row">
+          <select id="modalInjuryOwnerSelect" class="grow" onchange="renderInjuryModalContent()"></select>
+          <select id="modalInjurySeasonSelect" onchange="renderInjuryModalContent()"></select>
+        </div>
+        <div class="controls-row">
+          <select id="modalInjurySortSelect" class="grow" onchange="renderInjuryModalContent()">
+            <option value="round">Sort by: Draft Round</option>
+            <option value="weekLost">Sort by: Week Lost</option>
+            <option value="weeksLostCount">Sort by: Number of Weeks Lost</option>
+            <option value="season">Sort by: Season</option>
+          </select>
+          <button class="btn-icon" id="modalInjuryDirBtn" onclick="toggleModalInjuryDir()">↑ Asc</button>
+        </div>
+        <div id="modalInjurySummary" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+        <div id="modalInjuryContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAVIGATION (9 SCROLLABLE TABS) -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="standings" onclick="switchTab('standings')">
+      <span class="nav-icon">📊</span>
+      <span>Standings</span>
+    </button>
+    <button class="nav-btn" data-tab="playoffs" onclick="switchTab('playoffs')">
+      <span class="nav-icon">🏆</span>
+      <span>Playoffs</span>
+    </button>
+    <button class="nav-btn" data-tab="positions" onclick="switchTab('positions')">
+      <span class="nav-icon">📋</span>
+      <span>Positions</span>
+    </button>
+    <button class="nav-btn" data-tab="activity" onclick="switchTab('activity')">
+      <span class="nav-icon">🤝</span>
+      <span>Activity</span>
+    </button>
+    <button class="nav-btn" data-tab="draft" onclick="switchTab('draft')">
+      <span class="nav-icon">🎓</span>
+      <span>Draft</span>
+    </button>
+    <button class="nav-btn" data-tab="injuries" onclick="switchTab('injuries')">
+      <span class="nav-icon">🚑</span>
+      <span>Injuries</span>
+    </button>
+    <button class="nav-btn" data-tab="luck" onclick="switchTab('luck')">
+      <span class="nav-icon">🍀</span>
+      <span>Luck</span>
+    </button>
+    <button class="nav-btn" data-tab="h2h" onclick="switchTab('h2h')">
+      <span class="nav-icon">⚔️</span>
+      <span>H2H</span>
+    </button>
+    <button class="nav-btn" data-tab="matchups" onclick="switchTab('matchups')">
+      <span class="nav-icon">🏈</span>
+      <span>Weeks</span>
+    </button>
+  </nav>
+
+  <script>
+    /* ==========================================================================
+       1. HARDCODED LEAGUE ID & CACHE KEYS
+       ========================================================================== */
+    const HARDCODED_LEAGUE_ID = "1389754082821947392";
+    const SLEEPER_BASE = "https://api.sleeper.app/v1";
+    const ARCHIVE_CACHE_KEY = "sleeper_vault_seasons_cache_v6";
+    const PLAYERS_CACHE_KEY = "sleeper_vault_players_compact_v3";
+    const PLAYERS_TS_KEY = "sleeper_vault_players_ts_v3";
+    const GEMINI_KEY_STORAGE = "sleeper_vault_gemini_api_key";
+
+    let appData = {
+      nflState: null,
+      seasons: [],
+      managers: {},
+      players: {},
+      standingsSort: { col: "winPct", dir: "desc" },
+      positionsSort: { col: "QB", dir: "desc" },
+      efficiencySort: { col: "efficiencyPct", dir: "desc" },
+      draftSort: { col: "draftOnlyPf", dir: "desc" },
+      injuryLogDir: "asc",
+      modalInjuryDir: "asc"
+    };
+
+    /* ==========================================================================
+       2. INLINE PWA MANIFEST & SERVICE WORKER
+       ========================================================================== */
+    (function initPWA() {
+      const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="36" fill="#295982"/><text x="96" y="122" font-size="92" text-anchor="middle" fill="#eceff2" font-family="sans-serif" font-weight="bold">LV</text></svg>`;
+      const iconUrl = "data:image/svg+xml;base64," + btoa(svgIcon);
+      const manifest = {
+        name: "Sleeper League Vault",
+        short_name: "League Vault",
+        start_url: ".",
+        display: "standalone",
+        background_color: "#dfe3e8",
+        theme_color: "#dfe3e8",
+        icons: [{ src: iconUrl, sizes: "192x192", type: "image/svg+xml" }]
+      };
+      const manifestBlob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
+      const link = document.createElement("link");
+      link.rel = "manifest";
+      link.href = URL.createObjectURL(manifestBlob);
+      document.head.appendChild(link);
+
+      if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+        const swCode = `
+          const CACHE = 'sleeper-vault-shell-v8';
+          self.addEventListener('install', e => {
+            e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./'])));
+            self.skipWaiting();
+          });
+          self.addEventListener('fetch', e => {
+            if (e.request.url.includes('api.sleeper.app') || e.request.url.includes('generativelanguage.googleapis.com')) return;
+            e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+          });
+        `;
+        const swBlob = new Blob([swCode], { type: "application/javascript" });
+        navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+      }
+    })();
+
+    /* ==========================================================================
+       3. API FETCHING, PLAYER CACHE & MULTI-SEASON SYNC
+       ========================================================================== */
+    async function fetchJson(endpoint) {
+      const res = await fetch(`${SLEEPER_BASE}${endpoint}`);
+      if (!res.ok) throw new Error(`Sleeper API error (${res.status}) on ${endpoint}`);
+      return res.json();
+    }
+
+    async function ensurePlayerDirectory(force = false) {
+      const lastTs = Number(localStorage.getItem(PLAYERS_TS_KEY) || 0);
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      const cachedRaw = localStorage.getItem(PLAYERS_CACHE_KEY);
+
+      if (!force && cachedRaw && (Date.now() - lastTs < sevenDaysMs)) {
+        appData.players = JSON.parse(cachedRaw);
+        return;
+      }
+
+      try {
+        const fullPlayers = await fetchJson("/players/nfl");
+        const compact = {};
+        for (const [pid, p] of Object.entries(fullPlayers)) {
+          if (!p || !p.position) continue;
+          const name = p.full_name || `${p.first_name || ""} ${p.last_name || ""}`.trim() || pid;
+          compact[pid] = {
+            n: name,
+            p: p.position,
+            inj: p.injury_status || null
+          };
+        }
+        appData.players = compact;
+        try {
+          localStorage.setItem(PLAYERS_CACHE_KEY, JSON.stringify(compact));
+          localStorage.setItem(PLAYERS_TS_KEY, String(Date.now()));
+        } catch (e) {
+          console.warn("Player cache exceeded localStorage quota; kept in memory.");
+        }
+      } catch (e) {
+        if (cachedRaw) appData.players = JSON.parse(cachedRaw);
+      }
+    }
+
+    function getPlayerLabel(pid) {
+      const entry = appData.players[pid];
+      if (!entry) return `Player #${pid}`;
+      return typeof entry === "string" ? entry : `${entry.n} (${entry.p})`;
+    }
+
+    function getPlayerNameOnly(pid) {
+      const entry = appData.players[pid];
+      if (!entry) return `Player #${pid}`;
+      return typeof entry === "string" ? entry : entry.n;
+    }
+
+    function getPlayerPos(pid) {
+      const entry = appData.players[pid];
+      if (entry && typeof entry === "object" && entry.p) return entry.p;
+      if (/^[A-Z]{2,3}$/.test(String(pid))) return "DEF";
+      return "OTHER";
+    }
+
+    function getPlayerLiveInjury(pid) {
+      const entry = appData.players[pid];
+      return (entry && typeof entry === "object") ? (entry.inj || null) : null;
+    }
+
+    function computeAllPlay(weekMatchups) {
+      const active = weekMatchups.filter(m => m.matchup_id !== null && m.matchup_id !== undefined);
+      const map = {};
+      for (const team of active) {
+        const pts = Number(team.points || 0);
+        let wins = 0, losses = 0, ties = 0;
+        for (const opp of active) {
+          if (opp.roster_id === team.roster_id) continue;
+          const oppPts = Number(opp.points || 0);
+          if (pts > oppPts) wins++;
+          else if (pts < oppPts) losses++;
+          else ties++;
+        }
+        map[team.roster_id] = { wins, losses, ties };
+      }
+      return map;
+    }
+
+    function extractPodiumFromBracket(winnersBracket, rosterOwnerMap) {
+      if (!Array.isArray(winnersBracket) || winnersBracket.length === 0) {
+        return { champUid: null, runnerUpUid: null, thirdUid: null };
+      }
+      const maxRound = Math.max(...winnersBracket.map(m => m.r || 0));
+      const titleMatch = winnersBracket.find(m => m.p === 1) ||
+        winnersBracket.find(m => m.r === maxRound && !m.t1_from?.l);
+      const thirdMatch = winnersBracket.find(m => m.p === 3);
+
+      return {
+        champUid: titleMatch?.w ? (rosterOwnerMap[titleMatch.w] || null) : null,
+        runnerUpUid: titleMatch?.l ? (rosterOwnerMap[titleMatch.l] || null) : null,
+        thirdUid: thirdMatch?.w ? (rosterOwnerMap[thirdMatch.w] || null) : null
+      };
+    }
+
+    async function fetchSingleSeason(leagueId, nflState) {
+      const [league, users, rosters, bracket, drafts] = await Promise.all([
+        fetchJson(`/league/${leagueId}`),
+        fetchJson(`/league/${leagueId}/users`),
+        fetchJson(`/league/${leagueId}/rosters`),
+        fetchJson(`/league/${leagueId}/winners_bracket`),
+        fetchJson(`/league/${leagueId}/drafts`)
+      ]);
+
+      const rosterOwnerMap = Object.fromEntries(
+        rosters.map(r => [r.roster_id, r.owner_id || `roster_${leagueId}_${r.roster_id}`])
+      );
+
+      let draftPicks = [];
+      if (Array.isArray(drafts) && drafts.length > 0) {
+        const primaryDraft = drafts.find(d => d.status === "complete") || drafts[0];
+        if (primaryDraft?.draft_id) {
+          const rawPicks = await fetchJson(`/draft/${primaryDraft.draft_id}/picks`);
+          if (Array.isArray(rawPicks)) {
+            draftPicks = rawPicks.map(pk => ({
+              pick_no: pk.pick_no,
+              round: pk.round,
+              roster_id: pk.roster_id,
+              owner_id: pk.picked_by || rosterOwnerMap[pk.roster_id],
+              player_id: pk.player_id,
+              pos: pk.metadata?.position || getPlayerPos(pk.player_id),
+              player_name: pk.metadata
+                ? `${pk.metadata.first_name || ""} ${pk.metadata.last_name || ""}`.trim()
+                : getPlayerLabel(pk.player_id)
+            }));
+          }
+        }
+      }
+
+      const startingSlots = (league.roster_positions || []).filter(
+        pos => !["BN", "IR", "TAXI"].includes(pos)
+      );
+
+      const isCurrentSeason = String(league.season) === String(nflState.season);
+      const maxWeek = isCurrentSeason && nflState.season_type === "regular"
+        ? Math.min(18, Number(nflState.week || 18))
+        : 18;
+
+      const weekNumbers = Array.from({ length: maxWeek }, (_, i) => i + 1);
+      const [rawWeeks, rawTxWeeks] = await Promise.all([
+        Promise.all(weekNumbers.map(w => fetchJson(`/league/${leagueId}/matchups/${w}`))),
+        Promise.all(weekNumbers.map(w => fetchJson(`/league/${leagueId}/transactions/${w}`)))
+      ]);
+
+      const matchupsByWeek = {};
+      rawWeeks.forEach((weekData, idx) => {
+        if (!Array.isArray(weekData) || weekData.length === 0) return;
+        if (weekData.every(m => m.matchup_id === null)) return;
+        const allPlayMap = computeAllPlay(weekData);
+        matchupsByWeek[String(idx + 1)] = weekData.map(m => ({
+          matchup_id: m.matchup_id,
+          roster_id: m.roster_id,
+          owner_id: rosterOwnerMap[m.roster_id],
+          points: Number(m.points || 0),
+          starters: m.starters || [],
+          starters_points: m.starters_points || [],
+          players: m.players || [],
+          players_points: m.players_points || {},
+          all_play: allPlayMap[m.roster_id] || { wins: 0, losses: 0, ties: 0 }
+        }));
+      });
+
+      const tradeMap = new Map();
+      const wireTxMap = new Map();
+
+      rawTxWeeks.forEach((txList, idx) => {
+        if (!Array.isArray(txList)) return;
+        for (const tx of txList) {
+          if (tx.status !== "complete") continue;
+          if (tx.type === "trade") {
+            if (tradeMap.has(tx.transaction_id)) continue;
+            tradeMap.set(tx.transaction_id, {
+              transaction_id: tx.transaction_id,
+              week: tx.leg || (idx + 1),
+              created: tx.status_updated || tx.created || 0,
+              roster_ids: tx.roster_ids || [],
+              adds: tx.adds || {},
+              drops: tx.drops || {},
+              draft_picks: tx.draft_picks || [],
+              waiver_budget: tx.waiver_budget || []
+            });
+          } else if (tx.type === "waiver" || tx.type === "free_agent") {
+            if (wireTxMap.has(tx.transaction_id)) continue;
+            wireTxMap.set(tx.transaction_id, {
+              transaction_id: tx.transaction_id,
+              type: tx.type,
+              week: tx.leg || (idx + 1),
+              roster_ids: tx.roster_ids || [],
+              adds: tx.adds || {},
+              drops: tx.drops || {},
+              waiver_bid: Number(tx.settings?.waiver_bid || 0)
+            });
+          }
+        }
+      });
+
+      const podium = extractPodiumFromBracket(bracket, rosterOwnerMap);
+
+      return {
+        season: String(league.season),
+        league_id: leagueId,
+        previous_league_id: league.previous_league_id,
+        name: league.name,
+        status: league.status,
+        roster_positions: startingSlots,
+        playoff_week_start: Number(league.settings?.playoff_week_start || 15),
+        champion_user_id: podium.champUid,
+        runner_up_user_id: podium.runnerUpUid,
+        third_place_user_id: podium.thirdUid,
+        winners_bracket: Array.isArray(bracket) ? bracket : [],
+        roster_owner_map: rosterOwnerMap,
+        rosters_final: rosters.map(r => ({
+          roster_id: r.roster_id,
+          owner_id: r.owner_id || `roster_${leagueId}_${r.roster_id}`,
+          players: r.players || [],
+          reserve: r.reserve || []
+        })),
+        draft_picks: draftPicks,
+        users: users.map(u => ({
+          user_id: u.user_id,
+          display_name: u.display_name,
+          avatar: u.avatar,
+          team_name: u.metadata?.team_name || u.display_name
+        })),
+        matchups_by_week: matchupsByWeek,
+        trades: Array.from(tradeMap.values()).sort((a, b) => b.created - a.created),
+        wire_transactions: Array.from(wireTxMap.values())
+      };
+    }
+
+    function buildManagerDirectory(seasons) {
+      const dir = {};
+      for (const s of seasons) {
+        for (const u of s.users) {
+          if (!u.user_id) continue;
+          if (!dir[u.user_id]) {
+            dir[u.user_id] = {
+              user_id: u.user_id,
+              name: u.display_name,
+              avatar: u.avatar,
+              teamsBySeason: {}
+            };
+          }
+          dir[u.user_id].name = u.display_name;
+          if (u.avatar) dir[u.user_id].avatar = u.avatar;
+          dir[u.user_id].teamsBySeason[s.season] = u.team_name;
+        }
+      }
+      return dir;
+    }
+
+    async function syncNow(forceFull = false) {
+      hideError();
+      showStatus(forceFull ? "Performing full multi-season resync..." : "Syncing active season & cached history...");
+
+      try {
+        const [nflState] = await Promise.all([
+          fetchJson("/state/nfl"),
+          ensurePlayerDirectory(forceFull)
+        ]);
+
+        const cached = forceFull ? {} : JSON.parse(localStorage.getItem(ARCHIVE_CACHE_KEY) || "{}");
+        const seasons = [];
+        const visited = new Set();
+        let nextId = HARDCODED_LEAGUE_ID;
+        let cachedCount = 0;
+
+        while (nextId && nextId !== "0" && !visited.has(nextId)) {
+          visited.add(nextId);
+          const cItem = cached[nextId];
+          if (
+            cItem &&
+            cItem.status === "complete" &&
+            Array.isArray(cItem.winners_bracket) &&
+            Array.isArray(cItem.draft_picks) &&
+            Array.isArray(cItem.rosters_final) &&
+            Array.isArray(cItem.wire_transactions)
+          ) {
+            seasons.push(cItem);
+            cachedCount++;
+            nextId = String(cItem.previous_league_id || "").trim();
+          } else {
+            const fresh = await fetchSingleSeason(nextId, nflState);
+            seasons.push(fresh);
+            cached[nextId] = fresh;
+            nextId = String(fresh.previous_league_id || "").trim();
+          }
+        }
+
+        try {
+          localStorage.setItem(ARCHIVE_CACHE_KEY, JSON.stringify(cached));
+        } catch (e) {
+          console.warn("LocalStorage quota reached; running in-memory.", e);
+        }
+
+        seasons.sort((a, b) => Number(a.season) - Number(b.season));
+        appData.nflState = nflState;
+        appData.seasons = seasons;
+        appData.managers = buildManagerDirectory(seasons);
+
+        const latest = seasons[seasons.length - 1];
+        document.getElementById("headerTitle").textContent = latest.name || "Sleeper League Vault";
+        document.getElementById("headerSub").textContent =
+          `${seasons[0].season}–${latest.season} • NFL Wk ${nflState.week}`;
+
+        updateAiModeBadge();
+        populateFilters();
+        renderAll();
+
+        showStatus(
+          `Synced ${seasons.length} season(s) at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+          `${cachedCount} cached / ${seasons.length - cachedCount} live`
+        );
+        setTimeout(() => document.getElementById("statusBanner").classList.add("hidden"), 3800);
+      } catch (err) {
+        document.getElementById("statusBanner").classList.add("hidden");
+        showError(err.message || "Failed to fetch Sleeper data.");
+      }
+    }
+
+    /* ==========================================================================
+       4. OPTIMAL LINEUP, STANDINGS, PLAYOFFS, WAIVER BARGAINS, DRAFT & INJURIES
+       ========================================================================== */
+    function getManagerMeta(uid) {
+      return appData.managers[uid] || { user_id: uid, name: String(uid).slice(0, 8), avatar: null, teamsBySeason: {} };
+    }
+
+    function computeOptimalLineupPoints(candidatePlayerIds, startingSlots, weeklyPtsMap) {
+      const pool = (candidatePlayerIds || []).map(pid => ({
+        pid,
+        pos: getPlayerPos(pid),
+        pts: Number(weeklyPtsMap[pid] || 0)
+      })).sort((a, b) => b.pts - a.pts);
+
+      const used = new Set();
+      let total = 0;
+
+      const flexSlots = [];
+      for (const slot of startingSlots) {
+        if (slot.includes("FLEX")) {
+          flexSlots.push(slot);
+          continue;
+        }
+        const match = pool.find(p => !used.has(p.pid) && p.pos === slot);
+        if (match) {
+          used.add(match.pid);
+          total += match.pts;
+        }
+      }
+
+      for (const fSlot of flexSlots) {
+        const eligible = fSlot === "SUPER_FLEX"
+          ? ["QB", "RB", "WR", "TE"]
+          : fSlot === "REC_FLEX"
+            ? ["WR", "TE"]
+            : ["RB", "WR", "TE"];
+        const match = pool.find(p => !used.has(p.pid) && eligible.includes(p.pos));
+        if (match) {
+          used.add(match.pid);
+          total += match.pts;
+        }
+      }
+
+      return total;
+    }
+
+    function computeStatsForSeasons(seasonFilter) {
+      const targetSeasons = seasonFilter === "ALL"
+        ? appData.seasons
+        : appData.seasons.filter(s => s.season === seasonFilter);
+
+      const stats = {};
+      let totalGames = 0;
+      let totalTrades = 0;
+      let highestScore = { pts: 0, manager: "-", season: "", week: "" };
+
+      const ensure = (uid) => {
+        if (!stats[uid]) {
+          const meta = getManagerMeta(uid);
+          stats[uid] = {
+            user_id: uid,
+            name: meta.name,
+            avatar: meta.avatar,
+            wins: 0, losses: 0, ties: 0,
+            pf: 0, pa: 0,
+            maxPf: 0,
+            weeksLogged: 0,
+            perfectWeeks: 0,
+            worstBench: { diff: 0, season: "", week: "" },
+            apWins: 0, apLosses: 0, apTies: 0,
+            titles: 0
+          };
+        }
+        return stats[uid];
+      };
+
+      for (const s of targetSeasons) {
+        totalTrades += (s.trades || []).length;
+        const slots = s.roster_positions || [];
+        if (s.champion_user_id) {
+          ensure(s.champion_user_id).titles += 1;
+        }
+
+        for (const [weekStr, entries] of Object.entries(s.matchups_by_week)) {
+          const byMatchup = {};
+          for (const e of entries) {
+            if (e.matchup_id === null || e.matchup_id === undefined) continue;
+            if (!byMatchup[e.matchup_id]) byMatchup[e.matchup_id] = [];
+            byMatchup[e.matchup_id].push(e);
+
+            const st = ensure(e.owner_id);
+            st.apWins += e.all_play.wins;
+            st.apLosses += e.all_play.losses;
+            st.apTies += e.all_play.ties;
+
+            if (e.points > highestScore.pts) {
+              highestScore = { pts: e.points, manager: st.name, season: s.season, week: weekStr };
+            }
+
+            if (e.points > 0) {
+              const rawOpt = computeOptimalLineupPoints(e.players || [], slots, e.players_points || {});
+              const weekMaxPf = Math.max(e.points, rawOpt);
+              const weekBenchDiff = Math.max(0, weekMaxPf - e.points);
+
+              st.maxPf += weekMaxPf;
+              st.weeksLogged += 1;
+              if (weekBenchDiff < 0.05) {
+                st.perfectWeeks += 1;
+              }
+              if (weekBenchDiff > st.worstBench.diff) {
+                st.worstBench = { diff: weekBenchDiff, season: s.season, week: weekStr };
+              }
+            }
+          }
+
+          for (const pair of Object.values(byMatchup)) {
+            if (pair.length !== 2) continue;
+            const [a, b] = pair;
+            if (a.points === 0 && b.points === 0) continue;
+
+            const stA = ensure(a.owner_id);
+            const stB = ensure(b.owner_id);
+            stA.pf += a.points; stA.pa += b.points;
+            stB.pf += b.points; stB.pa += a.points;
+
+            if (a.points > b.points) { stA.wins++; stB.losses++; }
+            else if (b.points > a.points) { stB.wins++; stA.losses++; }
+            else { stA.ties++; stB.ties++; }
+            totalGames++;
+          }
+        }
+      }
+
+      const rows = Object.values(stats).map(r => {
+        const games = r.wins + r.losses + r.ties;
+        const apGames = r.apWins + r.apLosses + r.apTies;
+        const winPct = games ? (r.wins + 0.5 * r.ties) / games : 0;
+        const apPct = apGames ? (r.apWins + 0.5 * r.apTies) / apGames : 0;
+        const luck = r.wins - (apPct * games);
+        const benchLeft = Math.max(0, r.maxPf - r.pf);
+        const efficiencyPct = r.maxPf > 0 ? (r.pf / r.maxPf) * 100 : 0;
+        const avgBenchLeft = r.weeksLogged > 0 ? benchLeft / r.weeksLogged : 0;
+        return {
+          ...r,
+          games,
+          winPct,
+          apPct,
+          luck,
+          benchLeft,
+          efficiencyPct,
+          avgBenchLeft
+        };
+      });
+
+      return { rows, totalGames, totalTrades, highestScore };
+    }
+
+    function computePlayoffHistory() {
+      const board = {};
+      const ensure = (uid) => {
+        if (!board[uid]) {
+          const meta = getManagerMeta(uid);
+          board[uid] = {
+            user_id: uid,
+            name: meta.name,
+            avatar: meta.avatar,
+            titles: 0,
+            runnerUps: 0,
+            thirds: 0,
+            appearances: 0,
+            wins: 0,
+            losses: 0,
+            pf: 0,
+            games: 0
+          };
+        }
+        return board[uid];
+      };
+
+      for (const s of appData.seasons) {
+        const ownerMap = s.roster_owner_map || {};
+        if (s.champion_user_id) ensure(s.champion_user_id).titles += 1;
+        if (s.runner_up_user_id) ensure(s.runner_up_user_id).runnerUps += 1;
+        if (s.third_place_user_id) ensure(s.third_place_user_id).thirds += 1;
+
+        const bracket = s.winners_bracket || [];
+        const playoffUidsThisYear = new Set();
+        const playoffStart = s.playoff_week_start || 15;
+
+        for (const m of bracket) {
+          const u1 = typeof m.t1 === "number" ? ownerMap[m.t1] : null;
+          const u2 = typeof m.t2 === "number" ? ownerMap[m.t2] : null;
+          if (u1) playoffUidsThisYear.add(u1);
+          if (u2) playoffUidsThisYear.add(u2);
+
+          if (m.w && ownerMap[m.w]) ensure(ownerMap[m.w]).wins += 1;
+          if (m.l && ownerMap[m.l]) ensure(ownerMap[m.l]).losses += 1;
+        }
+
+        for (const uid of playoffUidsThisYear) {
+          ensure(uid).appearances += 1;
+        }
+
+        for (const [wkStr, entries] of Object.entries(s.matchups_by_week)) {
+          if (Number(wkStr) < playoffStart) continue;
+          for (const e of entries) {
+            if (!playoffUidsThisYear.has(e.owner_id) || e.points === 0) continue;
+            const rec = ensure(e.owner_id);
+            rec.pf += e.points;
+            rec.games += 1;
+          }
+        }
+      }
+
+      return Object.values(board).map(r => ({
+        ...r,
+        avgPf: r.games > 0 ? r.pf / r.games : 0
+      })).sort((a, b) =>
+        b.titles - a.titles ||
+        b.runnerUps - a.runnerUps ||
+        b.wins - a.wins ||
+        b.appearances - a.appearances
+      );
+    }
+
+    function normalizeSlotBucket(slotLabel) {
+      if (!slotLabel) return null;
+      if (slotLabel === "QB") return "QB";
+      if (slotLabel === "RB") return "RB";
+      if (slotLabel === "WR") return "WR";
+      if (slotLabel === "TE") return "TE";
+      if (slotLabel === "K") return "K";
+      if (slotLabel === "DEF") return "DEF";
+      if (slotLabel.includes("FLEX")) return "FLEX";
+      return null;
+    }
+
+    function computePositionsAndActivity(seasonFilter) {
+      const targetSeasons = seasonFilter === "ALL"
+        ? appData.seasons
+        : appData.seasons.filter(s => s.season === seasonFilter);
+
+      const POS_KEYS = ["QB", "RB", "WR", "FLEX", "K", "DEF"];
+      const managersMap = {};
+
+      const ensure = (uid) => {
+        if (!managersMap[uid]) {
+          const meta = getManagerMeta(uid);
+          managersMap[uid] = {
+            user_id: uid,
+            name: meta.name,
+            avatar: meta.avatar,
+            weeksPlayed: 0,
+            posTotals: { QB: 0, RB: 0, WR: 0, FLEX: 0, K: 0, DEF: 0 },
+            tradesCount: 0,
+            partners: {},
+            waiversCount: 0,
+            faCount: 0
+          };
+        }
+        return managersMap[uid];
+      };
+
+      for (const s of targetSeasons) {
+        const slots = s.roster_positions || [];
+        const ownerMap = s.roster_owner_map || {};
+
+        for (const entries of Object.values(s.matchups_by_week)) {
+          for (const e of entries) {
+            if (e.matchup_id === null || e.matchup_id === undefined) continue;
+            if (e.points === 0) continue;
+
+            const rec = ensure(e.owner_id);
+            rec.weeksPlayed += 1;
+
+            const starters = e.starters || [];
+            const sPts = e.starters_points || [];
+            const pPtsMap = e.players_points || {};
+
+            starters.forEach((pid, idx) => {
+              const slotName = slots[idx];
+              const bucket = normalizeSlotBucket(slotName) || normalizeSlotBucket(getPlayerPos(pid));
+              if (!bucket || !POS_KEYS.includes(bucket)) return;
+              const pts = sPts[idx] !== undefined ? Number(sPts[idx] || 0) : Number(pPtsMap[pid] || 0);
+              rec.posTotals[bucket] += pts;
+            });
+          }
+        }
+
+        for (const tx of (s.trades || [])) {
+          const uids = [...new Set(tx.roster_ids.map(rid => ownerMap[rid]).filter(Boolean))];
+          for (const uid of uids) {
+            const rec = ensure(uid);
+            rec.tradesCount += 1;
+            for (const otherUid of uids) {
+              if (otherUid === uid) continue;
+              rec.partners[otherUid] = (rec.partners[otherUid] || 0) + 1;
+            }
+          }
+        }
+
+        for (const wtx of (s.wire_transactions || [])) {
+          const uids = [...new Set(wtx.roster_ids.map(rid => ownerMap[rid]).filter(Boolean))];
+          for (const uid of uids) {
+            const rec = ensure(uid);
+            if (wtx.type === "waiver") rec.waiversCount += 1;
+            else if (wtx.type === "free_agent") rec.faCount += 1;
+          }
+        }
+      }
+
+      return Object.values(managersMap).map(r => {
+        const avgs = {};
+        for (const k of POS_KEYS) {
+          avgs[k] = r.weeksPlayed > 0 ? r.posTotals[k] / r.weeksPlayed : 0;
+        }
+
+        const sortedPartners = Object.entries(r.partners).sort((a, b) => b[1] - a[1]);
+        let topPartnerLabel = "-";
+        let topPartnerUid = null;
+        if (sortedPartners.length > 0) {
+          topPartnerUid = sortedPartners[0][0];
+          const maxCnt = sortedPartners[0][1];
+          const topNames = sortedPartners
+            .filter(([, cnt]) => cnt === maxCnt)
+            .map(([pUid]) => getManagerMeta(pUid).name);
+          topPartnerLabel = `${topNames.join(", ")} (${maxCnt}x)`;
+        }
+
+        return {
+          ...r,
+          ...avgs,
+          topPartnerUid,
+          topPartnerLabel,
+          totalWire: r.waiversCount + r.faCount
+        };
+      });
+    }
+
+    function computeWaiverBargains(seasonFilter) {
+      const targetSeasons = seasonFilter === "ALL"
+        ? appData.seasons
+        : appData.seasons.filter(s => s.season === seasonFilter);
+
+      const managerStats = {};
+      const bargains = [];
+
+      const ensure = (uid) => {
+        if (!managerStats[uid]) {
+          const meta = getManagerMeta(uid);
+          managerStats[uid] = {
+            user_id: uid,
+            name: meta.name,
+            avatar: meta.avatar,
+            faabSpent: 0,
+            wireStarterPts: 0,
+            bestPickup: null
+          };
+        }
+        return managerStats[uid];
+      };
+
+      for (const s of targetSeasons) {
+        const ownerMap = s.roster_owner_map || {};
+        // Ensure all season managers appear even if 0 claims
+        for (const uid of Object.values(ownerMap)) ensure(uid);
+
+        // Deduplicate by (roster_id, player_id, week) so re-adds don't double-count full season
+        const claims = [];
+        for (const wtx of (s.wire_transactions || [])) {
+          for (const [pid, rid] of Object.entries(wtx.adds || {})) {
+            claims.push({
+              pid,
+              rid,
+              uid: ownerMap[rid],
+              week: Number(wtx.week || 1),
+              type: wtx.type,
+              bid: Number(wtx.waiver_bid || 0)
+            });
+          }
+        }
+
+        claims.sort((a, b) => a.week - b.week);
+
+        for (let i = 0; i < claims.length; i++) {
+          const c = claims[i];
+          if (!c.uid) continue;
+          const mRec = ensure(c.uid);
+          mRec.faabSpent += c.bid;
+
+          // Find if same roster re-claimed the same player later so we bound the window
+          const nextSameClaim = claims.slice(i + 1).find(n => n.rid === c.rid && n.pid === c.pid);
+          const endWeek = nextSameClaim ? nextSameClaim.week - 1 : 18;
+
+          let starterPts = 0;
+          let starts = 0;
+          for (const [wkStr, entries] of Object.entries(s.matchups_by_week)) {
+            const wk = Number(wkStr);
+            if (wk < c.week || wk > endWeek) continue;
+            const teamEntry = entries.find(e => e.roster_id === c.rid);
+            if (!teamEntry || !teamEntry.players.includes(c.pid)) continue;
+            if (teamEntry.starters.includes(c.pid)) {
+              starterPts += Number(teamEntry.players_points[c.pid] || 0);
+              starts++;
+            }
+          }
+
+          mRec.wireStarterPts += starterPts;
+
+          if (starterPts > 0) {
+            const ptsPerDollar = c.bid > 0 ? starterPts / c.bid : starterPts;
+            const item = {
+              season: s.season,
+              week: c.week,
+              ownerId: c.uid,
+              ownerName: mRec.name,
+              pid: c.pid,
+              playerLabel: getPlayerLabel(c.pid),
+              type: c.type,
+              bid: c.bid,
+              starterPts,
+              starts,
+              ptsPerDollar
+            };
+            bargains.push(item);
+
+            if (!mRec.bestPickup || item.starterPts > mRec.bestPickup.starterPts) {
+              mRec.bestPickup = item;
+            }
+          }
+        }
+      }
+
+      const managerRows = Object.values(managerStats).map(r => ({
+        ...r,
+        ptsPerDollar: r.faabSpent > 0 ? (r.wireStarterPts / r.faabSpent) : null
+      })).sort((a, b) => b.wireStarterPts - a.wireStarterPts);
+
+      bargains.sort((a, b) => b.starterPts - a.starterPts);
+      return { managerRows, bargains };
+    }
+
+    function computeDraftAnalysis(seasonFilter) {
+      const targetSeasons = seasonFilter === "ALL"
+        ? appData.seasons
+        : appData.seasons.filter(s => s.season === seasonFilter);
+
+      const managersMap = {};
+      const ensure = (uid) => {
+        if (!managersMap[uid]) {
+          const meta = getManagerMeta(uid);
+          managersMap[uid] = {
+            user_id: uid,
+            name: meta.name,
+            avatar: meta.avatar,
+            draftedCount: 0,
+            retainedCount: 0,
+            draftOnlyPf: 0,
+            actualPf: 0,
+            draftTotalPts: 0,
+            retainedNames: []
+          };
+        }
+        return managersMap[uid];
+      };
+
+      for (const s of targetSeasons) {
+        if (!Array.isArray(s.draft_picks) || s.draft_picks.length === 0) continue;
+
+        const leagueWeeklyPts = {};
+        const actualPfByOwner = {};
+
+        for (const [wkStr, entries] of Object.entries(s.matchups_by_week)) {
+          leagueWeeklyPts[wkStr] = {};
+          for (const e of entries) {
+            if (e.matchup_id === null || e.matchup_id === undefined) continue;
+            if (e.points > 0) {
+              actualPfByOwner[e.owner_id] = (actualPfByOwner[e.owner_id] || 0) + e.points;
+            }
+            for (const [pid, pts] of Object.entries(e.players_points || {})) {
+              leagueWeeklyPts[wkStr][pid] = Number(pts || 0);
+            }
+          }
+        }
+
+        const finalRosterByOwner = {};
+        for (const rf of (s.rosters_final || [])) {
+          finalRosterByOwner[rf.owner_id] = new Set(rf.players || []);
+        }
+
+        const picksByOwner = {};
+        for (const pk of s.draft_picks) {
+          if (!pk.owner_id || !pk.player_id) continue;
+          if (!picksByOwner[pk.owner_id]) picksByOwner[pk.owner_id] = [];
+          picksByOwner[pk.owner_id].push(pk);
+        }
+
+        for (const [uid, picks] of Object.entries(picksByOwner)) {
+          const rec = ensure(uid);
+          const finalSet = finalRosterByOwner[uid] || new Set();
+          const draftedIds = picks.map(p => p.player_id);
+
+          rec.draftedCount += draftedIds.length;
+          rec.actualPf += (actualPfByOwner[uid] || 0);
+
+          for (const pk of picks) {
+            if (finalSet.has(pk.player_id)) {
+              rec.retainedCount += 1;
+              rec.retainedNames.push(`${pk.player_name} (${s.season} Rd ${pk.round})`);
+            }
+            for (const wkPtsMap of Object.values(leagueWeeklyPts)) {
+              rec.draftTotalPts += Number(wkPtsMap[pk.player_id] || 0);
+            }
+          }
+
+          for (const [wkStr, wkPtsMap] of Object.entries(leagueWeeklyPts)) {
+            const entries = s.matchups_by_week[wkStr] || [];
+            const playedThisWeek = entries.some(e => e.owner_id === uid && e.points > 0);
+            if (!playedThisWeek) continue;
+            rec.draftOnlyPf += computeOptimalLineupPoints(draftedIds, s.roster_positions || [], wkPtsMap);
+          }
+        }
+      }
+
+      return Object.values(managersMap).map(r => ({
+        ...r,
+        retainedPct: r.draftedCount > 0 ? (r.retainedCount / r.draftedCount) * 100 : 0,
+        moveNet: r.actualPf - r.draftOnlyPf
+      }));
+    }
+
+    function formatWeekRanges(weekNumbers) {
+      if (!weekNumbers || weekNumbers.length === 0) return "None";
+      const sorted = [...weekNumbers].sort((a, b) => a - b);
+      const ranges = [];
+      let start = sorted[0];
+      let prev = sorted[0];
+
+      for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i] === prev + 1) {
+          prev = sorted[i];
+        } else {
+          ranges.push(start === prev ? `${start}` : `${start}–${prev}`);
+          start = prev = sorted[i];
+        }
+      }
+      ranges.push(start === prev ? `${start}` : `${start}–${prev}`);
+      return `Wks ${ranges.join(", ")}`;
+    }
+
+    function computeInjuryAnalysis(seasonFilter) {
+      const targetSeasons = seasonFilter === "ALL"
+        ? appData.seasons
+        : appData.seasons.filter(s => s.season === seasonFilter);
+
+      const currentSeasonYear = String(appData.nflState?.season || "");
+      const managersMap = {};
+      const casualtyLog = [];
+
+      const ensure = (uid) => {
+        if (!managersMap[uid]) {
+          const meta = getManagerMeta(uid);
+          managersMap[uid] = {
+            user_id: uid,
+            name: meta.name,
+            avatar: meta.avatar,
+            seasonEndingCount: 0,
+            earlyRoundLost: 0,
+            weeksMissed: 0,
+            activeIrOutCount: 0,
+            wins: 0,
+            games: 0,
+            casualties: []
+          };
+        }
+        return managersMap[uid];
+      };
+
+      for (const s of targetSeasons) {
+        const isCurrentSeason = s.season === currentSeasonYear;
+        const weekNums = Object.keys(s.matchups_by_week)
+          .map(Number)
+          .filter(w => (s.matchups_by_week[String(w)] || []).some(e => e.points > 0))
+          .sort((a, b) => a - b);
+
+        const leagueWeeklyPts = {};
+        for (const wk of weekNums) {
+          leagueWeeklyPts[wk] = {};
+          for (const e of (s.matchups_by_week[String(wk)] || [])) {
+            for (const [pid, pts] of Object.entries(e.players_points || {})) {
+              leagueWeeklyPts[wk][pid] = Number(pts || 0);
+            }
+          }
+        }
+
+        for (const entries of Object.values(s.matchups_by_week)) {
+          const byMatchup = {};
+          for (const e of entries) {
+            if (e.matchup_id === null || e.matchup_id === undefined) continue;
+            if (!byMatchup[e.matchup_id]) byMatchup[e.matchup_id] = [];
+            byMatchup[e.matchup_id].push(e);
+          }
+          for (const pair of Object.values(byMatchup)) {
+            if (pair.length !== 2) continue;
+            const [a, b] = pair;
+            if (a.points === 0 && b.points === 0) continue;
+            const stA = ensure(a.owner_id);
+            const stB = ensure(b.owner_id);
+            stA.games++; stB.games++;
+            if (a.points > b.points) stA.wins++;
+            else if (b.points > a.points) stB.wins++;
+          }
+        }
+
+        const reserveSetByOwner = {};
+        for (const rf of (s.rosters_final || [])) {
+          reserveSetByOwner[rf.owner_id] = new Set(rf.reserve || []);
+          if (isCurrentSeason) {
+            const rec = ensure(rf.owner_id);
+            for (const pid of (rf.players || [])) {
+              const inj = getPlayerLiveInjury(pid);
+              if (inj && ["IR", "Out", "PUP"].includes(inj)) {
+                rec.activeIrOutCount += 1;
+              }
+            }
+          }
+        }
+
+        for (const pk of (s.draft_picks || [])) {
+          if (!pk.owner_id || !pk.player_id || weekNums.length === 0) continue;
+          const rec = ensure(pk.owner_id);
+          const pid = pk.player_id;
+
+          let lastActiveWeek = 0;
+          const missedWeekList = [];
+
+          for (const wk of weekNums) {
+            const pts = leagueWeeklyPts[wk][pid];
+            if (pts !== undefined && pts !== 0) {
+              lastActiveWeek = wk;
+            } else {
+              missedWeekList.push(wk);
+            }
+          }
+
+          rec.weeksMissed += missedWeekList.length;
+
+          const endedOnIR = (reserveSetByOwner[pk.owner_id] || new Set()).has(pid);
+          const liveInj = isCurrentSeason ? getPlayerLiveInjury(pid) : null;
+          const missedFinalStreak = weekNums[weekNums.length - 1] - lastActiveWeek;
+
+          const isSeasonEnding = endedOnIR || liveInj === "IR" || liveInj === "PUP" || (weekNums.length >= 5 && missedFinalStreak >= 4);
+
+          if (isSeasonEnding) {
+            rec.seasonEndingCount += 1;
+            if (Number(pk.round) <= 5) rec.earlyRoundLost += 1;
+
+            const postInjuryWeeks = missedWeekList.filter(w => w > lastActiveWeek);
+            const weeksLostCount = postInjuryWeeks.length > 0 ? postInjuryWeeks.length : missedWeekList.length;
+            const weekLostNum = lastActiveWeek + 1;
+
+            const casualtyItem = {
+              season: Number(s.season),
+              seasonStr: s.season,
+              ownerId: pk.owner_id,
+              ownerName: rec.name,
+              playerName: pk.player_name || getPlayerLabel(pid),
+              pos: pk.pos || getPlayerPos(pid),
+              round: Number(pk.round || 99),
+              pickNo: Number(pk.pick_no || 999),
+              lastActiveWeek,
+              weekLostNum,
+              weeksMissed: missedWeekList.length,
+              weeksLostCount,
+              weeksLabel: formatWeekRanges(postInjuryWeeks.length > 0 ? postInjuryWeeks : missedWeekList),
+              statusTag: liveInj || (endedOnIR ? "Season-End IR" : `Out Wk ${weekLostNum}+`)
+            };
+
+            rec.casualties.push(casualtyItem);
+            casualtyLog.push(casualtyItem);
+          }
+        }
+      }
+
+      const rows = Object.values(managersMap).map(r => ({
+        ...r,
+        winPct: r.games > 0 ? (r.wins / r.games) * 100 : 0
+      }));
+
+      return { rows, casualtyLog };
+    }
+
+    function sortCasualtyList(list, sortBy, dir) {
+      const mult = dir === "desc" ? -1 : 1;
+      return [...list].sort((a, b) => {
+        if (sortBy === "round") {
+          return mult * (a.round - b.round || a.pickNo - b.pickNo);
+        }
+        if (sortBy === "weekLost") {
+          return mult * (a.weekLostNum - b.weekLostNum || a.round - b.round);
+        }
+        if (sortBy === "weeksLostCount") {
+          return mult * (a.weeksLostCount - b.weeksLostCount || a.round - b.round);
+        }
+        return mult * (a.season - b.season || a.round - b.round);
+      });
+    }
+
+    function evaluatePlayerPostTradePoints(seasonObj, rosterId, playerId, startWeek) {
+      let starterPts = 0;
+      let totalPts = 0;
+      let starts = 0;
+
+      for (const [wkStr, entries] of Object.entries(seasonObj.matchups_by_week)) {
+        if (Number(wkStr) < startWeek) continue;
+        const teamEntry = entries.find(e => e.roster_id === rosterId);
+        if (!teamEntry) continue;
+        if (!teamEntry.players.includes(playerId)) continue;
+
+        const pts = Number(teamEntry.players_points[playerId] || 0);
+        totalPts += pts;
+        if (teamEntry.starters.includes(playerId)) {
+          starterPts += pts;
+          starts++;
+        }
+      }
+      return { starterPts, totalPts, starts };
+    }
+
+    /* ==========================================================================
+       5. RENDERING VIEWS
+       ========================================================================== */
+    function renderAvatar(meta) {
+      if (meta.avatar) {
+        return `<span class="avatar"><img src="https://sleepercdn.com/avatars/thumbs/${meta.avatar}" alt="" loading="lazy"></span>`;
+      }
+      return `<span class="avatar">${(meta.name || "?").slice(0, 2).toUpperCase()}</span>`;
+    }
+
+    function populateFilters() {
+      const seasonOpts = [`<option value="ALL">All-Time (${appData.seasons.length} Yrs)</option>`]
+        .concat([...appData.seasons].reverse().map(s => `<option value="${s.season}">${s.season} Season</option>`))
+        .join("");
+
+      const singleSeasonOpts = [...appData.seasons]
+        .reverse()
+        .map(s => `<option value="${s.season}">${s.season} Season</option>`)
+        .join("");
+
+      document.getElementById("standingsSeasonFilter").innerHTML = seasonOpts;
+      document.getElementById("playoffSeasonSelect").innerHTML = singleSeasonOpts;
+      document.getElementById("posSeasonFilter").innerHTML = seasonOpts;
+      document.getElementById("effSeasonFilter").innerHTML = seasonOpts;
+      document.getElementById("activitySeasonFilter").innerHTML = seasonOpts;
+      document.getElementById("draftSeasonFilter").innerHTML = seasonOpts;
+      document.getElementById("injurySeasonFilter").innerHTML = seasonOpts;
+      document.getElementById("modalInjurySeasonSelect").innerHTML = seasonOpts;
+      document.getElementById("luckSeasonFilter").innerHTML = seasonOpts;
+
+      const sortedManagers = Object.values(appData.managers).sort((a, b) => a.name.localeCompare(b.name));
+      const managerOpts = sortedManagers.map(m => `<option value="${m.user_id}">${m.name}</option>`).join("");
+
+      document.getElementById("h2hManagerSelect").innerHTML = managerOpts;
+      document.getElementById("versusTeamASelect").innerHTML = managerOpts;
+      document.getElementById("versusTeamBSelect").innerHTML = managerOpts;
+      if (sortedManagers.length > 1) {
+        document.getElementById("versusTeamBSelect").selectedIndex = 1;
+      }
+
+      document.getElementById("modalOwnerASelect").innerHTML = managerOpts;
+      document.getElementById("modalOwnerBSelect").innerHTML =
+        `<option value="ALL">All Trade Partners</option>` + managerOpts;
+      document.getElementById("modalInjuryOwnerSelect").innerHTML = managerOpts;
+
+      document.getElementById("matchupSeasonSelect").innerHTML = [...appData.seasons]
+        .reverse()
+        .map(s => `<option value="${s.season}">${s.season} — ${s.name}</option>`)
+        .join("");
+
+      populateWeekDropdown();
+    }
+
+    function renderAll() {
+      const allTime = computeStatsForSeasons("ALL");
+      document.getElementById("kpiSeasons").textContent = appData.seasons.length;
+      document.getElementById("kpiTrades").textContent = allTime.totalTrades;
+      document.getElementById("kpiHigh").textContent = allTime.highestScore.pts.toFixed(1);
+
+      renderStandings();
+      renderPlayoffHistory();
+      renderPositions();
+      renderEfficiencyCard();
+      renderActivityAndWaivers();
+      renderDraftAnalysis();
+      renderInjuries();
+      renderLuck();
+      renderTwoTeamMatchup();
+      renderH2H();
+      renderMatchups();
+    }
+
+    function sortStandings(col) {
+      if (appData.standingsSort.col === col) {
+        appData.standingsSort.dir = appData.standingsSort.dir === "desc" ? "asc" : "desc";
+      } else {
+        appData.standingsSort = { col, dir: col === "name" ? "asc" : "desc" };
+      }
+      renderStandings();
+    }
+
+    function renderStandings() {
+      const filter = document.getElementById("standingsSeasonFilter").value || "ALL";
+      const { rows } = computeStatsForSeasons(filter);
+      const { col, dir } = appData.standingsSort;
+      const mult = dir === "desc" ? -1 : 1;
+
+      rows.sort((a, b) => {
+        if (col === "name") return mult * a.name.localeCompare(b.name);
+        return mult * ((a[col] || 0) - (b[col] || 0));
+      });
+
+      document.getElementById("standingsBody").innerHTML = rows.map((r, i) => {
+        const effBadge = r.efficiencyPct >= 88
+          ? "badge-win"
+          : r.efficiencyPct < 80
+            ? "badge-loss"
+            : "badge-neutral";
+        return `
+          <tr>
+            <td>${i + 1}</td>
+            <td>
+              <div class="manager-cell">
+                ${renderAvatar(r)}
+                <span class="manager-name">${r.name}</span>
+              </div>
+            </td>
+            <td class="num">${r.titles > 0 ? `<span class="badge badge-gold">🏆 ${r.titles}</span>` : "-"}</td>
+            <td class="num"><strong>${r.wins}-${r.losses}${r.ties ? `-${r.ties}` : ""}</strong></td>
+            <td class="num">${(r.winPct * 100).toFixed(1)}%</td>
+            <td class="num">${r.pf.toFixed(1)}</td>
+            <td class="num">${r.maxPf.toFixed(1)}</td>
+            <td class="num" style="color:var(--loss);">${r.benchLeft.toFixed(1)}</td>
+            <td class="num"><span class="badge ${effBadge}">${r.efficiencyPct.toFixed(1)}%</span></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function sortEfficiency(col) {
+      if (appData.efficiencySort.col === col) {
+        appData.efficiencySort.dir = appData.efficiencySort.dir === "desc" ? "asc" : "desc";
+      } else {
+        appData.efficiencySort = { col, dir: col === "name" ? "asc" : "desc" };
+      }
+      renderEfficiencyCard();
+    }
+
+    function renderEfficiencyCard() {
+      const filter = document.getElementById("effSeasonFilter").value || "ALL";
+      const { rows } = computeStatsForSeasons(filter);
+      const { col, dir } = appData.efficiencySort;
+      const mult = dir === "desc" ? -1 : 1;
+
+      rows.sort((a, b) => {
+        if (col === "name") return mult * a.name.localeCompare(b.name);
+        return mult * ((a[col] || 0) - (b[col] || 0));
+      });
+
+      const active = rows.filter(r => r.weeksLogged > 0);
+      if (active.length > 0) {
+        const mostEfficient = [...active].sort((a, b) => b.efficiencyPct - a.efficiencyPct)[0];
+        const mostBenchLeft = [...active].sort((a, b) => b.benchLeft - a.benchLeft)[0];
+        const worstSingle = [...active].sort((a, b) => b.worstBench.diff - a.worstBench.diff)[0];
+
+        document.getElementById("effHighlightStrip").innerHTML = `
+          <span class="badge badge-win">Sharpest Manager: ${mostEfficient.name} (${mostEfficient.efficiencyPct.toFixed(1)}%)</span>
+          <span class="badge badge-loss">Most Bench Left: ${mostBenchLeft.name} (${mostBenchLeft.benchLeft.toFixed(1)} pts)</span>
+          <span class="badge badge-neutral">Biggest Single-Wk Miss: ${worstSingle.name} (-${worstSingle.worstBench.diff.toFixed(1)} in ${worstSingle.worstBench.season} W${worstSingle.worstBench.week})</span>
+        `;
+      } else {
+        document.getElementById("effHighlightStrip").innerHTML = "";
+      }
+
+      document.getElementById("efficiencyBody").innerHTML = rows.map(r => {
+        const effBadge = r.efficiencyPct >= 88
+          ? "badge-win"
+          : r.efficiencyPct < 80
+            ? "badge-loss"
+            : "badge-neutral";
+        const worstLabel = r.worstBench.diff > 0
+          ? `-${r.worstBench.diff.toFixed(1)} (${r.worstBench.season} W${r.worstBench.week})`
+          : "-";
+        return `
+          <tr>
+            <td>
+              <div class="manager-cell">
+                ${renderAvatar(r)}
+                <span class="manager-name">${r.name}</span>
+              </div>
+            </td>
+            <td class="num"><span class="badge ${effBadge}">${r.efficiencyPct.toFixed(1)}%</span></td>
+            <td class="num">${r.pf.toFixed(1)}</td>
+            <td class="num">${r.maxPf.toFixed(1)}</td>
+            <td class="num"><strong style="color:var(--loss);">${r.benchLeft.toFixed(1)}</strong></td>
+            <td class="num">${r.avgBenchLeft.toFixed(1)}</td>
+            <td class="num">${r.perfectWeeks}</td>
+            <td style="font-size:12px; color:var(--text-secondary);">${worstLabel}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderPlayoffHistory() {
+      const rows = computePlayoffHistory();
+      document.getElementById("playoffLeaderboardBody").innerHTML = rows.map(r => `
+        <tr>
+          <td>
+            <div class="manager-cell">
+              ${renderAvatar(r)}
+              <span class="manager-name">${r.name}</span>
+            </div>
+          </td>
+          <td class="num">${r.titles > 0 ? `<span class="badge badge-gold">🏆 ${r.titles}</span>` : "0"}</td>
+          <td class="num">${r.runnerUps}</td>
+          <td class="num">${r.thirds}</td>
+          <td class="num">${r.appearances}</td>
+          <td class="num"><strong>${r.wins}-${r.losses}</strong></td>
+          <td class="num">${r.games > 0 ? r.avgPf.toFixed(1) : "-"}</td>
+        </tr>
+      `).join("");
+
+      renderSeasonBracket();
+    }
+
+    function renderSeasonBracket() {
+      const seasonYear = document.getElementById("playoffSeasonSelect").value;
+      const s = appData.seasons.find(item => item.season === seasonYear);
+      if (!s) return;
+
+      const ownerMap = s.roster_owner_map || {};
+      const champMeta = s.champion_user_id ? getManagerMeta(s.champion_user_id) : null;
+      const runnerMeta = s.runner_up_user_id ? getManagerMeta(s.runner_up_user_id) : null;
+      const thirdMeta = s.third_place_user_id ? getManagerMeta(s.third_place_user_id) : null;
+
+      document.getElementById("seasonPodiumArea").innerHTML = `
+        <div class="podium-card champ">
+          <div style="font-size:11px; font-weight:700; color:var(--gold); text-transform:uppercase;">🏆 Champion</div>
+          <div style="margin-top:6px;">
+            ${champMeta ? `<div class="manager-cell">${renderAvatar(champMeta)}<span class="manager-name">${champMeta.name}</span></div>` : "<strong>TBD / In Progress</strong>"}
+          </div>
+        </div>
+        <div class="podium-card">
+          <div style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">🥈 Runner-Up</div>
+          <div style="margin-top:6px;">
+            ${runnerMeta ? `<div class="manager-cell">${renderAvatar(runnerMeta)}<span class="manager-name">${runnerMeta.name}</span></div>` : "<strong>TBD</strong>"}
+          </div>
+        </div>
+        <div class="podium-card">
+          <div style="font-size:11px; font-weight:700; color:var(--text-secondary); text-transform:uppercase;">🥉 3rd Place</div>
+          <div style="margin-top:6px;">
+            ${thirdMeta ? `<div class="manager-cell">${renderAvatar(thirdMeta)}<span class="manager-name">${thirdMeta.name}</span></div>` : "<strong>TBD</strong>"}
+          </div>
+        </div>
+      `;
+
+      const bracket = [...(s.winners_bracket || [])].sort((a, b) => (a.r || 0) - (b.r || 0) || (a.m || 0) - (b.m || 0));
+      if (bracket.length === 0) {
+        document.getElementById("seasonBracketList").innerHTML =
+          `<p style="font-size:13px; color:var(--text-secondary);">Playoff bracket has not been generated yet for ${s.season}.</p>`;
+        return;
+      }
+
+      const maxRound = Math.max(...bracket.map(m => m.r || 0));
+      const playoffStart = s.playoff_week_start || 15;
+
+      document.getElementById("seasonBracketList").innerHTML = bracket.map(m => {
+        const weekNum = playoffStart + (m.r - 1);
+        const weekEntries = s.matchups_by_week[String(weekNum)] || [];
+
+        const getTeamDisplay = (rosterId, fromObj) => {
+          if (typeof rosterId === "number") {
+            const uid = ownerMap[rosterId];
+            const meta = getManagerMeta(uid);
+            const wkRow = weekEntries.find(e => e.roster_id === rosterId);
+            return {
+              name: meta.name,
+              avatarHtml: renderAvatar(meta),
+              pts: wkRow ? wkRow.points.toFixed(2) : "-"
+            };
+          }
+          if (fromObj?.w) return { name: `Winner of Game #${fromObj.w}`, avatarHtml: "", pts: "-" };
+          if (fromObj?.l) return { name: `Loser of Game #${fromObj.l}`, avatarHtml: "", pts: "-" };
+          return { name: "TBD", avatarHtml: "", pts: "-" };
+        };
+
+        const t1Info = getTeamDisplay(m.t1, m.t1_from);
+        const t2Info = getTeamDisplay(m.t2, m.t2_from);
+        const t1Won = m.w && m.w === m.t1;
+        const t2Won = m.w && m.w === m.t2;
+
+        let roundLabel = `Round ${m.r} (Week ${weekNum})`;
+        if (m.p === 1 || (m.r === maxRound && !m.t1_from?.l)) roundLabel = `🏆 Championship (Week ${weekNum})`;
+        else if (m.p === 3) roundLabel = `🥉 3rd Place Game (Week ${weekNum})`;
+        else if (m.p === 5) roundLabel = `5th Place Game (Week ${weekNum})`;
+
+        return `
+          <div class="matchup-card">
+            <div style="font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase;">
+              ${roundLabel}
+            </div>
+            <div class="matchup-row ${t1Won ? "winner" : ""}">
+              <div class="manager-cell">${t1Info.avatarHtml}<span class="m-team">${t1Info.name}</span></div>
+              <div class="m-score">${t1Info.pts}</div>
+            </div>
+            <div class="matchup-row ${t2Won ? "winner" : ""}">
+              <div class="manager-cell">${t2Info.avatarHtml}<span class="m-team">${t2Info.name}</span></div>
+              <div class="m-score">${t2Info.pts}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function sortPositions(col) {
+      if (appData.positionsSort.col === col) {
+        appData.positionsSort.dir = appData.positionsSort.dir === "desc" ? "asc" : "desc";
+      } else {
+        appData.positionsSort = { col, dir: col === "name" ? "asc" : "desc" };
+      }
+      renderPositions();
+    }
+
+    function renderPositions() {
+      const filter = document.getElementById("posSeasonFilter").value || "ALL";
+      const rows = computePositionsAndActivity(filter);
+      const { col, dir } = appData.positionsSort;
+      const mult = dir === "desc" ? -1 : 1;
+
+      const posSorted = [...rows].sort((a, b) => {
+        if (col === "name") return mult * a.name.localeCompare(b.name);
+        return mult * ((a[col] || 0) - (b[col] || 0));
+      });
+
+      const POS_KEYS = ["QB", "RB", "WR", "FLEX", "K", "DEF"];
+      const leagueAvgs = {};
+      for (const k of POS_KEYS) {
+        const activeRows = posSorted.filter(r => r.weeksPlayed > 0);
+        leagueAvgs[k] = activeRows.length
+          ? activeRows.reduce((sum, r) => sum + r[k], 0) / activeRows.length
+          : 0;
+      }
+
+      const posHtml = posSorted.map(r => `
+        <tr>
+          <td>
+            <div class="manager-cell">
+              ${renderAvatar(r)}
+              <span class="manager-name">${r.name}</span>
+            </div>
+          </td>
+          ${POS_KEYS.map(k => `<td class="num">${r.weeksPlayed > 0 ? r[k].toFixed(1) : "-"}</td>`).join("")}
+        </tr>
+      `).join("");
+
+      const summaryRow = `
+        <tr class="summary-row">
+          <td>League Avg</td>
+          ${POS_KEYS.map(k => `<td class="num">${leagueAvgs[k].toFixed(1)}</td>`).join("")}
+        </tr>
+      `;
+
+      document.getElementById("positionsBody").innerHTML = posHtml + summaryRow;
+    }
+
+    function renderActivityAndWaivers() {
+      const filter = document.getElementById("activitySeasonFilter").value || "ALL";
+      const rows = computePositionsAndActivity(filter);
+      const actSorted = [...rows].sort((a, b) => (b.tradesCount + b.totalWire) - (a.tradesCount + a.totalWire));
+
+      document.getElementById("activityBody").innerHTML = actSorted.map(r => `
+        <tr class="clickable-row" onclick="openOwnerTradeModal('${r.user_id}', '${r.topPartnerUid || "ALL"}')">
+          <td>
+            <div class="manager-cell">
+              ${renderAvatar(r)}
+              <span class="manager-name">${r.name}</span>
+            </div>
+          </td>
+          <td class="num"><strong>${r.tradesCount}</strong></td>
+          <td>
+            <span style="color:var(--accent); font-weight:600; text-decoration:underline;">
+              ${r.topPartnerLabel}
+            </span>
+          </td>
+          <td class="num">${r.waiversCount}</td>
+          <td class="num">${r.faCount}</td>
+          <td class="num"><span class="badge badge-neutral">${r.totalWire}</span></td>
+        </tr>
+      `).join("");
+
+      // Waiver Wire & FAAB Bargains
+      const { managerRows, bargains } = computeWaiverBargains(filter);
+
+      if (bargains.length > 0) {
+        const topBargain = bargains[0];
+        const freeBargain = bargains.find(b => b.bid === 0) || topBargain;
+        document.getElementById("waiverHighlightStrip").innerHTML = `
+          <span class="badge badge-win">Top Wire Producer: ${topBargain.playerLabel} — ${topBargain.starterPts.toFixed(1)} starter pts (${topBargain.ownerName})</span>
+          <span class="badge badge-gold">Best $0 Free Agent: ${freeBargain.playerLabel} — ${freeBargain.starterPts.toFixed(1)} pts (${freeBargain.ownerName})</span>
+        `;
+      } else {
+        document.getElementById("waiverHighlightStrip").innerHTML = "";
+      }
+
+      document.getElementById("waiverRoiBody").innerHTML = managerRows.map(r => {
+        const bestLabel = r.bestPickup
+          ? `${r.bestPickup.playerLabel} (${r.bestPickup.starterPts.toFixed(1)} pts, $${r.bestPickup.bid})`
+          : "-";
+        return `
+          <tr>
+            <td>
+              <div class="manager-cell">
+                ${renderAvatar(r)}
+                <span class="manager-name">${r.name}</span>
+              </div>
+            </td>
+            <td class="num">$${r.faabSpent}</td>
+            <td class="num"><strong>${r.wireStarterPts.toFixed(1)}</strong></td>
+            <td class="num">${r.ptsPerDollar !== null ? r.ptsPerDollar.toFixed(2) : (r.wireStarterPts > 0 ? "∞ ($0)" : "-")}</td>
+            <td style="font-size:12px;">${bestLabel}</td>
+          </tr>
+        `;
+      }).join("");
+
+      document.getElementById("topWaiverBargainsList").innerHTML = bargains.length > 0
+        ? bargains.slice(0, 12).map((b, idx) => `
+            <div class="versus-game-row">
+              <div>
+                <strong>#${idx + 1} ${b.playerLabel}</strong>
+                <div style="font-size:11px; color:var(--text-secondary);">
+                  Claimed by <strong>${b.ownerName}</strong> • ${b.season} Wk ${b.week} (${b.type === "waiver" ? `$${b.bid} FAAB` : "$0 Free Agent"})
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <span class="badge badge-win">${b.starterPts.toFixed(1)} starter pts</span>
+                <div style="font-size:10.5px; color:var(--text-secondary); margin-top:2px;">
+                  ${b.starts} start${b.starts === 1 ? "" : "s"}${b.bid > 0 ? ` • ${b.ptsPerDollar.toFixed(1)} pts/$` : ""}
+                </div>
+              </div>
+            </div>
+          `).join("")
+        : `<p style="font-size:13px; color:var(--text-secondary);">No waiver or free-agent starter points recorded for this filter.</p>`;
+    }
+
+    /* ==========================================================================
+       6. OWNER-TO-OWNER TRADE WINDOW MODAL
+       ========================================================================== */
+    function openOwnerTradeModal(ownerAUid, partnerBUid = "ALL") {
+      document.getElementById("modalOwnerASelect").value = ownerAUid;
+      document.getElementById("modalOwnerBSelect").value = partnerBUid || "ALL";
+      document.getElementById("tradeModalBackdrop").classList.remove("hidden");
+      renderModalTrades();
+    }
+
+    function closeTradeModal() {
+      document.getElementById("tradeModalBackdrop").classList.add("hidden");
+    }
+
+    function closeTradeModalOnBackdrop(e) {
+      if (e.target.id === "tradeModalBackdrop") closeTradeModal();
+    }
+
+    function renderModalTrades() {
+      const uidA = document.getElementById("modalOwnerASelect").value;
+      const uidB = document.getElementById("modalOwnerBSelect").value;
+      const metaA = getManagerMeta(uidA);
+      const metaB = uidB !== "ALL" ? getManagerMeta(uidB) : null;
+
+      document.getElementById("tradeModalTitle").textContent = metaB
+        ? `${metaA.name} ↔ ${metaB.name}`
+        : `${metaA.name} — All Trades`;
+
+      const renderedCards = [];
+      let totalStarterPtsA = 0;
+      let totalStarterPtsB = 0;
+
+      for (const s of [...appData.seasons].reverse()) {
+        const ownerMap = s.roster_owner_map || {};
+        for (const tx of (s.trades || [])) {
+          const participantUids = tx.roster_ids.map(rid => ownerMap[rid]).filter(Boolean);
+          if (!participantUids.includes(uidA)) continue;
+          if (uidB !== "ALL" && !participantUids.includes(uidB)) continue;
+
+          const sides = tx.roster_ids.map(rid => {
+            const uid = ownerMap[rid];
+            const meta = getManagerMeta(uid);
+            const receivedPlayers = Object.entries(tx.adds || {})
+              .filter(([, destRid]) => destRid === rid)
+              .map(([pid]) => {
+                const prod = evaluatePlayerPostTradePoints(s, rid, pid, tx.week);
+                return { pid, label: getPlayerLabel(pid), ...prod };
+              });
+
+            const receivedPicks = (tx.draft_picks || [])
+              .filter(p => p.owner_id === rid)
+              .map(p => `${p.season} Rd ${p.round}`);
+
+            const receivedFaab = (tx.waiver_budget || [])
+              .filter(wb => wb.receiver === rid)
+              .reduce((sum, wb) => sum + Number(wb.amount || 0), 0);
+
+            const totalStarterPts = receivedPlayers.reduce((sum, p) => sum + p.starterPts, 0);
+            if (uid === uidA) totalStarterPtsA += totalStarterPts;
+            if (uidB !== "ALL" && uid === uidB) totalStarterPtsB += totalStarterPts;
+
+            return { rid, uid, meta, receivedPlayers, receivedPicks, receivedFaab, totalStarterPts };
+          });
+
+          const maxStarterPts = Math.max(...sides.map(side => side.totalStarterPts));
+          const hasClearPtsWinner = sides.length === 2 && maxStarterPts > 0 &&
+            sides[0].totalStarterPts !== sides[1].totalStarterPts;
+
+          const dateStr = tx.created
+            ? new Date(tx.created).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
+            : "";
+
+          renderedCards.push(`
+            <div class="trade-card">
+              <div class="trade-header">
+                <span><strong>${s.season}</strong> • Week ${tx.week}</span>
+                <span>${dateStr}</span>
+              </div>
+              <div class="trade-sides">
+                ${sides.map(side => {
+                  const isEdge = hasClearPtsWinner && side.totalStarterPts === maxStarterPts;
+                  const assetsHtml = [
+                    ...side.receivedPlayers.map(p => `
+                      <div class="trade-asset">
+                        <span>+ ${p.label}</span>
+                        <span class="asset-pts">${p.starterPts.toFixed(1)} starter pts (${p.starts}x)</span>
+                      </div>
+                    `),
+                    ...side.receivedPicks.map(pk => `
+                      <div class="trade-asset">
+                        <span>+ Pick: ${pk}</span>
+                        <span class="asset-pts">Draft Capital</span>
+                      </div>
+                    `),
+                    ...(side.receivedFaab > 0 ? [`
+                      <div class="trade-asset">
+                        <span>+ $${side.receivedFaab} FAAB</span>
+                        <span class="asset-pts">Waiver Budget</span>
+                      </div>
+                    `] : [])
+                  ].join("") || `<div class="trade-asset"><span>No direct assets logged</span></div>`;
+
+                  return `
+                    <div class="trade-side ${isEdge ? "edge" : ""}">
+                      <div class="trade-side-top">
+                        <div class="manager-cell">
+                          ${renderAvatar(side.meta)}
+                          <span class="manager-name">${side.meta.name}</span>
+                        </div>
+                        <span class="badge ${isEdge ? "badge-win" : "badge-neutral"}">
+                          ${side.totalStarterPts.toFixed(1)} pts
+                        </span>
+                      </div>
+                      ${assetsHtml}
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+            </div>
+          `);
+        }
+      }
+
+      document.getElementById("tradeModalSub").textContent =
+        `${renderedCards.length} completed trade${renderedCards.length === 1 ? "" : "s"} found`;
+
+      document.getElementById("modalTradeSummary").innerHTML = metaB && renderedCards.length > 0
+        ? `
+          <span class="badge badge-neutral">${metaA.name}: ${totalStarterPtsA.toFixed(1)} post-trade starter pts</span>
+          <span class="badge badge-neutral">${metaB.name}: ${totalStarterPtsB.toFixed(1)} post-trade starter pts</span>
+        `
+        : "";
+
+      document.getElementById("modalTradesContainer").innerHTML = renderedCards.length > 0
+        ? renderedCards.join("")
+        : `<p style="font-size:13px; color:var(--text-secondary);">No trades found between these two managers.</p>`;
+    }
+
+    /* ==========================================================================
+       7. DRAFT ANALYSIS & INJURIES RENDERING + SORTABLE INJURY DETAIL MODAL
+       ========================================================================== */
+    function sortDraft(col) {
+      if (appData.draftSort.col === col) {
+        appData.draftSort.dir = appData.draftSort.dir === "desc" ? "asc" : "desc";
+      } else {
+        appData.draftSort = { col, dir: col === "name" ? "asc" : "desc" };
+      }
+      renderDraftAnalysis();
+    }
+
+    function renderDraftAnalysis() {
+      const filter = document.getElementById("draftSeasonFilter").value || "ALL";
+      const rows = computeDraftAnalysis(filter);
+      const { col, dir } = appData.draftSort;
+      const mult = dir === "desc" ? -1 : 1;
+
+      rows.sort((a, b) => {
+        if (col === "name") return mult * a.name.localeCompare(b.name);
+        return mult * ((a[col] || 0) - (b[col] || 0));
+      });
+
+      if (rows.length === 0) {
+        document.getElementById("draftBody").innerHTML =
+          `<tr><td colspan="7" style="color:var(--text-secondary);">No draft pick records available for this selection.</td></tr>`;
+        document.getElementById("draftKeptCards").innerHTML = "";
+        return;
+      }
+
+      const topRetainer = [...rows].sort((a, b) => b.retainedCount - a.retainedCount)[0];
+      const topDrafter = [...rows].sort((a, b) => b.draftOnlyPf - a.draftOnlyPf)[0];
+
+      document.getElementById("draftHighlightStrip").innerHTML = `
+        <span class="badge badge-gold">Most Drafted Kept: ${topRetainer.name} (${topRetainer.retainedCount}/${topRetainer.draftedCount})</span>
+        <span class="badge badge-win">Best Draft-Only Lineup: ${topDrafter.name} (${topDrafter.draftOnlyPf.toFixed(1)} pts)</span>
+      `;
+
+      document.getElementById("draftBody").innerHTML = rows.map(r => {
+        const netSign = r.moveNet >= 0 ? "+" : "";
+        const netBadge = r.moveNet >= 5 ? "badge-win" : r.moveNet <= -5 ? "badge-loss" : "badge-neutral";
+        return `
+          <tr>
+            <td>
+              <div class="manager-cell">
+                ${renderAvatar(r)}
+                <span class="manager-name">${r.name}</span>
+              </div>
+            </td>
+            <td class="num"><strong>${r.retainedCount}/${r.draftedCount}</strong></td>
+            <td class="num">${r.retainedPct.toFixed(0)}%</td>
+            <td class="num"><strong>${r.draftOnlyPf.toFixed(1)}</strong></td>
+            <td class="num">${r.actualPf.toFixed(1)}</td>
+            <td class="num"><span class="badge ${netBadge}">${netSign}${r.moveNet.toFixed(1)}</span></td>
+            <td class="num">${r.draftTotalPts.toFixed(1)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      document.getElementById("draftKeptCards").innerHTML = [...rows]
+        .sort((a, b) => b.retainedCount - a.retainedCount)
+        .map(r => `
+          <div class="h2h-card" style="flex-direction:column; align-items:flex-start; gap:6px;">
+            <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+              <div class="manager-cell">
+                ${renderAvatar(r)}
+                <span class="manager-name">${r.name}</span>
+              </div>
+              <span class="badge badge-neutral">${r.retainedCount} of ${r.draftedCount} kept</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-secondary); line-height:1.4;">
+              ${r.retainedNames.length > 0 ? r.retainedNames.join(" • ") : "No drafted players remained on final roster."}
+            </div>
+          </div>
+        `).join("");
+    }
+
+    function toggleInjuryLogDir() {
+      appData.injuryLogDir = appData.injuryLogDir === "asc" ? "desc" : "asc";
+      document.getElementById("injuryLogDirBtn").textContent = appData.injuryLogDir === "asc" ? "↑ Asc" : "↓ Desc";
+      renderInjuries();
+    }
+
+    function renderInjuries() {
+      const filter = document.getElementById("injurySeasonFilter").value || "ALL";
+      const logSortBy = document.getElementById("injuryLogSortSelect").value || "round";
+      const { rows, casualtyLog } = computeInjuryAnalysis(filter);
+
+      rows.sort((a, b) => b.seasonEndingCount - a.seasonEndingCount || b.weeksMissed - a.weeksMissed);
+
+      document.getElementById("injuryBody").innerHTML = rows.map(r => `
+        <tr class="clickable-row" onclick="openInjuryModal('${r.user_id}')">
+          <td>
+            <div class="manager-cell">
+              ${renderAvatar(r)}
+              <span class="manager-name">${r.name}</span>
+            </div>
+          </td>
+          <td class="num">
+            <button type="button" class="count-pill-btn ${r.seasonEndingCount === 0 ? "zero" : ""}"
+              onclick="event.stopPropagation(); openInjuryModal('${r.user_id}')">
+              ${r.seasonEndingCount}
+            </button>
+          </td>
+          <td class="num">${r.earlyRoundLost}</td>
+          <td class="num">${r.weeksMissed}</td>
+          <td class="num">${r.activeIrOutCount}</td>
+          <td class="num">${r.winPct.toFixed(1)}%</td>
+        </tr>
+      `).join("");
+
+      const sortedLog = sortCasualtyList(casualtyLog, logSortBy, appData.injuryLogDir);
+
+      document.getElementById("injuryLogList").innerHTML = sortedLog.length > 0
+        ? sortedLog.map(c => `
+            <div class="versus-game-row clickable-row" onclick="openInjuryModal('${c.ownerId}')">
+              <div>
+                <strong>${c.playerName}</strong> <span style="color:var(--text-secondary);">(${c.pos})</span>
+                <div style="font-size:11px; color:var(--text-secondary);">
+                  <strong>${c.ownerName}</strong> • ${c.seasonStr} Rd ${c.round} • Lost Wk ${c.weekLostNum} (${c.weeksLostCount} wks lost)
+                </div>
+              </div>
+              <span class="badge badge-loss">${c.statusTag}</span>
+            </div>
+          `).join("")
+        : `<p style="font-size:13px; color:var(--text-secondary);">No season-ending drafted player injuries detected for this filter.</p>`;
+    }
+
+    function openInjuryModal(ownerUid) {
+      const currentSeasonFilter = document.getElementById("injurySeasonFilter").value || "ALL";
+      document.getElementById("modalInjuryOwnerSelect").value = ownerUid;
+      document.getElementById("modalInjurySeasonSelect").value = currentSeasonFilter;
+      document.getElementById("injuryModalBackdrop").classList.remove("hidden");
+      renderInjuryModalContent();
+    }
+
+    function closeInjuryModal() {
+      document.getElementById("injuryModalBackdrop").classList.add("hidden");
+    }
+
+    function closeInjuryModalOnBackdrop(e) {
+      if (e.target.id === "injuryModalBackdrop") closeInjuryModal();
+    }
+
+    function toggleModalInjuryDir() {
+      appData.modalInjuryDir = appData.modalInjuryDir === "asc" ? "desc" : "asc";
+      document.getElementById("modalInjuryDirBtn").textContent = appData.modalInjuryDir === "asc" ? "↑ Asc" : "↓ Desc";
+      renderInjuryModalContent();
+    }
+
+    function renderInjuryModalContent() {
+      const ownerUid = document.getElementById("modalInjuryOwnerSelect").value;
+      const seasonFilter = document.getElementById("modalInjurySeasonSelect").value || "ALL";
+      const sortBy = document.getElementById("modalInjurySortSelect").value || "round";
+      const meta = getManagerMeta(ownerUid);
+      const { rows } = computeInjuryAnalysis(seasonFilter);
+      const managerRow = rows.find(r => r.user_id === ownerUid);
+      const rawCasualties = managerRow ? managerRow.casualties : [];
+      const casualties = sortCasualtyList(rawCasualties, sortBy, appData.modalInjuryDir);
+
+      document.getElementById("injuryModalTitle").textContent = `${meta.name} — Drafted Players Lost`;
+      document.getElementById("injuryModalSub").textContent =
+        seasonFilter === "ALL" ? "All-Time IR & Season-Ending Injuries" : `${seasonFilter} Season IR & Season-Ending Injuries`;
+
+      const totalPostWeeks = casualties.reduce((sum, c) => sum + c.weeksLostCount, 0);
+      const earlyRoundCount = casualties.filter(c => Number(c.round) <= 5).length;
+
+      document.getElementById("modalInjurySummary").innerHTML = `
+        <span class="badge badge-loss">${casualties.length} Lost for Year</span>
+        <span class="badge badge-gold">${earlyRoundCount} in Rounds 1–5</span>
+        <span class="badge badge-neutral">${totalPostWeeks} Total Wks Lost</span>
+      `;
+
+      document.getElementById("modalInjuryContainer").innerHTML = casualties.length > 0
+        ? casualties.map(c => `
+            <div class="inj-detail-card">
+              <div class="inj-detail-top">
+                <div>
+                  <strong style="font-size:13px;">${c.playerName}</strong>
+                  <span style="font-size:12px; color:var(--text-secondary);">(${c.pos})</span>
+                </div>
+                <span class="badge badge-loss">${c.statusTag}</span>
+              </div>
+              <div class="inj-detail-grid">
+                <div>
+                  <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Drafted</div>
+                  <strong>${c.seasonStr} • Rd ${c.round}${c.pickNo < 999 ? ` (#${c.pickNo})` : ""}</strong>
+                </div>
+                <div>
+                  <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Week Lost</div>
+                  <strong>Week ${c.weekLostNum}</strong>
+                </div>
+                <div>
+                  <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Weeks Lost</div>
+                  <strong>${c.weeksLostCount} wk${c.weeksLostCount === 1 ? "" : "s"} (${c.weeksLabel})</strong>
+                </div>
+              </div>
+            </div>
+          `).join("")
+        : `<p style="font-size:13px; color:var(--text-secondary);">No drafted players were lost to IR or season-ending injury for ${meta.name} in this timeframe.</p>`;
+    }
+
+    /* ==========================================================================
+       8. ALWAYS-ON-TOP FLOATING AI ANALYST (LOCAL ENGINE + GEMINI 3.8 FLASH)
+       ========================================================================== */
+    function toggleAiDrawer(open) {
+      const drawer = document.getElementById("aiDrawer");
+      const fab = document.getElementById("aiFabBtn");
+      if (open) {
+        drawer.classList.remove("hidden");
+        fab.classList.add("hidden");
+        setTimeout(() => document.getElementById("chatInput").focus(), 50);
+      } else {
+        drawer.classList.add("hidden");
+        fab.classList.remove("hidden");
+      }
+    }
+
+    function toggleAiExpand() {
+      const drawer = document.getElementById("aiDrawer");
+      drawer.classList.toggle("fullscreen");
+      document.getElementById("aiExpandBtn").textContent = drawer.classList.contains("fullscreen") ? "⤡" : "⤢";
+    }
+
+    function updateAiModeBadge() {
+      const hasKey = Boolean(localStorage.getItem(GEMINI_KEY_STORAGE));
+      document.getElementById("aiModeSubtitle").textContent = hasKey
+        ? "Connected: Gemini 3.8 Flash"
+        : "Instant Local Engine (No Key Needed)";
+    }
+
+    function toggleApiKeyBar() {
+      const bar = document.getElementById("apiKeyBar");
+      bar.classList.toggle("hidden");
+      document.getElementById("geminiKeyInput").value = localStorage.getItem(GEMINI_KEY_STORAGE) || "";
+    }
+
+    function saveGeminiKey() {
+      const val = document.getElementById("geminiKeyInput").value.trim();
+      if (val) {
+        localStorage.setItem(GEMINI_KEY_STORAGE, val);
+        updateAiModeBadge();
+        appendChatMsg("bot", "Saved your Gemini API key locally. Future questions will use Gemini 3.8 Flash with your full league stats.");
+      }
+      document.getElementById("apiKeyBar").classList.add("hidden");
+    }
+
+    function clearGeminiKey() {
+      localStorage.removeItem(GEMINI_KEY_STORAGE);
+      document.getElementById("geminiKeyInput").value = "";
+      updateAiModeBadge();
+      appendChatMsg("bot", "Cleared Gemini API key. Switched back to the built-in offline league analyst.");
+    }
+
+    function askSample(text) {
+      document.getElementById("chatInput").value = text;
+      sendChat();
+    }
+
+    function appendChatMsg(sender, text) {
+      const box = document.getElementById("chatMessages");
+      const div = document.createElement("div");
+      div.className = `chat-msg ${sender}`;
+      div.textContent = text;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+      return div;
+    }
+
+    function collectAllPlayerWeekPerformances() {
+      const records = [];
+      for (const s of appData.seasons) {
+        for (const [wkStr, entries] of Object.entries(s.matchups_by_week)) {
+          for (const e of entries) {
+            if (e.matchup_id === null || e.matchup_id === undefined) continue;
+            const ownerName = getManagerMeta(e.owner_id).name;
+            const starterSet = new Set(e.starters || []);
+            for (const [pid, ptsRaw] of Object.entries(e.players_points || {})) {
+              const pts = Number(ptsRaw || 0);
+              if (pts <= 0) continue;
+              records.push({
+                season: s.season,
+                week: Number(wkStr),
+                owner: ownerName,
+                pid,
+                player: getPlayerNameOnly(pid),
+                pos: getPlayerPos(pid),
+                pts,
+                started: starterSet.has(pid)
+              });
+            }
+          }
+        }
+      }
+      return records;
+    }
+
+    function buildLeagueDigestForAI() {
+      const standings = computeStatsForSeasons("ALL").rows
+        .sort((a, b) => b.winPct - a.winPct)
+        .map(r => `${r.name}: ${r.wins}-${r.losses}, ${r.titles} titles, ${r.pf.toFixed(1)} PF, ${r.maxPf.toFixed(1)} Max PF, ${r.benchLeft.toFixed(1)} Bench Left (${r.efficiencyPct.toFixed(1)}% Eff), Luck ${r.luck >= 0 ? "+" : ""}${r.luck.toFixed(1)}`);
+
+      const allPerf = collectAllPlayerWeekPerformances();
+      const topByPos = {};
+      for (const pos of ["QB", "RB", "WR", "TE", "K", "DEF"]) {
+        topByPos[pos] = allPerf
+          .filter(p => p.pos === pos)
+          .sort((a, b) => b.pts - a.pts)
+          .slice(0, 5)
+          .map(p => `${p.player} (${p.pts.toFixed(2)} pts, ${p.owner}, ${p.season} Wk ${p.week}${p.started ? "" : " [Bench]"})`);
+      }
+
+      const teamWeeks = [];
+      for (const s of appData.seasons) {
+        for (const [wkStr, entries] of Object.entries(s.matchups_by_week)) {
+          for (const e of entries) {
+            if (e.points > 0) {
+              teamWeeks.push({
+                season: s.season,
+                week: wkStr,
+                owner: getManagerMeta(e.owner_id).name,
+                pts: e.points
+              });
+            }
+          }
+        }
+      }
+      teamWeeks.sort((a, b) => b.pts - a.pts);
+
+      const waiverData = computeWaiverBargains("ALL");
+      const topWaivers = waiverData.bargains.slice(0, 8).map(b =>
+        `${b.playerLabel} (${b.starterPts.toFixed(1)} starter pts, $${b.bid} bid, ${b.ownerName}, ${b.season} Wk ${b.week})`
+      );
+
+      const activity = computePositionsAndActivity("ALL").map(a =>
+        `${a.name}: ${a.tradesCount} trades (top partner: ${a.topPartnerLabel}), ${a.waiversCount} waivers, ${a.faCount} FA`
+      );
+
+      const injuries = computeInjuryAnalysis("ALL").rows.map(i =>
+        `${i.name}: ${i.seasonEndingCount} lost for yr (${i.earlyRoundLost} in Rds 1-5), ${i.weeksMissed} total wks missed`
+      );
+
+      return JSON.stringify({
+        league_name: appData.seasons[appData.seasons.length - 1]?.name,
+        seasons: appData.seasons.map(s => ({
+          season: s.season,
+          champion: s.champion_user_id ? getManagerMeta(s.champion_user_id).name : "In Progress",
+          runner_up: s.runner_up_user_id ? getManagerMeta(s.runner_up_user_id).name : "N/A"
+        })),
+        all_time_standings_and_efficiency: standings,
+        top_5_player_weeks_by_position: topByPos,
+        top_5_team_weeks: teamWeeks.slice(0, 5),
+        lowest_3_team_weeks: teamWeeks.slice(-3),
+        top_waiver_pickups: topWaivers,
+        trades_and_wire: activity,
+        drafted_injuries: injuries
+      });
+    }
+
+    function runLocalLeagueAnalyst(query) {
+      const q = query.toLowerCase();
+      const allPerf = collectAllPlayerWeekPerformances();
+
+      // Waiver bargains / pickups
+      if (q.includes("waiver") || q.includes("bargain") || q.includes("pickup") || q.includes("faab") || q.includes("free agent")) {
+        const { bargains, managerRows } = computeWaiverBargains("ALL");
+        if (bargains.length === 0) return "No waiver or free-agent starter points recorded yet.";
+        const top5 = bargains.slice(0, 5).map((b, i) =>
+          `${i + 1}. ${b.playerLabel} — ${b.starterPts.toFixed(1)} starter pts (${b.ownerName}, ${b.season} Wk ${b.week}, $${b.bid})`
+        ).join("\n");
+        const topMgr = managerRows[0];
+        return `Top 5 Waiver Wire & Free-Agent Bargains:\n${top5}\n\nMost Total Wire Starter Points: ${topMgr.name} (${topMgr.wireStarterPts.toFixed(1)} pts on $${topMgr.faabSpent} FAAB).`;
+      }
+
+      // Lineup efficiency / bench points
+      if (q.includes("bench") || q.includes("efficien") || q.includes("optimal") || q.includes("max pf") || q.includes("left on")) {
+        const effRows = computeStatsForSeasons("ALL").rows.filter(r => r.weeksLogged > 0);
+        if (q.includes("bench") || q.includes("left") || q.includes("worst")) {
+          const byBench = [...effRows].sort((a, b) => b.benchLeft - a.benchLeft);
+          return `All-Time Points Left on the Bench:\n` + byBench.map((r, i) =>
+            `${i + 1}. ${r.name}: ${r.benchLeft.toFixed(1)} pts left (${r.efficiencyPct.toFixed(1)}% efficiency, ${r.avgBenchLeft.toFixed(1)} pts/wk)`
+          ).join("\n");
+        }
+        const byEff = [...effRows].sort((a, b) => b.efficiencyPct - a.efficiencyPct);
+        return `All-Time Lineup Efficiency Rankings (Actual PF ÷ Max PF):\n` + byEff.map((r, i) =>
+          `${i + 1}. ${r.name}: ${r.efficiencyPct.toFixed(1)}% (${r.pf.toFixed(1)} Actual / ${r.maxPf.toFixed(1)} Max PF, ${r.benchLeft.toFixed(1)} bench pts left)`
+        ).join("\n");
+      }
+
+      const posMap = [
+        { key: "RB", terms: ["rb", "running back", "runningback"] },
+        { key: "WR", terms: ["wr", "wide receiver", "receiver"] },
+        { key: "QB", terms: ["qb", "quarterback"] },
+        { key: "TE", terms: ["te", "tight end"] },
+        { key: "K", terms: ["kicker", " k "] },
+        { key: "DEF", terms: ["def", "defense", "dst"] }
+      ];
+
+      const matchedPos = posMap.find(item =>
+        item.terms.some(t => (` ${q} `).includes(` ${t.trim()} `) || q.includes(t.trim()))
+      );
+
+      if (matchedPos && (q.includes("high") || q.includes("best") || q.includes("most") || q.includes("top") || q.includes("score") || q.includes("pts") || q.includes("points"))) {
+        const list = allPerf.filter(p => p.pos === matchedPos.key).sort((a, b) => b.pts - a.pts);
+        if (list.length === 0) return `No ${matchedPos.key} scoring records found yet.`;
+        const top = list[0];
+        const top5 = list.slice(0, 5).map((p, idx) =>
+          `${idx + 1}. ${p.player} — ${p.pts.toFixed(2)} pts (${p.owner}, ${p.season} Wk ${p.week}${p.started ? "" : " • Bench"})`
+        ).join("\n");
+        return `Highest single-week ${matchedPos.key} score in league history:\n\n🏆 ${top.player} scored ${top.pts.toFixed(2)} pts for ${top.owner} in ${top.season} Week ${top.week}${top.started ? "" : " (on the bench)"}.\n\nTop 5 ${matchedPos.key} Performances:\n${top5}`;
+      }
+
+      if ((q.includes("player") || q.includes("individual")) && (q.includes("high") || q.includes("most") || q.includes("best"))) {
+        const list = [...allPerf].sort((a, b) => b.pts - a.pts).slice(0, 5);
+        return `Top 5 Individual Player Weeks (All Positions):\n` + list.map((p, i) =>
+          `${i + 1}. ${p.player} (${p.pos}) — ${p.pts.toFixed(2)} pts (${p.owner}, ${p.season} Wk ${p.week})`
+        ).join("\n");
+      }
+
+      if (q.includes("high") || q.includes("lowest") || q.includes("worst score") || q.includes("best team")) {
+        const teamWeeks = [];
+        for (const s of appData.seasons) {
+          for (const [wkStr, entries] of Object.entries(s.matchups_by_week)) {
+            for (const e of entries) {
+              if (e.points > 0) teamWeeks.push({ season: s.season, week: wkStr, owner: getManagerMeta(e.owner_id).name, pts: e.points });
+            }
+          }
+        }
+        teamWeeks.sort((a, b) => b.pts - a.pts);
+        if (q.includes("low") || q.includes("worst")) {
+          const low5 = teamWeeks.slice(-5).reverse();
+          return `Lowest 5 Single-Week Team Scores:\n` + low5.map((t, i) =>
+            `${i + 1}. ${t.owner} — ${t.pts.toFixed(2)} pts (${t.season} Wk ${t.week})`
+          ).join("\n");
+        }
+        const top5 = teamWeeks.slice(0, 5);
+        return `Highest 5 Single-Week Team Scores:\n` + top5.map((t, i) =>
+          `${i + 1}. ${t.owner} — ${t.pts.toFixed(2)} pts (${t.season} Wk ${t.week})`
+        ).join("\n");
+      }
+
+      if (q.includes("champ") || q.includes("title") || q.includes("won the league") || q.includes("ring")) {
+        const pfRows = computePlayoffHistory();
+        const byYear = appData.seasons.map(s =>
+          `• ${s.season}: ${s.champion_user_id ? getManagerMeta(s.champion_user_id).name : "In Progress"}`
+        ).join("\n");
+        const leaders = pfRows.filter(r => r.titles > 0).map(r => `${r.name} (${r.titles})`).join(", ") || "None completed yet";
+        return `Championship History:\n${byYear}\n\nAll-Time Title Leaders: ${leaders}`;
+      }
+
+      if (q.includes("trade") || q.includes("active") || q.includes("transaction")) {
+        const act = computePositionsAndActivity("ALL").sort((a, b) => b.tradesCount - a.tradesCount);
+        return `All-Time Trade & Waiver Leaders:\n` + act.map((a, i) =>
+          `${i + 1}. ${a.name}: ${a.tradesCount} trades (Top partner: ${a.topPartnerLabel}), ${a.totalWire} wire moves`
+        ).join("\n");
+      }
+
+      if (q.includes("injur") || q.includes("ir") || q.includes("hurt") || q.includes("lost")) {
+        const inj = computeInjuryAnalysis("ALL").rows.sort((a, b) => b.seasonEndingCount - a.seasonEndingCount);
+        return `Season-Ending Drafted Player Losses:\n` + inj.map((r, i) =>
+          `${i + 1}. ${r.name}: ${r.seasonEndingCount} lost for year (${r.earlyRoundLost} in Rds 1–5), ${r.weeksMissed} wks missed`
+        ).join("\n");
+      }
+
+      if (q.includes("draft") || q.includes("kept") || q.includes("retain")) {
+        const dr = computeDraftAnalysis("ALL").sort((a, b) => b.draftOnlyPf - a.draftOnlyPf);
+        return `All-Time Draft-Only Lineup Simulation:\n` + dr.map((d, i) =>
+          `${i + 1}. ${d.name}: ${d.draftOnlyPf.toFixed(1)} Draft-Only PF (${d.retainedCount}/${d.draftedCount} drafted players kept)`
+        ).join("\n");
+      }
+
+      if (q.includes("luck") || q.includes("all-play") || q.includes("unlucky")) {
+        const lk = computeStatsForSeasons("ALL").rows.sort((a, b) => b.luck - a.luck);
+        return `All-Time Schedule Luck Index (Actual Wins minus All-Play Expected Wins):\n` + lk.map((r, i) =>
+          `${i + 1}. ${r.name}: ${r.luck >= 0 ? "+" : ""}${r.luck.toFixed(1)} wins (${r.wins}-${r.losses} actual vs ${(r.apPct * 100).toFixed(1)}% all-play)`
+        ).join("\n");
+      }
+
+      return `I can answer questions about player highs by position (QB, RB, WR, TE, K, DEF), waiver wire bargains, lineup efficiency & bench points left, highest/lowest team scores, championships, trades, draft grades, injuries/IR, and schedule luck.\n\nTip: Tap "🔑 Key" above if you want to connect a free Gemini key for open-ended questions.`;
+    }
+
+    async function sendChat() {
+      const input = document.getElementById("chatInput");
+      const question = input.value.trim();
+      if (!question) return;
+
+      input.value = "";
+      appendChatMsg("user", question);
+
+      const apiKey = localStorage.getItem(GEMINI_KEY_STORAGE);
+      if (!apiKey) {
+        const answer = runLocalLeagueAnalyst(question);
+        appendChatMsg("bot", answer);
+        return;
+      }
+
+      const thinkingEl = appendChatMsg("bot", "Analyzing league records with Gemini 3.8 Flash...");
+      try {
+        const digest = buildLeagueDigestForAI();
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              systemInstruction: {
+                parts: [{
+                  text: "You are a concise, accurate fantasy football league analyst. Answer the user's question strictly using the provided JSON league history data. Cite exact player names, manager names, seasons, weeks, and point totals."
+                }]
+              },
+              contents: [{
+                role: "user",
+                parts: [{ text: `LEAGUE DATA:\n${digest}\n\nQUESTION: ${question}` }]
+              }]
+            })
+          }
+        );
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || `Gemini API error ${res.status}`);
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || runLocalLeagueAnalyst(question);
+        thinkingEl.textContent = reply;
+      } catch (err) {
+        thinkingEl.textContent = `Fallback local answer (${err.message}):\n\n` + runLocalLeagueAnalyst(question);
+      }
+    }
+
+    /* ==========================================================================
+       9. LUCK, H2H & WEEKLY MATCHUPS RENDERING
+       ========================================================================== */
+    function renderLuck() {
+      const filter = document.getElementById("luckSeasonFilter").value || "ALL";
+      const { rows } = computeStatsForSeasons(filter);
+      rows.sort((a, b) => b.luck - a.luck);
+      const maxAbsLuck = Math.max(1, ...rows.map(r => Math.abs(r.luck)));
+
+      document.getElementById("luckBody").innerHTML = rows.map(r => {
+        const luckSign = r.luck > 0 ? "+" : "";
+        const badgeCls = r.luck >= 0.5 ? "badge-win" : r.luck <= -0.5 ? "badge-loss" : "badge-neutral";
+        const pctWidth = Math.min(50, (Math.abs(r.luck) / maxAbsLuck) * 50);
+        const barStyle = r.luck >= 0
+          ? `left:50%; width:${pctWidth}%; background:var(--win);`
+          : `right:50%; width:${pctWidth}%; background:var(--loss);`;
+
+        return `
+          <tr>
+            <td>
+              <div class="manager-cell">
+                ${renderAvatar(r)}
+                <span class="manager-name">${r.name}</span>
+              </div>
+            </td>
+            <td class="num">${r.wins}-${r.losses}</td>
+            <td class="num">${r.apWins}-${r.apLosses}</td>
+            <td class="num">${(r.apPct * 100).toFixed(1)}%</td>
+            <td class="num"><span class="badge ${badgeCls}">${luckSign}${r.luck.toFixed(1)}</span></td>
+            <td>
+              <div class="luck-bar-track">
+                <div class="luck-bar-fill" style="${barStyle}"></div>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderTwoTeamMatchup() {
+      const uidA = document.getElementById("versusTeamASelect").value;
+      const uidB = document.getElementById("versusTeamBSelect").value;
+      const scope = document.getElementById("versusScopeSelect").value;
+      const area = document.getElementById("versusResultArea");
+
+      if (!uidA || !uidB) return;
+      if (uidA === uidB) {
+        area.innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">Select two different teams above to compare head-to-head history.</p>`;
+        return;
+      }
+
+      const metaA = getManagerMeta(uidA);
+      const metaB = getManagerMeta(uidB);
+      const games = [];
+      let winsA = 0, winsB = 0, ties = 0, ptsA = 0, ptsB = 0;
+
+      for (const s of appData.seasons) {
+        const playoffStart = s.playoff_week_start || 15;
+        for (const [weekStr, entries] of Object.entries(s.matchups_by_week)) {
+          const wk = Number(weekStr);
+          const isPlayoff = wk >= playoffStart;
+          if (scope === "regular" && isPlayoff) continue;
+          if (scope === "playoffs" && !isPlayoff) continue;
+
+          const byMatchup = {};
+          for (const e of entries) {
+            if (e.matchup_id === null || e.matchup_id === undefined) continue;
+            if (!byMatchup[e.matchup_id]) byMatchup[e.matchup_id] = [];
+            byMatchup[e.matchup_id].push(e);
+          }
+
+          for (const pair of Object.values(byMatchup)) {
+            if (pair.length !== 2) continue;
+            const entryA = pair.find(p => p.owner_id === uidA);
+            const entryB = pair.find(p => p.owner_id === uidB);
+            if (!entryA || !entryB || (entryA.points === 0 && entryB.points === 0)) continue;
+
+            ptsA += entryA.points;
+            ptsB += entryB.points;
+            if (entryA.points > entryB.points) winsA++;
+            else if (entryB.points > entryA.points) winsB++;
+            else ties++;
+
+            games.push({
+              season: s.season,
+              week: wk,
+              isPlayoff,
+              ptsA: entryA.points,
+              ptsB: entryB.points,
+              margin: Math.abs(entryA.points - entryB.points),
+              combined: entryA.points + entryB.points
+            });
+          }
+        }
+      }
+
+      if (games.length === 0) {
+        area.innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">No head-to-head matchups found between ${metaA.name} and ${metaB.name} for this filter.</p>`;
+        return;
+      }
+
+      const avgA = (ptsA / games.length).toFixed(1);
+      const avgB = (ptsB / games.length).toFixed(1);
+      const highShootout = [...games].sort((a, b) => b.combined - a.combined)[0];
+      const closestGame = [...games].sort((a, b) => a.margin - b.margin)[0];
+
+      const summaryHtml = `
+        <div class="versus-summary">
+          <div class="versus-scoreboard">
+            <div>
+              <div style="display:flex; justify-content:center; margin-bottom:4px;">${renderAvatar(metaA)}</div>
+              <div style="font-weight:700; font-size:13px;">${metaA.name}</div>
+              <div style="font-size:11px; color:var(--text-secondary);">Avg ${avgA} pts</div>
+            </div>
+            <div>
+              <div style="font-size:20px; font-weight:800; letter-spacing:0.03em;">
+                ${winsA} – ${winsB}${ties ? ` – ${ties}` : ""}
+              </div>
+              <div style="font-size:11px; color:var(--text-secondary);">${games.length} Meeting${games.length === 1 ? "" : "s"}</div>
+            </div>
+            <div>
+              <div style="display:flex; justify-content:center; margin-bottom:4px;">${renderAvatar(metaB)}</div>
+              <div style="font-weight:700; font-size:13px;">${metaB.name}</div>
+              <div style="font-size:11px; color:var(--text-secondary);">Avg ${avgB} pts</div>
+            </div>
+          </div>
+          <div class="versus-stats-row">
+            <div>
+              <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Total Pts</div>
+              <strong>${ptsA.toFixed(0)} – ${ptsB.toFixed(0)}</strong>
+            </div>
+            <div>
+              <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Shootout</div>
+              <strong>${highShootout.combined.toFixed(1)} (${highShootout.season} W${highShootout.week})</strong>
+            </div>
+            <div>
+              <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Closest</div>
+              <strong>${closestGame.margin.toFixed(2)} pts (${closestGame.season} W${closestGame.week})</strong>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const gameLogHtml = [...games].reverse().map(g => {
+        const aWon = g.ptsA > g.ptsB;
+        const bWon = g.ptsB > g.ptsA;
+        return `
+          <div class="versus-game-row">
+            <span>
+              <strong>${g.season} Wk ${g.week}</strong>
+              ${g.isPlayoff ? `<span class="badge badge-gold" style="margin-left:4px;">Playoff</span>` : ""}
+            </span>
+            <span>
+              <span style="${aWon ? "font-weight:700; color:var(--win);" : ""}">${metaA.name} ${g.ptsA.toFixed(2)}</span>
+              <span style="color:var(--text-muted); margin:0 5px;">vs</span>
+              <span style="${bWon ? "font-weight:700; color:var(--win);" : ""}">${g.ptsB.toFixed(2)} ${metaB.name}</span>
+            </span>
+          </div>
+        `;
+      }).join("");
+
+      area.innerHTML = summaryHtml + gameLogHtml;
+    }
+
+    function renderH2H() {
+      const targetUid = document.getElementById("h2hManagerSelect").value;
+      const scope = document.getElementById("h2hScopeSelect").value;
+      if (!targetUid) return;
+
+      const rivals = {};
+      for (const s of appData.seasons) {
+        const playoffStart = s.playoff_week_start || 15;
+        for (const [weekStr, entries] of Object.entries(s.matchups_by_week)) {
+          const wk = Number(weekStr);
+          if (scope === "regular" && wk >= playoffStart) continue;
+          if (scope === "playoffs" && wk < playoffStart) continue;
+
+          const byMatchup = {};
+          for (const e of entries) {
+            if (e.matchup_id === null || e.matchup_id === undefined) continue;
+            if (!byMatchup[e.matchup_id]) byMatchup[e.matchup_id] = [];
+            byMatchup[e.matchup_id].push(e);
+          }
+
+          for (const pair of Object.values(byMatchup)) {
+            if (pair.length !== 2) continue;
+            const me = pair.find(p => p.owner_id === targetUid);
+            const opp = pair.find(p => p.owner_id !== targetUid);
+            if (!me || !opp || (me.points === 0 && opp.points === 0)) continue;
+
+            if (!rivals[opp.owner_id]) {
+              rivals[opp.owner_id] = { oppId: opp.owner_id, wins: 0, losses: 0, ties: 0, pf: 0, pa: 0 };
+            }
+            const rec = rivals[opp.owner_id];
+            rec.pf += me.points;
+            rec.pa += opp.points;
+            if (me.points > opp.points) rec.wins++;
+            else if (me.points < opp.points) rec.losses++;
+            else rec.ties++;
+          }
+        }
+      }
+
+      const list = Object.values(rivals).sort((a, b) => (b.wins + b.losses) - (a.wins + a.losses));
+      if (list.length === 0) {
+        document.getElementById("h2hGrid").innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">No games found for this filter.</p>`;
+        return;
+      }
+
+      document.getElementById("h2hGrid").innerHTML = list.map(r => {
+        const oppMeta = getManagerMeta(r.oppId);
+        const games = r.wins + r.losses + r.ties;
+        const avgDiff = games ? ((r.pf - r.pa) / games).toFixed(1) : "0.0";
+        const badgeCls = r.wins > r.losses ? "badge-win" : r.wins < r.losses ? "badge-loss" : "badge-neutral";
+
+        return `
+          <div class="h2h-card">
+            <div class="manager-cell">
+              ${renderAvatar(oppMeta)}
+              <div>
+                <div class="manager-name">${oppMeta.name}</div>
+                <div style="font-size:11px; color:var(--text-secondary);">
+                  Avg Margin: ${Number(avgDiff) >= 0 ? "+" : ""}${avgDiff} pts
+                </div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <span class="badge ${badgeCls}" style="font-size:12px;">${r.wins}-${r.losses}${r.ties ? `-${r.ties}` : ""}</span>
+              <div style="font-size:11px; color:var(--text-secondary); margin-top:3px;">
+                ${r.pf.toFixed(0)} – ${r.pa.toFixed(0)}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function populateWeekDropdown() {
+      const seasonYear = document.getElementById("matchupSeasonSelect").value;
+      const seasonObj = appData.seasons.find(s => s.season === seasonYear);
+      if (!seasonObj) return;
+
+      const weeks = Object.keys(seasonObj.matchups_by_week).sort((a, b) => Number(b) - Number(a));
+      document.getElementById("matchupWeekSelect").innerHTML = weeks
+        .map(w => `<option value="${w}">Week ${w}${Number(w) >= seasonObj.playoff_week_start ? " (Playoffs)" : ""}</option>`)
+        .join("");
+
+      renderMatchups();
+    }
+
+    function renderMatchups() {
+      const seasonYear = document.getElementById("matchupSeasonSelect").value;
+      const weekStr = document.getElementById("matchupWeekSelect").value;
+      const seasonObj = appData.seasons.find(s => s.season === seasonYear);
+      const entries = seasonObj?.matchups_by_week?.[weekStr] || [];
+
+      if (entries.length === 0) {
+        document.getElementById("matchupsList").innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">No matchup data for this week.</p>`;
+        return;
+      }
+
+      const active = entries.filter(e => e.matchup_id !== null && e.matchup_id !== undefined);
+      const sortedByPts = [...active].sort((a, b) => b.points - a.points);
+      const topTeam = sortedByPts[0];
+      const lowTeam = sortedByPts[sortedByPts.length - 1];
+
+      document.getElementById("weekSummaryStrip").innerHTML = topTeam ? `
+        <span class="badge badge-win">High: ${getManagerMeta(topTeam.owner_id).name} (${topTeam.points.toFixed(2)})</span>
+        <span class="badge badge-loss">Low: ${getManagerMeta(lowTeam.owner_id).name} (${lowTeam.points.toFixed(2)})</span>
+      ` : "";
+
+      const grouped = {};
+      for (const e of active) {
+        if (!grouped[e.matchup_id]) grouped[e.matchup_id] = [];
+        grouped[e.matchup_id].push(e);
+      }
+
+      document.getElementById("matchupsList").innerHTML = Object.entries(grouped).map(([mid, pair]) => {
+        const [t1, t2] = pair;
+        if (!t2) {
+          const m1 = getManagerMeta(t1.owner_id);
+          return `<div class="matchup-card"><strong>${m1.name}</strong> — Bye Week (${t1.points.toFixed(2)} pts)</div>`;
+        }
+        const m1 = getManagerMeta(t1.owner_id);
+        const m2 = getManagerMeta(t2.owner_id);
+        const t1Win = t1.points > t2.points;
+        const t2Win = t2.points > t1.points;
+        const margin = Math.abs(t1.points - t2.points).toFixed(2);
+
+        return `
+          <div class="matchup-card">
+            <div class="matchup-row ${t1Win ? "winner" : ""}">
+              <div class="manager-cell">${renderAvatar(m1)}<span class="m-team">${m1.name}</span></div>
+              <div class="m-score">${t1.points.toFixed(2)}</div>
+            </div>
+            <div class="matchup-row ${t2Win ? "winner" : ""}">
+              <div class="manager-cell">${renderAvatar(m2)}<span class="m-team">${m2.name}</span></div>
+              <div class="m-score">${t2.points.toFixed(2)}</div>
+            </div>
+            <div class="matchup-meta">
+              <span>Matchup #${mid}</span>
+              <span>Margin: ${margin} pts</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    /* ==========================================================================
+       10. NAVIGATION & EXPORTS
+       ========================================================================== */
+    function switchTab(tabName) {
+      document.querySelectorAll(".tab-panel").forEach(el => el.classList.add("hidden"));
+      document.getElementById(`tab-${tabName}`).classList.remove("hidden");
+      document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tabName);
+      });
+    }
+
+    function exportJSON() {
+      const payload = {
+        exported_at: new Date().toISOString(),
+        root_league_id: HARDCODED_LEAGUE_ID,
+        managers: appData.managers,
+        seasons: appData.seasons
+      };
+      downloadFile(`sleeper_${HARDCODED_LEAGUE_ID}_history.json`, JSON.stringify(payload, null, 2), "application/json");
+    }
+
+    function exportStandingsCSV() {
+      const filter = document.getElementById("standingsSeasonFilter").value || "ALL";
+      const { rows } = computeStatsForSeasons(filter);
+      const header = ["Manager,User_ID,Titles,Wins,Losses,Ties,Win_Pct,PF,Max_PF,Bench_Left,Efficiency_Pct,PA,AllPlay_Wins,AllPlay_Losses,Luck_Index"];
+      const lines = rows.map(r =>
+        `"${r.name.replace(/"/g, '""')}",${r.user_id},${r.titles},${r.wins},${r.losses},${r.ties},${(r.winPct * 100).toFixed(2)},${r.pf.toFixed(2)},${r.maxPf.toFixed(2)},${r.benchLeft.toFixed(2)},${r.efficiencyPct.toFixed(2)},${r.pa.toFixed(2)},${r.apWins},${r.apLosses},${r.luck.toFixed(2)}`
+      );
+      downloadFile(`sleeper_standings_${filter}.csv`, header.concat(lines).join("\n"), "text/csv");
+    }
+
+    function downloadFile(filename, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function showStatus(msg, badge = "") {
+      const banner = document.getElementById("statusBanner");
+      document.getElementById("statusText").textContent = msg;
+      const bEl = document.getElementById("cacheBadge");
+      bEl.textContent = badge;
+      bEl.style.display = badge ? "inline-block" : "none";
+      banner.classList.remove("hidden");
+    }
+
+    function showError(msg) {
+      const el = document.getElementById("errorBanner");
+      el.textContent = msg;
+      el.classList.remove("hidden");
+    }
+
+    function hideError() {
+      document.getElementById("errorBanner").classList.add("hidden");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      syncNow(false);
+    });
+  </script>
+</body>
+</html>
