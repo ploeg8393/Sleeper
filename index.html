@@ -3,57 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" id="themeColorMeta" content="#dfe3e8" />
+  <meta name="theme-color" id="themeColorMeta" content="#1f242b" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="League Vault" />
   <title>Sleeper League Vault — Multi-Season Analytics</title>
   <style>
     :root {
-      /* Muted Light-Grey Theme (Default) */
-      --bg-canvas: #dfe3e8;
-      --bg-surface: #eceff2;
-      --bg-subtle: #e3e7ec;
-      --bg-hover: #d8dee6;
-      --border: #c5cdd6;
-      --border-strong: #aeb8c4;
-      --text-primary: #1d242b;
-      --text-secondary: #4c5866;
-      --text-muted: #6c7988;
-      --accent: #295982;
-      --accent-soft: #d7e2ec;
-      --win: #1e6b47;
-      --win-bg: #d7e8df;
-      --loss: #962d2d;
-      --loss-bg: #ebd8d8;
-      --gold: #8a6214;
-      --gold-bg: #ece3cf;
+      color-scheme: dark;
+      /* Muted Dark-Slate Theme (Always Dark Mode) */
+      --bg-canvas: #161a1f;
+      --bg-surface: #1f242b;
+      --bg-subtle: #272d36;
+      --bg-hover: #303742;
+      --border: #363e4a;
+      --border-strong: #475261;
+      --text-primary: #e6ebf0;
+      --text-secondary: #a2aebc;
+      --text-muted: #7b8896;
+      --accent: #63a4db;
+      --accent-soft: #223547;
+      --win: #4cc38a;
+      --win-bg: #1c382b;
+      --loss: #e57373;
+      --loss-bg: #3b2124;
+      --gold: #e0b354;
+      --gold-bg: #382f1d;
       --nav-height: 62px;
       --header-height: 56px;
       --radius: 10px;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        /* Muted Dark-Slate Theme (Automatic when OS is in Dark Mode) */
-        --bg-canvas: #161a1f;
-        --bg-surface: #1f242b;
-        --bg-subtle: #272d36;
-        --bg-hover: #303742;
-        --border: #363e4a;
-        --border-strong: #475261;
-        --text-primary: #e6ebf0;
-        --text-secondary: #a2aebc;
-        --text-muted: #7b8896;
-        --accent: #63a4db;
-        --accent-soft: #223547;
-        --win: #4cc38a;
-        --win-bg: #1c382b;
-        --loss: #e57373;
-        --loss-bg: #3b2124;
-        --gold: #e0b354;
-        --gold-bg: #382f1d;
-      }
     }
 
     * {
@@ -1427,7 +1405,7 @@
 
   <script>
     /* ==========================================================================
-       1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
+       1. HARDCODED LEAGUE ID & CACHE KEYS
        ========================================================================== */
     const HARDCODED_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
@@ -1435,16 +1413,6 @@
     const PLAYERS_CACHE_KEY = "sleeper_vault_players_compact_v3";
     const PLAYERS_TS_KEY = "sleeper_vault_players_ts_v3";
     const GEMINI_KEY_STORAGE = "sleeper_vault_gemini_api_key";
-
-    (function syncThemeColorWithOS() {
-      const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      const apply = () => {
-        const meta = document.getElementById("themeColorMeta");
-        if (meta) meta.setAttribute("content", mq.matches ? "#1f242b" : "#dfe3e8");
-      };
-      apply();
-      if (mq.addEventListener) mq.addEventListener("change", apply);
-    })();
 
     let appData = {
       nflState: null,
@@ -1463,7 +1431,6 @@
        2. INLINE PWA MANIFEST & SERVICE WORKER
        ========================================================================== */
     (function initPWA() {
-      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="36" fill="#295982"/><text x="96" y="122" font-size="92" text-anchor="middle" fill="#eceff2" font-family="sans-serif" font-weight="bold">LV</text></svg>`;
       const iconUrl = "data:image/svg+xml;base64," + btoa(svgIcon);
       const manifest = {
@@ -1471,8 +1438,8 @@
         short_name: "League Vault",
         start_url: ".",
         display: "standalone",
-        background_color: isDark ? "#161a1f" : "#dfe3e8",
-        theme_color: isDark ? "#1f242b" : "#dfe3e8",
+        background_color: "#161a1f",
+        theme_color: "#1f242b",
         icons: [{ src: iconUrl, sizes: "192x192", type: "image/svg+xml" }]
       };
       const manifestBlob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
