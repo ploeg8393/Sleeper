@@ -4512,15 +4512,110 @@
     }
 
     /* ==========================================================================
-       10. TAB NAVIGATION & STATUS HELPERS
+       10. TAB NAVIGATION, EDGE-AWARE SWIPE & STATUS HELPERS
        ========================================================================== */
     function switchTab(tabName) {
+      const targetPanel = document.getElementById(`tab-${tabName}`);
+      if (!targetPanel) return;
       document.querySelectorAll(".tab-panel").forEach(el => el.classList.add("hidden"));
-      document.getElementById(`tab-${tabName}`).classList.remove("hidden");
+      targetPanel.classList.remove("hidden");
       document.querySelectorAll(".nav-btn").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.tab === tabName);
+        const isActive = btn.dataset.tab === tabName;
+        btn.classList.toggle("active", isActive);
+        if (isActive && btn.scrollIntoView) {
+          btn.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
+        }
       });
     }
+
+    (function initSwipeTabNavigation() {
+      let touchState = null;
+
+      function findHorizontalScroller(el) {
+        let cur = el && el.nodeType === 1 ? el : el?.parentElement;
+        while (cur && cur !== document.body) {
+          if (cur.scrollWidth > cur.clientWidth + 2) {
+            const style = window.getComputedStyle(cur);
+            if (style.overflowX === "auto" || style.overflowX === "scroll") {
+              return cur;
+            }
+          }
+          cur = cur.parentElement;
+        }
+        return null;
+      }
+
+      function isOverlayOpen() {
+        const ids = ["tradeModalBackdrop", "injuryModalBackdrop", "aiDrawer"];
+        return ids.some(id => {
+          const el = document.getElementById(id);
+          return el && !el.classList.contains("hidden");
+        });
+      }
+
+      document.addEventListener("touchstart", (e) => {
+        if (e.touches.length !== 1 || isOverlayOpen()) {
+          touchState = null;
+          return;
+        }
+        const target = e.target;
+        if (target.closest(".bottom-nav, input, select, textarea, button")) {
+          touchState = null;
+          return;
+        }
+        const t = e.touches[0];
+        const scroller = findHorizontalScroller(target);
+        touchState = {
+          startX: t.clientX,
+          startY: t.clientY,
+          scroller,
+          startScrollLeft: scroller ? scroller.scrollLeft : 0
+        };
+      }, { passive: true });
+
+      document.addEventListener("touchend", (e) => {
+        if (!touchState || e.changedTouches.length !== 1 || isOverlayOpen()) {
+          touchState = null;
+          return;
+        }
+        const t = e.changedTouches[0];
+        const dx = t.clientX - touchState.startX;
+        const dy = t.clientY - touchState.startY;
+        const { scroller, startScrollLeft } = touchState;
+        touchState = null;
+
+        // Require an intentional horizontal swipe
+        if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+
+        // If inside a horizontally scrollable table/container, only change tabs once fully at that edge
+        if (scroller && scroller.scrollWidth > scroller.clientWidth + 2) {
+          const maxScroll = scroller.scrollWidth - scroller.clientWidth;
+          const edgeTolerance = 4;
+          if (dx < 0) {
+            // Swiping left -> next tab: must already be fully scrolled right
+            const startedAtRight = startScrollLeft >= maxScroll - edgeTolerance;
+            const endedAtRight = scroller.scrollLeft >= maxScroll - edgeTolerance;
+            if (!startedAtRight || !endedAtRight) return;
+          } else {
+            // Swiping right -> previous tab: must already be fully scrolled left
+            const startedAtLeft = startScrollLeft <= edgeTolerance;
+            const endedAtLeft = scroller.scrollLeft <= edgeTolerance;
+            if (!startedAtLeft || !endedAtLeft) return;
+          }
+        }
+
+        const tabOrder = Array.from(document.querySelectorAll(".bottom-nav .nav-btn[data-tab]"))
+          .map(btn => btn.dataset.tab);
+        const activeBtn = document.querySelector(".bottom-nav .nav-btn.active");
+        const currentIdx = activeBtn ? tabOrder.indexOf(activeBtn.dataset.tab) : 0;
+        if (currentIdx === -1) return;
+
+        const nextIdx = dx < 0 ? currentIdx + 1 : currentIdx - 1;
+        if (nextIdx >= 0 && nextIdx < tabOrder.length) {
+          switchTab(tabOrder[nextIdx]);
+        }
+      }, { passive: true });
+    })();
 
     function showStatus(msg, badge = "") {
       const banner = document.getElementById("statusBanner");
