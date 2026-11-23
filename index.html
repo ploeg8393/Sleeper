@@ -203,6 +203,24 @@
       white-space: nowrap;
       cursor: pointer;
       user-select: none;
+      transition: color 0.15s, background-color 0.15s;
+    }
+
+    th:hover {
+      color: var(--text-primary);
+      background: var(--bg-hover);
+    }
+
+    th.sorted-asc::after {
+      content: " ▲";
+      font-size: 9px;
+      color: var(--accent);
+    }
+
+    th.sorted-desc::after {
+      content: " ▼";
+      font-size: 9px;
+      color: var(--accent);
     }
 
     th.num, td.num {
@@ -797,6 +815,10 @@
       <div class="brand-title" id="headerTitle">Sleeper League Vault</div>
       <div class="brand-sub" id="headerSub">League 1389754082821947392</div>
     </div>
+    <select id="teamScopeFilter" onchange="onTeamScopeChange()" aria-label="Team Scope Filter" style="font-size:12px; padding:6px 8px; flex-shrink:0;">
+      <option value="CURRENT" selected>Current Teams</option>
+      <option value="ALL">All-Time Teams</option>
+    </select>
   </header>
 
   <main class="container">
@@ -815,18 +837,18 @@
             <select id="standingsSeasonFilter" onchange="renderStandings()"></select>
           </div>
           <div class="table-wrap">
-            <table>
+            <table data-sort-table="standings">
               <thead>
                 <tr>
-                  <th onclick="sortStandings('rank')">#</th>
-                  <th onclick="sortStandings('name')">Manager</th>
-                  <th class="num" onclick="sortStandings('titles')">🏆</th>
-                  <th class="num" onclick="sortStandings('wins')">W-L-T</th>
-                  <th class="num" onclick="sortStandings('winPct')">Win%</th>
-                  <th class="num" onclick="sortStandings('pf')">PF</th>
-                  <th class="num" onclick="sortStandings('maxPf')">Max PF</th>
-                  <th class="num" onclick="sortStandings('benchLeft')">Bench</th>
-                  <th class="num" onclick="sortStandings('efficiencyPct')">Eff%</th>
+                  <th data-col="rank" onclick="sortTable('standings', 'rank')">#</th>
+                  <th data-col="name" onclick="sortTable('standings', 'name')">Manager</th>
+                  <th class="num" data-col="titles" onclick="sortTable('standings', 'titles')">🏆</th>
+                  <th class="num" data-col="wins" onclick="sortTable('standings', 'wins')">W-L-T</th>
+                  <th class="num" data-col="winPct" onclick="sortTable('standings', 'winPct')">Win%</th>
+                  <th class="num" data-col="pf" onclick="sortTable('standings', 'pf')">PF</th>
+                  <th class="num" data-col="maxPf" onclick="sortTable('standings', 'maxPf')">Max PF</th>
+                  <th class="num" data-col="benchLeft" onclick="sortTable('standings', 'benchLeft')">Bench</th>
+                  <th class="num" data-col="efficiencyPct" onclick="sortTable('standings', 'efficiencyPct')">Eff%</th>
                 </tr>
               </thead>
               <tbody id="standingsBody"></tbody>
@@ -842,16 +864,16 @@
             <div class="card-title">All-Time Playoff & Championship Leaderboard</div>
           </div>
           <div class="table-wrap">
-            <table>
+            <table data-sort-table="playoffs">
               <thead>
                 <tr>
-                  <th>Manager</th>
-                  <th class="num">🏆 Titles</th>
-                  <th class="num">🥈 2nd</th>
-                  <th class="num">🥉 3rd</th>
-                  <th class="num">Apps</th>
-                  <th class="num">Playoff W-L</th>
-                  <th class="num">Avg PF</th>
+                  <th data-col="name" onclick="sortTable('playoffs', 'name')">Manager</th>
+                  <th class="num" data-col="titles" onclick="sortTable('playoffs', 'titles')">🏆 Titles</th>
+                  <th class="num" data-col="runnerUps" onclick="sortTable('playoffs', 'runnerUps')">🥈 2nd</th>
+                  <th class="num" data-col="thirds" onclick="sortTable('playoffs', 'thirds')">🥉 3rd</th>
+                  <th class="num" data-col="appearances" onclick="sortTable('playoffs', 'appearances')">Apps</th>
+                  <th class="num" data-col="wins" onclick="sortTable('playoffs', 'wins')">Playoff W-L</th>
+                  <th class="num" data-col="avgPf" onclick="sortTable('playoffs', 'avgPf')">Avg PF</th>
                 </tr>
               </thead>
               <tbody id="playoffLeaderboardBody"></tbody>
@@ -880,16 +902,16 @@
             Average weekly starter points by lineup slot (QB, RB, WR, FLEX, K, DEF).
           </p>
           <div class="table-wrap">
-            <table>
+            <table data-sort-table="positions">
               <thead>
                 <tr>
-                  <th onclick="sortPositions('name')">Manager</th>
-                  <th class="num" onclick="sortPositions('QB')">QB</th>
-                  <th class="num" onclick="sortPositions('RB')">RB</th>
-                  <th class="num" onclick="sortPositions('WR')">WR</th>
-                  <th class="num" onclick="sortPositions('FLEX')">FLEX</th>
-                  <th class="num" onclick="sortPositions('K')">K</th>
-                  <th class="num" onclick="sortPositions('DEF')">DEF</th>
+                  <th data-col="name" onclick="sortTable('positions', 'name')">Manager</th>
+                  <th class="num" data-col="QB" onclick="sortTable('positions', 'QB')">QB</th>
+                  <th class="num" data-col="RB" onclick="sortTable('positions', 'RB')">RB</th>
+                  <th class="num" data-col="WR" onclick="sortTable('positions', 'WR')">WR</th>
+                  <th class="num" data-col="FLEX" onclick="sortTable('positions', 'FLEX')">FLEX</th>
+                  <th class="num" data-col="K" onclick="sortTable('positions', 'K')">K</th>
+                  <th class="num" data-col="DEF" onclick="sortTable('positions', 'DEF')">DEF</th>
                 </tr>
               </thead>
               <tbody id="positionsBody"></tbody>
@@ -907,17 +929,17 @@
           </p>
           <div id="effHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
           <div class="table-wrap">
-            <table>
+            <table data-sort-table="efficiency">
               <thead>
                 <tr>
-                  <th onclick="sortEfficiency('name')">Manager</th>
-                  <th class="num" onclick="sortEfficiency('efficiencyPct')">Eff%</th>
-                  <th class="num" onclick="sortEfficiency('pf')">Actual PF</th>
-                  <th class="num" onclick="sortEfficiency('maxPf')">Max PF</th>
-                  <th class="num" onclick="sortEfficiency('benchLeft')">Bench Left</th>
-                  <th class="num" onclick="sortEfficiency('avgBenchLeft')">Avg/Wk</th>
-                  <th class="num" onclick="sortEfficiency('perfectWeeks')">Perfect Wks</th>
-                  <th>Worst Bench Wk</th>
+                  <th data-col="name" onclick="sortTable('efficiency', 'name')">Manager</th>
+                  <th class="num" data-col="efficiencyPct" onclick="sortTable('efficiency', 'efficiencyPct')">Eff%</th>
+                  <th class="num" data-col="pf" onclick="sortTable('efficiency', 'pf')">Actual PF</th>
+                  <th class="num" data-col="maxPf" onclick="sortTable('efficiency', 'maxPf')">Max PF</th>
+                  <th class="num" data-col="benchLeft" onclick="sortTable('efficiency', 'benchLeft')">Bench Left</th>
+                  <th class="num" data-col="avgBenchLeft" onclick="sortTable('efficiency', 'avgBenchLeft')">Avg/Wk</th>
+                  <th class="num" data-col="perfectWeeks" onclick="sortTable('efficiency', 'perfectWeeks')">Perfect Wks</th>
+                  <th data-col="worstBenchDiff" onclick="sortTable('efficiency', 'worstBenchDiff')">Worst Bench Wk</th>
                 </tr>
               </thead>
               <tbody id="efficiencyBody"></tbody>
@@ -937,15 +959,15 @@
             Tap any manager row to open a window showing all trades between that owner and their trade partners.
           </p>
           <div class="table-wrap">
-            <table>
+            <table data-sort-table="activity">
               <thead>
                 <tr>
-                  <th>Manager</th>
-                  <th class="num">Trades</th>
-                  <th>Top Trade Partner</th>
-                  <th class="num">Waivers</th>
-                  <th class="num">FA Adds</th>
-                  <th class="num">Total Wire</th>
+                  <th data-col="name" onclick="sortTable('activity', 'name')">Manager</th>
+                  <th class="num" data-col="tradesCount" onclick="sortTable('activity', 'tradesCount')">Trades</th>
+                  <th data-col="topPartnerLabel" onclick="sortTable('activity', 'topPartnerLabel')">Top Trade Partner</th>
+                  <th class="num" data-col="waiversCount" onclick="sortTable('activity', 'waiversCount')">Waivers</th>
+                  <th class="num" data-col="faCount" onclick="sortTable('activity', 'faCount')">FA Adds</th>
+                  <th class="num" data-col="totalWire" onclick="sortTable('activity', 'totalWire')">Total Wire</th>
                 </tr>
               </thead>
               <tbody id="activityBody"></tbody>
@@ -955,21 +977,44 @@
 
         <div class="card">
           <div class="card-header">
-            <div class="card-title">Waiver Wire & FAAB ROI Leaderboard</div>
+            <div class="card-title">Draft Pick Trade Analysis (By Manager)</div>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
-            Measures total starting-lineup points scored by waiver and free-agent pickups after claiming, plus efficiency per FAAB dollar spent.
+            Tracks which draft rounds each owner traded away, the post-trade <strong>Starter PPG</strong> &amp; total points received in return, and what acquired picks turned into when drafted.
+          </p>
+          <div id="pickTradeHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+          <div class="table-wrap">
+            <table data-sort-table="pickTrades">
+              <thead>
+                <tr>
+                  <th data-col="name" onclick="sortTable('pickTrades', 'name')">Manager</th>
+                  <th data-col="sentCount" onclick="sortTable('pickTrades', 'sentCount')">Picks Sent (Rds)</th>
+                  <th class="num" data-col="returnStarterPpg" onclick="sortTable('pickTrades', 'returnStarterPpg')">Return PPG</th>
+                  <th class="num" data-col="returnStarterPts" onclick="sortTable('pickTrades', 'returnStarterPts')">Return Start Pts</th>
+                  <th data-col="acqCount" onclick="sortTable('pickTrades', 'acqCount')">Picks Acq (Rds)</th>
+                  <th data-col="acquiredDraftedPts" onclick="sortTable('pickTrades', 'acquiredDraftedPts')">Acq Draft Outcome</th>
+                </tr>
+              </thead>
+              <tbody id="pickTradeManagerBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Waiver Wire &amp; Free-Agent Leaderboard</div>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            Measures total starting-lineup points scored by waiver and free-agent pickups after claiming.
           </p>
           <div id="waiverHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
           <div class="table-wrap">
-            <table>
+            <table data-sort-table="waiverRoi">
               <thead>
                 <tr>
-                  <th>Manager</th>
-                  <th class="num">FAAB Spent</th>
-                  <th class="num">Wire Start Pts</th>
-                  <th class="num">Pts / $</th>
-                  <th>Best Pickup Bargain</th>
+                  <th data-col="name" onclick="sortTable('waiverRoi', 'name')">Manager</th>
+                  <th class="num" data-col="wireStarterPts" onclick="sortTable('waiverRoi', 'wireStarterPts')">Wire Start Pts</th>
+                  <th data-col="bestPickupPts" onclick="sortTable('waiverRoi', 'bestPickupPts')">Best Pickup</th>
                 </tr>
               </thead>
               <tbody id="waiverRoiBody"></tbody>
@@ -998,16 +1043,16 @@
           </p>
           <div id="draftHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
           <div class="table-wrap">
-            <table>
+            <table data-sort-table="draft">
               <thead>
                 <tr>
-                  <th onclick="sortDraft('name')">Manager</th>
-                  <th class="num" onclick="sortDraft('retainedCount')">Retained</th>
-                  <th class="num" onclick="sortDraft('retainedPct')">Retain%</th>
-                  <th class="num" onclick="sortDraft('draftOnlyPf')">Draft-Only PF</th>
-                  <th class="num" onclick="sortDraft('actualPf')">Actual PF</th>
-                  <th class="num" onclick="sortDraft('moveNet')">Move Net</th>
-                  <th class="num" onclick="sortDraft('draftTotalPts')">All Picks Pts</th>
+                  <th data-col="name" onclick="sortTable('draft', 'name')">Manager</th>
+                  <th class="num" data-col="retainedCount" onclick="sortTable('draft', 'retainedCount')">Retained</th>
+                  <th class="num" data-col="retainedPct" onclick="sortTable('draft', 'retainedPct')">Retain%</th>
+                  <th class="num" data-col="draftOnlyPf" onclick="sortTable('draft', 'draftOnlyPf')">Draft-Only PF</th>
+                  <th class="num" data-col="actualPf" onclick="sortTable('draft', 'actualPf')">Actual PF</th>
+                  <th class="num" data-col="moveNet" onclick="sortTable('draft', 'moveNet')">Move Net</th>
+                  <th class="num" data-col="draftTotalPts" onclick="sortTable('draft', 'draftTotalPts')">All Picks Pts</th>
                 </tr>
               </thead>
               <tbody id="draftBody"></tbody>
@@ -1030,6 +1075,15 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">Best Drafted Players</div>
+            <select id="bestDraftedPosFilter" onchange="renderDraftAnalysis()">
+              <option value="ALL">All Positions</option>
+              <option value="QB">QB</option>
+              <option value="RB">RB</option>
+              <option value="WR">WR</option>
+              <option value="TE">TE</option>
+              <option value="K">K</option>
+              <option value="DEF">DEF</option>
+            </select>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
             Highest total fantasy points produced in a single season by drafted players.
@@ -1037,13 +1091,13 @@
           <div id="bestDraftedPlayersList"></div>
         </div>
 
-        <!-- Card 4: Late-Round Sleeper Picks (Ignore K & DEF) -->
+        <!-- Card 4: Late-Round Sleeper Picks (Ignore QB, K & DEF) -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">Best Late-Round Sleeper Picks (Rd 9+, Excl. K & DEF)</div>
+            <div class="card-title">Best Late-Round Sleeper Picks (Rd 9+, Excl. QB, K &amp; DEF)</div>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
-            Highest-scoring RB, WR, QB, and TE steals drafted in Round 9 or later.
+            Highest-scoring RB, WR, and TE steals drafted in Round 9 or later.
           </p>
           <div id="sleeperManagerStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
           <div id="lateRoundSleepersList"></div>
@@ -1059,35 +1113,6 @@
           </p>
           <div id="terribleEarlyPicksList"></div>
         </div>
-
-        <!-- Card 6: Average Player Totals per Round -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Average Player Totals per Draft Round</div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Round</th>
-                  <th class="num">Picks</th>
-                  <th class="num">Avg Season Pts</th>
-                  <th>Best Pick in Round</th>
-                  <th>Lowest Healthy Pick</th>
-                </tr>
-              </thead>
-              <tbody id="roundAveragesBody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Card 7: Drafted Players Kept at Season End -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Drafted Players Kept at Season End</div>
-          </div>
-          <div id="draftKeptCards" class="h2h-grid"></div>
-        </div>
       </section>
 
       <!-- TAB 6: INJURIES & SEASON-ENDING IR -->
@@ -1101,15 +1126,15 @@
             Click any manager's <strong>Lost for Yr</strong> number to open a sortable popup showing the drafted players who went on IR, their draft round, week lost, and weeks missed.
           </p>
           <div class="table-wrap">
-            <table>
+            <table data-sort-table="injuries">
               <thead>
                 <tr>
-                  <th>Manager</th>
-                  <th class="num">Lost for Yr</th>
-                  <th class="num">Rds 1–5 Lost</th>
-                  <th class="num">Wks Missed</th>
-                  <th class="num">Active IR/Out</th>
-                  <th class="num">Actual Win%</th>
+                  <th data-col="name" onclick="sortTable('injuries', 'name')">Manager</th>
+                  <th class="num" data-col="seasonEndingCount" onclick="sortTable('injuries', 'seasonEndingCount')">Lost for Yr</th>
+                  <th class="num" data-col="earlyRoundLost" onclick="sortTable('injuries', 'earlyRoundLost')">Rds 1–5 Lost</th>
+                  <th class="num" data-col="weeksMissed" onclick="sortTable('injuries', 'weeksMissed')">Wks Missed</th>
+                  <th class="num" data-col="activeIrOutCount" onclick="sortTable('injuries', 'activeIrOutCount')">Active IR/Out</th>
+                  <th class="num" data-col="winPct" onclick="sortTable('injuries', 'winPct')">Actual Win%</th>
                 </tr>
               </thead>
               <tbody id="injuryBody"></tbody>
@@ -1117,21 +1142,6 @@
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Season-Ending & Active Injury Log</div>
-            <div style="display:flex; gap:6px; align-items:center;">
-              <select id="injuryLogSortSelect" onchange="renderInjuries()">
-                <option value="round">Sort: Draft Round</option>
-                <option value="weekLost">Sort: Week Lost</option>
-                <option value="weeksLostCount">Sort: # Weeks Lost</option>
-                <option value="season">Sort: Season</option>
-              </select>
-              <button class="btn-icon" id="injuryLogDirBtn" onclick="toggleInjuryLogDir()">↑ Asc</button>
-            </div>
-          </div>
-          <div id="injuryLogList"></div>
-        </div>
       </section>
 
       <!-- TAB 7: ALL-PLAY & LUCK INDEX -->
@@ -1145,18 +1155,42 @@
             <strong>Luck Index</strong> = Actual Wins minus Expected All-Play Wins (your record if you played every team every week).
           </p>
           <div class="table-wrap">
-            <table>
+            <table data-sort-table="luck">
               <thead>
                 <tr>
-                  <th>Manager</th>
-                  <th class="num">Actual</th>
-                  <th class="num">All-Play</th>
-                  <th class="num">AP%</th>
-                  <th class="num">Luck</th>
-                  <th>Index</th>
+                  <th data-col="name" onclick="sortTable('luck', 'name')">Manager</th>
+                  <th class="num" data-col="wins" onclick="sortTable('luck', 'wins')">Actual</th>
+                  <th class="num" data-col="apWins" onclick="sortTable('luck', 'apWins')">All-Play</th>
+                  <th class="num" data-col="apPct" onclick="sortTable('luck', 'apPct')">AP%</th>
+                  <th class="num" data-col="luck" onclick="sortTable('luck', 'luck')">Luck</th>
+                  <th data-col="luckBar" onclick="sortTable('luck', 'luckBar')">Index</th>
                 </tr>
               </thead>
               <tbody id="luckBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Weekly Rank Cutoff &amp; Tough-Break Luck</div>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            Tracks <strong>5th</strong> (lowest rank eligible for a 2nd W), <strong>6th</strong> (highest rank stuck with an extra L), <strong>2nd in Pts &amp; Lost</strong>, and <strong>6th + H2H Loss (Extra Unlucky)</strong>.
+          </p>
+          <div id="cutoffLuckHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+          <div class="table-wrap">
+            <table data-sort-table="cutoffLuck">
+              <thead>
+                <tr>
+                  <th data-col="name" onclick="sortTable('cutoffLuck', 'name')">Manager</th>
+                  <th class="num" data-col="fifthCount" onclick="sortTable('cutoffLuck', 'fifthCount')">5th (2nd W)</th>
+                  <th class="num" data-col="sixthCount" onclick="sortTable('cutoffLuck', 'sixthCount')">6th (Extra L)</th>
+                  <th class="num" data-col="sixthAndLossCount" onclick="sortTable('cutoffLuck', 'sixthAndLossCount')">6th + Loss</th>
+                  <th class="num" data-col="secondAndLossCount" onclick="sortTable('cutoffLuck', 'secondAndLossCount')">2nd &amp; Lost</th>
+                </tr>
+              </thead>
+              <tbody id="cutoffLuckBody"></tbody>
             </table>
           </div>
         </div>
@@ -1197,20 +1231,6 @@
         </div>
       </section>
 
-      <!-- TAB 9: WEEKLY MATCHUPS -->
-      <section id="tab-matchups" class="tab-panel hidden">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Weekly Scoreboard</div>
-          </div>
-          <div class="controls-row">
-            <select id="matchupSeasonSelect" class="grow" onchange="populateWeekDropdown()"></select>
-            <select id="matchupWeekSelect" onchange="renderMatchups()"></select>
-          </div>
-          <div id="weekSummaryStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
-          <div id="matchupsList"></div>
-        </div>
-      </section>
     </div>
   </main>
 
@@ -1352,10 +1372,6 @@
       <span class="nav-icon">⚔️</span>
       <span>H2H</span>
     </button>
-    <button class="nav-btn" data-tab="matchups" onclick="switchTab('matchups')">
-      <span class="nav-icon">🏈</span>
-      <span>Weeks</span>
-    </button>
   </nav>
 
   <script>
@@ -1373,14 +1389,102 @@
       nflState: null,
       seasons: [],
       managers: {},
+      currentTeamIds: new Set(),
       players: {},
-      standingsSort: { col: "winPct", dir: "desc" },
-      positionsSort: { col: "QB", dir: "desc" },
-      efficiencySort: { col: "efficiencyPct", dir: "desc" },
-      draftSort: { col: "draftOnlyPf", dir: "desc" },
-      injuryLogDir: "asc",
+      tableSorts: {
+        standings: { col: "winPct", dir: "desc" },
+        playoffs: { col: "titles", dir: "desc" },
+        positions: { col: "QB", dir: "desc" },
+        efficiency: { col: "efficiencyPct", dir: "desc" },
+        activity: { col: "totalWire", dir: "desc" },
+        pickTrades: { col: "sentCount", dir: "desc" },
+        waiverRoi: { col: "wireStarterPts", dir: "desc" },
+        draft: { col: "draftOnlyPf", dir: "desc" },
+        injuries: { col: "seasonEndingCount", dir: "desc" },
+        luck: { col: "luck", dir: "desc" },
+        cutoffLuck: { col: "sixthAndLossCount", dir: "desc" }
+      },
       modalInjuryDir: "asc"
     };
+
+    const TEXT_SORT_COLS = new Set(["name", "topPartnerLabel"]);
+    const ASC_DEFAULT_COLS = new Set(["rank", "name", "topPartnerLabel"]);
+
+    function getTeamScope() {
+      return document.getElementById("teamScopeFilter")?.value || "CURRENT";
+    }
+
+    function isIncludedTeam(uid) {
+      if (!uid) return false;
+      if (getTeamScope() === "ALL") return true;
+      return appData.currentTeamIds.has(uid);
+    }
+
+    function onTeamScopeChange() {
+      populateManagerDropdowns();
+      renderAll();
+      if (!document.getElementById("tradeModalBackdrop").classList.contains("hidden")) {
+        renderModalTrades();
+      }
+      if (!document.getElementById("injuryModalBackdrop").classList.contains("hidden")) {
+        renderInjuryModalContent();
+      }
+    }
+
+    function sortTable(tableKey, col) {
+      const cur = appData.tableSorts[tableKey] || { col, dir: "desc" };
+      if (cur.col === col) {
+        cur.dir = cur.dir === "desc" ? "asc" : "desc";
+      } else {
+        cur.col = col;
+        cur.dir = ASC_DEFAULT_COLS.has(col) ? "asc" : "desc";
+      }
+      appData.tableSorts[tableKey] = cur;
+
+      if (tableKey === "standings") renderStandings();
+      else if (tableKey === "playoffs") renderPlayoffHistory();
+      else if (tableKey === "positions") renderPositions();
+      else if (tableKey === "efficiency") renderEfficiencyCard();
+      else if (tableKey === "activity" || tableKey === "pickTrades" || tableKey === "waiverRoi") renderActivityAndWaivers();
+      else if (tableKey === "draft") renderDraftAnalysis();
+      else if (tableKey === "injuries") renderInjuries();
+      else if (tableKey === "luck" || tableKey === "cutoffLuck") renderLuck();
+    }
+
+    function updateTableSortHeaders(tableKey) {
+      const table = document.querySelector(`table[data-sort-table="${tableKey}"]`);
+      if (!table) return;
+      const { col, dir } = appData.tableSorts[tableKey] || {};
+      table.querySelectorAll("th[data-col]").forEach(th => {
+        th.classList.remove("sorted-asc", "sorted-desc");
+        if (th.dataset.col === col) {
+          th.classList.add(dir === "asc" ? "sorted-asc" : "sorted-desc");
+        }
+      });
+    }
+
+    function sortRowsGeneric(rows, tableKey, customGetters = {}) {
+      updateTableSortHeaders(tableKey);
+      const { col, dir } = appData.tableSorts[tableKey] || { col: "name", dir: "asc" };
+      const mult = dir === "desc" ? -1 : 1;
+      const getter = customGetters[col] || (r => r[col]);
+
+      return [...rows].sort((a, b) => {
+        const va = getter(a);
+        const vb = getter(b);
+        if (TEXT_SORT_COLS.has(col) || (typeof va === "string" && typeof vb === "string")) {
+          const sa = String(va || "");
+          const sb = String(vb || "");
+          if (sa === "-" && sb !== "-") return 1;
+          if (sb === "-" && sa !== "-") return -1;
+          return mult * sa.localeCompare(sb);
+        }
+        const na = Number(va ?? -Infinity);
+        const nb = Number(vb ?? -Infinity);
+        if (na !== nb) return mult * (na - nb);
+        return String(a.name || "").localeCompare(String(b.name || ""));
+      });
+    }
 
     /* ==========================================================================
        2. INLINE PWA MANIFEST & SERVICE WORKER
@@ -1604,8 +1708,7 @@
               roster_ids: tx.roster_ids || [],
               adds: tx.adds || {},
               drops: tx.drops || {},
-              draft_picks: tx.draft_picks || [],
-              waiver_budget: tx.waiver_budget || []
+              draft_picks: tx.draft_picks || []
             });
           } else if (tx.type === "waiver" || tx.type === "free_agent") {
             if (wireTxMap.has(tx.transaction_id)) continue;
@@ -1615,8 +1718,7 @@
               week: tx.leg || (idx + 1),
               roster_ids: tx.roster_ids || [],
               adds: tx.adds || {},
-              drops: tx.drops || {},
-              waiver_bid: Number(tx.settings?.waiver_bid || 0)
+              drops: tx.drops || {}
             });
           }
         }
@@ -1727,6 +1829,12 @@
         appData.managers = buildManagerDirectory(seasons);
 
         const latest = seasons[seasons.length - 1];
+        const latestOwners = Object.values(latest?.roster_owner_map || {}).filter(Boolean);
+        appData.currentTeamIds = new Set(
+          latestOwners.length > 0
+            ? latestOwners
+            : (latest?.users || []).map(u => u.user_id).filter(Boolean)
+        );
         document.getElementById("headerTitle").textContent = latest.name || "Sleeper League Vault";
         document.getElementById("headerSub").textContent =
           `${seasons[0].season}–${latest.season} • NFL Wk ${nflState.week}`;
@@ -2100,7 +2208,6 @@
             user_id: uid,
             name: meta.name,
             avatar: meta.avatar,
-            faabSpent: 0,
             wireStarterPts: 0,
             bestPickup: null
           };
@@ -2120,8 +2227,7 @@
               rid,
               uid: ownerMap[rid],
               week: Number(wtx.week || 1),
-              type: wtx.type,
-              bid: Number(wtx.waiver_bid || 0)
+              type: wtx.type
             });
           }
         }
@@ -2132,7 +2238,6 @@
           const c = claims[i];
           if (!c.uid) continue;
           const mRec = ensure(c.uid);
-          mRec.faabSpent += c.bid;
 
           const nextSameClaim = claims.slice(i + 1).find(n => n.rid === c.rid && n.pid === c.pid);
           const endWeek = nextSameClaim ? nextSameClaim.week - 1 : 18;
@@ -2153,7 +2258,6 @@
           mRec.wireStarterPts += starterPts;
 
           if (starterPts > 0) {
-            const ptsPerDollar = c.bid > 0 ? starterPts / c.bid : starterPts;
             const item = {
               season: s.season,
               week: c.week,
@@ -2162,10 +2266,8 @@
               pid: c.pid,
               playerLabel: getPlayerLabel(c.pid),
               type: c.type,
-              bid: c.bid,
               starterPts,
-              starts,
-              ptsPerDollar
+              starts
             };
             bargains.push(item);
 
@@ -2176,10 +2278,7 @@
         }
       }
 
-      const managerRows = Object.values(managerStats).map(r => ({
-        ...r,
-        ptsPerDollar: r.faabSpent > 0 ? (r.wireStarterPts / r.faabSpent) : null
-      })).sort((a, b) => b.wireStarterPts - a.wireStarterPts);
+      const managerRows = Object.values(managerStats).sort((a, b) => b.wireStarterPts - a.wireStarterPts);
 
       bargains.sort((a, b) => b.starterPts - a.starterPts);
       return { managerRows, bargains };
@@ -2388,9 +2487,9 @@
       // Best drafted players
       const bestDrafted = [...allEvaluatedPicks].sort((a, b) => b.totalPts - a.totalPts);
 
-      // Late-round sleeper picks (Round 9+, excluding K and DEF)
+      // Late-round sleeper picks (Round 9+, excluding QB, K and DEF)
       const sleepers = allEvaluatedPicks
-        .filter(p => p.round >= 9 && !["K", "DEF"].includes(p.pos) && p.totalPts > 0)
+        .filter(p => p.round >= 9 && !["QB", "K", "DEF"].includes(p.pos) && p.totalPts > 0)
         .sort((a, b) => b.totalPts - a.totalPts);
 
       // Terrible early selections (Rounds 1-5, healthy only)
@@ -2596,6 +2695,7 @@
       let starterPts = 0;
       let totalPts = 0;
       let starts = 0;
+      let weeksOnRoster = 0;
 
       for (const [wkStr, entries] of Object.entries(seasonObj.matchups_by_week)) {
         if (Number(wkStr) < startWeek) continue;
@@ -2605,12 +2705,352 @@
 
         const pts = Number(teamEntry.players_points[playerId] || 0);
         totalPts += pts;
+        if (pts !== 0 || teamEntry.starters.includes(playerId)) {
+          weeksOnRoster++;
+        }
         if (teamEntry.starters.includes(playerId)) {
           starterPts += pts;
           starts++;
         }
       }
-      return { starterPts, totalPts, starts };
+      const starterPpg = starts > 0 ? starterPts / starts : 0;
+      const rosterPpg = weeksOnRoster > 0 ? totalPts / weeksOnRoster : 0;
+      return { starterPts, totalPts, starts, weeksOnRoster, starterPpg, rosterPpg };
+    }
+
+    function lookupDraftedPickOutcome(pickSeasonStr, roundNum, receiverUid, origOwnerUid) {
+      const targetSeason = appData.seasons.find(s => String(s.season) === String(pickSeasonStr));
+      if (!targetSeason || !Array.isArray(targetSeason.draft_picks) || targetSeason.draft_picks.length === 0) {
+        return null;
+      }
+
+      const roundPicks = targetSeason.draft_picks.filter(pk => Number(pk.round) === Number(roundNum));
+      // Match pick drafted by receiverUid in that round
+      const matchedPick = roundPicks.find(pk => pk.owner_id === receiverUid) || null;
+      if (!matchedPick) return null;
+
+      const pid = matchedPick.player_id;
+      let totalPts = 0;
+      let games = 0;
+      for (const entries of Object.values(targetSeason.matchups_by_week)) {
+        for (const e of entries) {
+          if (e.players_points && e.players_points[pid] !== undefined) {
+            const val = Number(e.players_points[pid] || 0);
+            if (val !== 0) {
+              totalPts += val;
+              games++;
+            }
+            break;
+          }
+        }
+      }
+
+      return {
+        playerName: matchedPick.player_name || getPlayerLabel(pid),
+        pos: matchedPick.pos || getPlayerPos(pid),
+        pickNo: matchedPick.pick_no,
+        totalPts,
+        games,
+        ppg: games > 0 ? totalPts / games : 0
+      };
+    }
+
+    function computeDraftPickTradeAnalysis(seasonFilter) {
+      const targetSeasons = seasonFilter === "ALL"
+        ? appData.seasons
+        : appData.seasons.filter(s => s.season === seasonFilter);
+
+      const managerStats = {};
+      const pickTrades = [];
+
+      const ensure = (uid) => {
+        if (!managerStats[uid]) {
+          const meta = getManagerMeta(uid);
+          managerStats[uid] = {
+            user_id: uid,
+            name: meta.name,
+            avatar: meta.avatar,
+            sentPicks: [],
+            acquiredPicks: [],
+            returnStarterPts: 0,
+            returnStarts: 0,
+            returnRosterPts: 0,
+            returnRosterWeeks: 0,
+            acquiredDraftedPts: 0,
+            acquiredDraftedGames: 0
+          };
+        }
+        return managerStats[uid];
+      };
+
+      for (const s of targetSeasons) {
+        const ownerMap = s.roster_owner_map || {};
+        for (const tx of (s.trades || [])) {
+          const dps = tx.draft_picks || [];
+          if (dps.length === 0) continue;
+
+          // Group picks by senderRid -> receiverRid
+          const sentByRid = {};
+          const acqByRid = {};
+
+          for (const dp of dps) {
+            const receiverRid = dp.owner_id;
+            let senderRid = dp.previous_owner_id;
+            if (!senderRid && tx.roster_ids.length === 2) {
+              senderRid = tx.roster_ids.find(r => r !== receiverRid);
+            }
+            if (!senderRid || !receiverRid) continue;
+
+            const senderUid = ownerMap[senderRid];
+            const receiverUid = ownerMap[receiverRid];
+            const origUid = ownerMap[dp.roster_id] || senderUid;
+            const outcome = lookupDraftedPickOutcome(dp.season, dp.round, receiverUid, origUid);
+
+            const pickObj = {
+              season: dp.season,
+              round: Number(dp.round),
+              senderRid,
+              senderUid,
+              senderName: senderUid ? getManagerMeta(senderUid).name : `Roster ${senderRid}`,
+              receiverRid,
+              receiverUid,
+              receiverName: receiverUid ? getManagerMeta(receiverUid).name : `Roster ${receiverRid}`,
+              label: `${dp.season} Rd ${dp.round}`,
+              outcome
+            };
+
+            if (!sentByRid[senderRid]) sentByRid[senderRid] = [];
+            sentByRid[senderRid].push(pickObj);
+
+            if (!acqByRid[receiverRid]) acqByRid[receiverRid] = [];
+            acqByRid[receiverRid].push(pickObj);
+
+            if (senderUid) {
+              ensure(senderUid).sentPicks.push(pickObj);
+            }
+            if (receiverUid) {
+              const rRec = ensure(receiverUid);
+              rRec.acquiredPicks.push(pickObj);
+              if (outcome) {
+                rRec.acquiredDraftedPts += outcome.totalPts;
+                rRec.acquiredDraftedGames += outcome.games;
+              }
+            }
+          }
+
+          // For each pick sender in this trade, evaluate what they got in return
+          const dealSides = [];
+          for (const [senderRidStr, picksSent] of Object.entries(sentByRid)) {
+            const senderRid = Number(senderRidStr);
+            const senderUid = ownerMap[senderRid];
+            const senderMeta = getManagerMeta(senderUid);
+
+            const receivedPlayers = Object.entries(tx.adds || {})
+              .filter(([, destRid]) => destRid === senderRid)
+              .map(([pid]) => {
+                const prod = evaluatePlayerPostTradePoints(s, senderRid, pid, tx.week);
+                return { pid, label: getPlayerLabel(pid), ...prod };
+              });
+
+            const receivedOtherPicks = (acqByRid[senderRid] || []).map(p => p.label);
+
+            const totalStartPts = receivedPlayers.reduce((sum, p) => sum + p.starterPts, 0);
+            const totalStarts = receivedPlayers.reduce((sum, p) => sum + p.starts, 0);
+            const totalRosPts = receivedPlayers.reduce((sum, p) => sum + p.totalPts, 0);
+            const totalRosWks = receivedPlayers.reduce((sum, p) => sum + p.weeksOnRoster, 0);
+
+            if (senderUid) {
+              const sRec = ensure(senderUid);
+              sRec.returnStarterPts += totalStartPts;
+              sRec.returnStarts += totalStarts;
+              sRec.returnRosterPts += totalRosPts;
+              sRec.returnRosterWeeks += totalRosWks;
+            }
+
+            dealSides.push({
+              senderUid,
+              senderMeta,
+              picksSent,
+              receivedPlayers,
+              receivedOtherPicks,
+              totalStartPts,
+              totalStarts,
+              returnStarterPpg: totalStarts > 0 ? totalStartPts / totalStarts : 0
+            });
+          }
+
+          pickTrades.push({
+            tradeSeason: s.season,
+            week: tx.week,
+            created: tx.created,
+            dealSides
+          });
+        }
+      }
+
+      const formatRoundSummary = (picksArr) => {
+        if (!picksArr.length) return "-";
+        const byRd = {};
+        for (const p of picksArr) {
+          byRd[p.round] = (byRd[p.round] || 0) + 1;
+        }
+        return Object.entries(byRd)
+          .sort((a, b) => Number(a[0]) - Number(b[0]))
+          .map(([rd, cnt]) => `Rd ${rd}${cnt > 1 ? ` (${cnt}x)` : ""}`)
+          .join(", ");
+      };
+
+      const managerRows = Object.values(managerStats)
+        .filter(r => r.sentPicks.length > 0 || r.acquiredPicks.length > 0)
+        .map(r => ({
+          ...r,
+          sentCount: r.sentPicks.length,
+          acqCount: r.acquiredPicks.length,
+          sentRoundsLabel: formatRoundSummary(r.sentPicks),
+          acqRoundsLabel: formatRoundSummary(r.acquiredPicks),
+          returnStarterPpg: r.returnStarts > 0 ? r.returnStarterPts / r.returnStarts : 0,
+          acqDraftedPpg: r.acquiredDraftedGames > 0 ? r.acquiredDraftedPts / r.acquiredDraftedGames : 0
+        }))
+        .sort((a, b) => b.sentCount - a.sentCount || b.acqCount - a.acqCount);
+
+      return { managerRows, pickTrades };
+    }
+
+    function computeWeeklyRankLuck(seasonFilter) {
+      const targetSeasons = seasonFilter === "ALL"
+        ? appData.seasons
+        : appData.seasons.filter(s => s.season === seasonFilter);
+
+      const managerMap = {};
+      const events = [];
+
+      const ensure = (uid) => {
+        if (!managerMap[uid]) {
+          const meta = getManagerMeta(uid);
+          managerMap[uid] = {
+            user_id: uid,
+            name: meta.name,
+            avatar: meta.avatar,
+            fifthCount: 0,
+            sixthCount: 0,
+            sixthAndLossCount: 0,
+            secondAndLossCount: 0,
+            notes: []
+          };
+        }
+        return managerMap[uid];
+      };
+
+      for (const s of targetSeasons) {
+        const weekKeys = Object.keys(s.matchups_by_week).sort((a, b) => Number(a) - Number(b));
+        for (const wkStr of weekKeys) {
+          const entries = (s.matchups_by_week[wkStr] || []).filter(
+            e => e.matchup_id !== null && e.matchup_id !== undefined
+          );
+          if (entries.length === 0 || entries.every(e => e.points === 0)) continue;
+
+          // Build H2H matchup lookup
+          const byMatchup = {};
+          for (const e of entries) {
+            if (!byMatchup[e.matchup_id]) byMatchup[e.matchup_id] = [];
+            byMatchup[e.matchup_id].push(e);
+          }
+
+          for (const e of entries) {
+            const rec = ensure(e.owner_id);
+            const ptsRank = 1 + entries.filter(other => other.points > e.points).length;
+            const pair = byMatchup[e.matchup_id] || [];
+            const opp = pair.find(p => p.roster_id !== e.roster_id);
+            const lostH2H = opp ? (e.points < opp.points) : false;
+            const wonH2H = opp ? (e.points > opp.points) : false;
+            const oppName = opp ? getManagerMeta(opp.owner_id).name : "Bye";
+            const oppPts = opp ? opp.points : 0;
+
+            if (ptsRank === 5) {
+              rec.fifthCount += 1;
+              events.push({
+                type: "FIFTH",
+                season: s.season,
+                week: Number(wkStr),
+                ownerId: e.owner_id,
+                ownerName: rec.name,
+                pts: e.points,
+                ptsRank,
+                lostH2H,
+                wonH2H,
+                oppName,
+                oppPts,
+                note: `5th in Pts (Cutoff 2nd W) • ${wonH2H ? "Won H2H (2-0 wk)" : lostH2H ? "Lost H2H (1-1 wk)" : "Tied H2H"}`
+              });
+            }
+
+            if (ptsRank === 6) {
+              rec.sixthCount += 1;
+              if (lostH2H) {
+                rec.sixthAndLossCount += 1;
+                rec.notes.push(`${s.season} W${wkStr}: 6th + Loss vs ${oppName} (Extra Unlucky)`);
+                events.push({
+                  type: "EXTRA_UNLUCKY",
+                  season: s.season,
+                  week: Number(wkStr),
+                  ownerId: e.owner_id,
+                  ownerName: rec.name,
+                  pts: e.points,
+                  ptsRank,
+                  lostH2H: true,
+                  wonH2H: false,
+                  oppName,
+                  oppPts,
+                  note: `EXTRA UNLUCKY: 6th in Pts (missed 2nd W by 1 spot) AND lost H2H to ${oppName} (${e.points.toFixed(2)}–${oppPts.toFixed(2)})`
+                });
+              } else {
+                events.push({
+                  type: "SIXTH",
+                  season: s.season,
+                  week: Number(wkStr),
+                  ownerId: e.owner_id,
+                  ownerName: rec.name,
+                  pts: e.points,
+                  ptsRank,
+                  lostH2H: false,
+                  wonH2H,
+                  oppName,
+                  oppPts,
+                  note: `6th in Pts (Took Extra L) • ${wonH2H ? `Won H2H vs ${oppName} (1-1 wk)` : "Tied H2H"}`
+                });
+              }
+            }
+
+            if (ptsRank === 2 && lostH2H) {
+              rec.secondAndLossCount += 1;
+              rec.notes.push(`${s.season} W${wkStr}: 2nd in Pts, lost to #1 ${oppName}`);
+              events.push({
+                type: "SECOND_LOST",
+                season: s.season,
+                week: Number(wkStr),
+                ownerId: e.owner_id,
+                ownerName: rec.name,
+                pts: e.points,
+                ptsRank,
+                lostH2H: true,
+                wonH2H: false,
+                oppName,
+                oppPts,
+                note: `2nd in Pts (#1 loser) & Lost H2H to ${oppName} (${e.points.toFixed(2)}–${oppPts.toFixed(2)})`
+              });
+            }
+          }
+        }
+      }
+
+      const rows = Object.values(managerMap).sort(
+        (a, b) =>
+          (b.sixthAndLossCount + b.secondAndLossCount) - (a.sixthAndLossCount + a.secondAndLossCount) ||
+          b.sixthCount - a.sixthCount ||
+          b.fifthCount - a.fifthCount
+      );
+
+      return { rows, events: events.reverse() };
     }
 
     /* ==========================================================================
@@ -2643,27 +3083,34 @@
       document.getElementById("modalInjurySeasonSelect").innerHTML = seasonOpts;
       document.getElementById("luckSeasonFilter").innerHTML = seasonOpts;
 
-      const sortedManagers = Object.values(appData.managers).sort((a, b) => a.name.localeCompare(b.name));
+      populateManagerDropdowns();
+    }
+
+    function populateManagerDropdowns() {
+      const sortedManagers = Object.values(appData.managers)
+        .filter(m => isIncludedTeam(m.user_id))
+        .sort((a, b) => a.name.localeCompare(b.name));
       const managerOpts = sortedManagers.map(m => `<option value="${m.user_id}">${m.name}</option>`).join("");
+      const validIds = new Set(sortedManagers.map(m => m.user_id));
 
-      document.getElementById("h2hManagerSelect").innerHTML = managerOpts;
-      document.getElementById("versusTeamASelect").innerHTML = managerOpts;
-      document.getElementById("versusTeamBSelect").innerHTML = managerOpts;
-      if (sortedManagers.length > 1) {
-        document.getElementById("versusTeamBSelect").selectedIndex = 1;
-      }
+      const applySelect = (id, optsHtml, fallbackIdx = 0, allowAll = false) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const prev = el.value;
+        el.innerHTML = optsHtml;
+        if (prev && ((allowAll && prev === "ALL") || validIds.has(prev))) {
+          el.value = prev;
+        } else if (el.options.length > fallbackIdx) {
+          el.selectedIndex = fallbackIdx;
+        }
+      };
 
-      document.getElementById("modalOwnerASelect").innerHTML = managerOpts;
-      document.getElementById("modalOwnerBSelect").innerHTML =
-        `<option value="ALL">All Trade Partners</option>` + managerOpts;
-      document.getElementById("modalInjuryOwnerSelect").innerHTML = managerOpts;
-
-      document.getElementById("matchupSeasonSelect").innerHTML = [...appData.seasons]
-        .reverse()
-        .map(s => `<option value="${s.season}">${s.season} — ${s.name}</option>`)
-        .join("");
-
-      populateWeekDropdown();
+      applySelect("h2hManagerSelect", managerOpts, 0);
+      applySelect("versusTeamASelect", managerOpts, 0);
+      applySelect("versusTeamBSelect", managerOpts, sortedManagers.length > 1 ? 1 : 0);
+      applySelect("modalOwnerASelect", managerOpts, 0);
+      applySelect("modalOwnerBSelect", `<option value="ALL">All Trade Partners</option>` + managerOpts, 0, true);
+      applySelect("modalInjuryOwnerSelect", managerOpts, 0);
     }
 
     function renderAll() {
@@ -2677,30 +3124,22 @@
       renderLuck();
       renderTwoTeamMatchup();
       renderH2H();
-      renderMatchups();
-    }
-
-    function sortStandings(col) {
-      if (appData.standingsSort.col === col) {
-        appData.standingsSort.dir = appData.standingsSort.dir === "desc" ? "asc" : "desc";
-      } else {
-        appData.standingsSort = { col, dir: col === "name" ? "asc" : "desc" };
-      }
-      renderStandings();
     }
 
     function renderStandings() {
       const filter = document.getElementById("standingsSeasonFilter").value || "ALL";
       const { rows } = computeStatsForSeasons(filter);
-      const { col, dir } = appData.standingsSort;
-      const mult = dir === "desc" ? -1 : 1;
 
-      rows.sort((a, b) => {
-        if (col === "name") return mult * a.name.localeCompare(b.name);
-        return mult * ((a[col] || 0) - (b[col] || 0));
+      // Assign baseline standings rank across all teams before filtering displayed teams
+      const baseline = [...rows].sort((a, b) => b.winPct - a.winPct || b.pf - a.pf);
+      baseline.forEach((r, idx) => { r.rank = idx + 1; });
+
+      const visibleRows = rows.filter(r => isIncludedTeam(r.user_id));
+      const sortedRows = sortRowsGeneric(visibleRows, "standings", {
+        wins: r => r.wins + r.winPct * 0.001
       });
 
-      document.getElementById("standingsBody").innerHTML = rows.map((r, i) => {
+      document.getElementById("standingsBody").innerHTML = sortedRows.map(r => {
         const effBadge = r.efficiencyPct >= 88
           ? "badge-win"
           : r.efficiencyPct < 80
@@ -2708,7 +3147,7 @@
             : "badge-neutral";
         return `
           <tr>
-            <td>${i + 1}</td>
+            <td>${r.rank}</td>
             <td>
               <div class="manager-cell">
                 ${renderAvatar(r)}
@@ -2727,24 +3166,11 @@
       }).join("");
     }
 
-    function sortEfficiency(col) {
-      if (appData.efficiencySort.col === col) {
-        appData.efficiencySort.dir = appData.efficiencySort.dir === "desc" ? "asc" : "desc";
-      } else {
-        appData.efficiencySort = { col, dir: col === "name" ? "asc" : "desc" };
-      }
-      renderEfficiencyCard();
-    }
-
     function renderEfficiencyCard() {
       const filter = document.getElementById("effSeasonFilter").value || "ALL";
-      const { rows } = computeStatsForSeasons(filter);
-      const { col, dir } = appData.efficiencySort;
-      const mult = dir === "desc" ? -1 : 1;
-
-      rows.sort((a, b) => {
-        if (col === "name") return mult * a.name.localeCompare(b.name);
-        return mult * ((a[col] || 0) - (b[col] || 0));
+      const { rows: rawRows } = computeStatsForSeasons(filter);
+      const rows = sortRowsGeneric(rawRows.filter(r => isIncludedTeam(r.user_id)), "efficiency", {
+        worstBenchDiff: r => r.worstBench?.diff || 0
       });
 
       const active = rows.filter(r => r.weeksLogged > 0);
@@ -2792,7 +3218,10 @@
     }
 
     function renderPlayoffHistory() {
-      const rows = computePlayoffHistory();
+      const rawRows = computePlayoffHistory();
+      const rows = sortRowsGeneric(rawRows.filter(r => isIncludedTeam(r.user_id)), "playoffs", {
+        wins: r => r.wins + ((r.wins + r.losses) > 0 ? (r.wins / (r.wins + r.losses)) * 0.001 : 0)
+      });
       document.getElementById("playoffLeaderboardBody").innerHTML = rows.map(r => `
         <tr>
           <td>
@@ -2902,34 +3331,20 @@
       }).join("");
     }
 
-    function sortPositions(col) {
-      if (appData.positionsSort.col === col) {
-        appData.positionsSort.dir = appData.positionsSort.dir === "desc" ? "asc" : "desc";
-      } else {
-        appData.positionsSort = { col, dir: col === "name" ? "asc" : "desc" };
-      }
-      renderPositions();
-    }
-
     function renderPositions() {
       const filter = document.getElementById("posSeasonFilter").value || "ALL";
       const rows = computePositionsAndActivity(filter);
-      const { col, dir } = appData.positionsSort;
-      const mult = dir === "desc" ? -1 : 1;
-
-      const posSorted = [...rows].sort((a, b) => {
-        if (col === "name") return mult * a.name.localeCompare(b.name);
-        return mult * ((a[col] || 0) - (b[col] || 0));
-      });
 
       const POS_KEYS = ["QB", "RB", "WR", "FLEX", "K", "DEF"];
       const leagueAvgs = {};
       for (const k of POS_KEYS) {
-        const activeRows = posSorted.filter(r => r.weeksPlayed > 0);
+        const activeRows = rows.filter(r => r.weeksPlayed > 0);
         leagueAvgs[k] = activeRows.length
           ? activeRows.reduce((sum, r) => sum + r[k], 0) / activeRows.length
           : 0;
       }
+
+      const posSorted = sortRowsGeneric(rows.filter(r => isIncludedTeam(r.user_id)), "positions");
 
       const posHtml = posSorted.map(r => `
         <tr>
@@ -2956,7 +3371,7 @@
     function renderActivityAndWaivers() {
       const filter = document.getElementById("activitySeasonFilter").value || "ALL";
       const rows = computePositionsAndActivity(filter);
-      const actSorted = [...rows].sort((a, b) => (b.tradesCount + b.totalWire) - (a.tradesCount + a.totalWire));
+      const actSorted = sortRowsGeneric(rows.filter(r => isIncludedTeam(r.user_id)), "activity");
 
       document.getElementById("activityBody").innerHTML = actSorted.map(r => `
         <tr class="clickable-row" onclick="openOwnerTradeModal('${r.user_id}', '${r.topPartnerUid || "ALL"}')">
@@ -2978,22 +3393,73 @@
         </tr>
       `).join("");
 
-      const { managerRows, bargains } = computeWaiverBargains(filter);
+      const { managerRows: pickMgrRows, pickTrades } = computeDraftPickTradeAnalysis(filter);
+
+      const stripPickRows = pickMgrRows.filter(r => isIncludedTeam(r.user_id));
+      if (stripPickRows.length > 0) {
+        const topSeller = [...stripPickRows].sort((a, b) => b.sentCount - a.sentCount)[0];
+        const topBuyer = [...stripPickRows].sort((a, b) => b.acqCount - a.acqCount)[0];
+        const bestReturn = [...stripPickRows].filter(r => r.returnStarts > 0).sort((a, b) => b.returnStarterPpg - a.returnStarterPpg)[0];
+        document.getElementById("pickTradeHighlightStrip").innerHTML = `
+          <span class="badge badge-neutral">Most Picks Sent: ${topSeller.name} (${topSeller.sentCount} pick${topSeller.sentCount === 1 ? "" : "s"})</span>
+          <span class="badge badge-gold">Most Picks Acq: ${topBuyer.name} (${topBuyer.acqCount} pick${topBuyer.acqCount === 1 ? "" : "s"})</span>
+          ${bestReturn ? `<span class="badge badge-win">Top Return PPG: ${bestReturn.name} (${bestReturn.returnStarterPpg.toFixed(1)} PPG)</span>` : ""}
+        `;
+      } else {
+        document.getElementById("pickTradeHighlightStrip").innerHTML = "";
+      }
+
+      const visiblePickMgrRows = pickMgrRows.filter(r => isIncludedTeam(r.user_id));
+      const sortedPickMgrRows = sortRowsGeneric(visiblePickMgrRows, "pickTrades", {
+        sentCount: r => r.sentCount + (r.sentPicks.reduce((s, p) => s + (20 - p.round), 0) * 0.001),
+        acqCount: r => r.acqCount + (r.acquiredPicks.reduce((s, p) => s + (20 - p.round), 0) * 0.001)
+      });
+
+      document.getElementById("pickTradeManagerBody").innerHTML = sortedPickMgrRows.length > 0
+        ? sortedPickMgrRows.map(r => {
+            const acqOutcomeTxt = r.acquiredDraftedGames > 0
+              ? `${r.acquiredDraftedPts.toFixed(1)} pts (${r.acqDraftedPpg.toFixed(1)} PPG)`
+              : (r.acqCount > 0 ? "Future / Pending" : "-");
+            return `
+              <tr>
+                <td>
+                  <div class="manager-cell">
+                    ${renderAvatar(r)}
+                    <span class="manager-name">${r.name}</span>
+                  </div>
+                </td>
+                <td style="font-size:12px;">${r.sentRoundsLabel}</td>
+                <td class="num"><strong>${r.returnStarts > 0 ? r.returnStarterPpg.toFixed(1) : "-"}</strong></td>
+                <td class="num">${r.returnStarterPts > 0 ? r.returnStarterPts.toFixed(1) : "-"}</td>
+                <td style="font-size:12px;">${r.acqRoundsLabel}</td>
+                <td style="font-size:12px; color:var(--text-secondary);">${acqOutcomeTxt}</td>
+              </tr>
+            `;
+          }).join("")
+        : `<tr><td colspan="6" style="color:var(--text-secondary);">No draft pick trades recorded for this filter.</td></tr>`;
+
+      const { managerRows: rawWaiverMgrRows, bargains: rawBargains } = computeWaiverBargains(filter);
+      const managerRows = rawWaiverMgrRows.filter(r => isIncludedTeam(r.user_id));
+      const bargains = rawBargains.filter(b => isIncludedTeam(b.ownerId));
 
       if (bargains.length > 0) {
         const topBargain = bargains[0];
-        const freeBargain = bargains.find(b => b.bid === 0) || topBargain;
+        const freeBargain = bargains.find(b => b.type === "free_agent") || topBargain;
         document.getElementById("waiverHighlightStrip").innerHTML = `
           <span class="badge badge-win">Top Wire Producer: ${topBargain.playerLabel} — ${topBargain.starterPts.toFixed(1)} starter pts (${topBargain.ownerName})</span>
-          <span class="badge badge-gold">Best $0 Free Agent: ${freeBargain.playerLabel} — ${freeBargain.starterPts.toFixed(1)} pts (${freeBargain.ownerName})</span>
+          <span class="badge badge-gold">Top Free Agent: ${freeBargain.playerLabel} — ${freeBargain.starterPts.toFixed(1)} pts (${freeBargain.ownerName})</span>
         `;
       } else {
         document.getElementById("waiverHighlightStrip").innerHTML = "";
       }
 
-      document.getElementById("waiverRoiBody").innerHTML = managerRows.map(r => {
+      const sortedWaiverMgrRows = sortRowsGeneric(managerRows, "waiverRoi", {
+        bestPickupPts: r => r.bestPickup ? r.bestPickup.starterPts : -1
+      });
+
+      document.getElementById("waiverRoiBody").innerHTML = sortedWaiverMgrRows.map(r => {
         const bestLabel = r.bestPickup
-          ? `${r.bestPickup.playerLabel} (${r.bestPickup.starterPts.toFixed(1)} pts, $${r.bestPickup.bid})`
+          ? `${r.bestPickup.playerLabel} (${r.bestPickup.starterPts.toFixed(1)} pts)`
           : "-";
         return `
           <tr>
@@ -3003,9 +3469,7 @@
                 <span class="manager-name">${r.name}</span>
               </div>
             </td>
-            <td class="num">$${r.faabSpent}</td>
             <td class="num"><strong>${r.wireStarterPts.toFixed(1)}</strong></td>
-            <td class="num">${r.ptsPerDollar !== null ? r.ptsPerDollar.toFixed(2) : (r.wireStarterPts > 0 ? "∞ ($0)" : "-")}</td>
             <td style="font-size:12px;">${bestLabel}</td>
           </tr>
         `;
@@ -3017,13 +3481,13 @@
               <div>
                 <strong>#${idx + 1} ${b.playerLabel}</strong>
                 <div style="font-size:11px; color:var(--text-secondary);">
-                  Claimed by <strong>${b.ownerName}</strong> • ${b.season} Wk ${b.week} (${b.type === "waiver" ? `$${b.bid} FAAB` : "$0 Free Agent"})
+                  Claimed by <strong>${b.ownerName}</strong> • ${b.season} Wk ${b.week} (${b.type === "waiver" ? "Waiver Claim" : "Free Agent"})
                 </div>
               </div>
               <div style="text-align:right;">
                 <span class="badge badge-win">${b.starterPts.toFixed(1)} starter pts</span>
                 <div style="font-size:10.5px; color:var(--text-secondary); margin-top:2px;">
-                  ${b.starts} start${b.starts === 1 ? "" : "s"}${b.bid > 0 ? ` • ${b.ptsPerDollar.toFixed(1)} pts/$` : ""}
+                  ${b.starts} start${b.starts === 1 ? "" : "s"}
                 </div>
               </div>
             </div>
@@ -3084,15 +3548,11 @@
               .filter(p => p.owner_id === rid)
               .map(p => `${p.season} Rd ${p.round}`);
 
-            const receivedFaab = (tx.waiver_budget || [])
-              .filter(wb => wb.receiver === rid)
-              .reduce((sum, wb) => sum + Number(wb.amount || 0), 0);
-
             const totalStarterPts = receivedPlayers.reduce((sum, p) => sum + p.starterPts, 0);
             if (uid === uidA) totalStarterPtsA += totalStarterPts;
             if (uidB !== "ALL" && uid === uidB) totalStarterPtsB += totalStarterPts;
 
-            return { rid, uid, meta, receivedPlayers, receivedPicks, receivedFaab, totalStarterPts };
+            return { rid, uid, meta, receivedPlayers, receivedPicks, totalStarterPts };
           });
 
           const maxStarterPts = Math.max(...sides.map(side => side.totalStarterPts));
@@ -3124,13 +3584,7 @@
                         <span>+ Pick: ${pk}</span>
                         <span class="asset-pts">Draft Capital</span>
                       </div>
-                    `),
-                    ...(side.receivedFaab > 0 ? [`
-                      <div class="trade-asset">
-                        <span>+ $${side.receivedFaab} FAAB</span>
-                        <span class="asset-pts">Waiver Budget</span>
-                      </div>
-                    `] : [])
+                    `)
                   ].join("") || `<div class="trade-asset"><span>No direct assets logged</span></div>`;
 
                   return `
@@ -3172,19 +3626,10 @@
     /* ==========================================================================
        7. DRAFT ANALYSIS & INJURIES RENDERING + SORTABLE INJURY DETAIL MODAL
        ========================================================================== */
-    function sortDraft(col) {
-      if (appData.draftSort.col === col) {
-        appData.draftSort.dir = appData.draftSort.dir === "desc" ? "asc" : "desc";
-      } else {
-        appData.draftSort = { col, dir: col === "name" ? "asc" : "desc" };
-      }
-      renderDraftAnalysis();
-    }
-
     function renderDraftAnalysis() {
       const filter = document.getElementById("draftSeasonFilter").value || "ALL";
       const {
-        managerRows,
+        managerRows: rawManagerRows,
         roundRows,
         bestDrafted,
         sleepers,
@@ -3192,18 +3637,11 @@
         worstByRoundAllTime
       } = computeDraftAnalysis(filter);
 
-      const { col, dir } = appData.draftSort;
-      const mult = dir === "desc" ? -1 : 1;
-
-      managerRows.sort((a, b) => {
-        if (col === "name") return mult * a.name.localeCompare(b.name);
-        return mult * ((a[col] || 0) - (b[col] || 0));
-      });
+      const managerRows = sortRowsGeneric(rawManagerRows.filter(r => isIncludedTeam(r.user_id)), "draft");
 
       if (managerRows.length === 0) {
         document.getElementById("draftBody").innerHTML =
           `<tr><td colspan="7" style="color:var(--text-secondary);">No draft pick records available for this selection.</td></tr>`;
-        document.getElementById("draftKeptCards").innerHTML = "";
         return;
       }
 
@@ -3238,7 +3676,7 @@
 
       // 1. Worst 1st, 2nd & 3rd Round Picks of All Time (Ignoring Injuries)
       document.getElementById("worstTop3RoundsArea").innerHTML = [1, 2, 3].map(rdNum => {
-        const list = worstByRoundAllTime[rdNum] || [];
+        const list = (worstByRoundAllTime[rdNum] || []).filter(p => isIncludedTeam(p.ownerId));
         const rdLabel = rdNum === 1 ? "1st Round" : rdNum === 2 ? "2nd Round" : "3rd Round";
         if (list.length === 0) return "";
         const worst = list[0];
@@ -3264,25 +3702,34 @@
         `;
       }).join("");
 
-      // 2. Best Drafted Players
-      document.getElementById("bestDraftedPlayersList").innerHTML = bestDrafted.slice(0, 10).map((p, i) => `
-        <div class="versus-game-row">
-          <div>
-            <strong>#${i + 1} ${p.playerName}</strong> <span style="color:var(--text-secondary);">(${p.pos})</span>
-            <div style="font-size:11px; color:var(--text-secondary);">
-              Drafted by <strong>${p.ownerName}</strong> • ${p.season} Rd ${p.round} (#${p.pickNo})
-            </div>
-          </div>
-          <div style="text-align:right;">
-            <span class="badge badge-win">${p.totalPts.toFixed(1)} pts</span>
-            <div style="font-size:10.5px; color:var(--text-secondary); margin-top:2px;">${p.ppg.toFixed(1)} PPG</div>
-          </div>
-        </div>
-      `).join("");
+      // 2. Best Drafted Players (with Position Filter)
+      const bestPosFilter = document.getElementById("bestDraftedPosFilter")?.value || "ALL";
+      const scopedBestDrafted = bestDrafted.filter(p => isIncludedTeam(p.ownerId));
+      const filteredBestDrafted = bestPosFilter === "ALL"
+        ? scopedBestDrafted
+        : scopedBestDrafted.filter(p => p.pos === bestPosFilter);
 
-      // 3. Late-Round Sleeper Picks (Rd 9+, Excl. K & DEF)
+      document.getElementById("bestDraftedPlayersList").innerHTML = filteredBestDrafted.length > 0
+        ? filteredBestDrafted.slice(0, 10).map((p, i) => `
+            <div class="versus-game-row">
+              <div>
+                <strong>#${i + 1} ${p.playerName}</strong> <span style="color:var(--text-secondary);">(${p.pos})</span>
+                <div style="font-size:11px; color:var(--text-secondary);">
+                  Drafted by <strong>${p.ownerName}</strong> • ${p.season} Rd ${p.round} (#${p.pickNo})
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <span class="badge badge-win">${p.totalPts.toFixed(1)} pts</span>
+                <div style="font-size:10.5px; color:var(--text-secondary); margin-top:2px;">${p.ppg.toFixed(1)} PPG</div>
+              </div>
+            </div>
+          `).join("")
+        : `<p style="font-size:13px; color:var(--text-secondary);">No drafted ${bestPosFilter} records found for this selection.</p>`;
+
+      // 3. Late-Round Sleeper Picks (Rd 9+, Excl. QB, K & DEF)
+      const visibleSleepers = sleepers.filter(p => isIncludedTeam(p.ownerId));
       const sleeperCounts = {};
-      sleepers.slice(0, 15).forEach(s => {
+      visibleSleepers.slice(0, 15).forEach(s => {
         sleeperCounts[s.ownerName] = (sleeperCounts[s.ownerName] || 0) + 1;
       });
       const topSleeperHunters = Object.entries(sleeperCounts).sort((a, b) => b[1] - a[1]).slice(0, 3);
@@ -3290,8 +3737,8 @@
         `<span class="badge badge-gold">${name}: ${cnt} top-15 sleeper${cnt === 1 ? "" : "s"}</span>`
       ).join("");
 
-      document.getElementById("lateRoundSleepersList").innerHTML = sleepers.length > 0
-        ? sleepers.slice(0, 10).map((p, i) => `
+      document.getElementById("lateRoundSleepersList").innerHTML = visibleSleepers.length > 0
+        ? visibleSleepers.slice(0, 10).map((p, i) => `
             <div class="versus-game-row">
               <div>
                 <strong>#${i + 1} ${p.playerName}</strong> <span style="color:var(--text-secondary);">(${p.pos})</span>
@@ -3308,8 +3755,9 @@
         : `<p style="font-size:13px; color:var(--text-secondary);">No late-round (Rd 9+) skill position data found.</p>`;
 
       // 4. Terrible Early Selections (Rounds 1–5, Healthy)
-      document.getElementById("terribleEarlyPicksList").innerHTML = terribleEarly.length > 0
-        ? terribleEarly.slice(0, 10).map((p, i) => `
+      const visibleTerribleEarly = terribleEarly.filter(p => isIncludedTeam(p.ownerId));
+      document.getElementById("terribleEarlyPicksList").innerHTML = visibleTerribleEarly.length > 0
+        ? visibleTerribleEarly.slice(0, 10).map((p, i) => `
             <div class="versus-game-row">
               <div>
                 <strong>#${i + 1} ${p.playerName}</strong> <span style="color:var(--text-secondary);">(${p.pos})</span>
@@ -3324,57 +3772,12 @@
             </div>
           `).join("")
         : `<p style="font-size:13px; color:var(--text-secondary);">Not enough completed healthy weeks yet to evaluate early-round busts.</p>`;
-
-      // 5. Average Player Totals per Round
-      document.getElementById("roundAveragesBody").innerHTML = roundRows.map(rr => {
-        const bestTxt = rr.bestPick
-          ? `${rr.bestPick.playerName} (${rr.bestPick.totalPts.toFixed(1)})`
-          : "-";
-        const worstTxt = rr.worstPick
-          ? `${rr.worstPick.playerName} (${rr.worstPick.totalPts.toFixed(1)})`
-          : "-";
-        return `
-          <tr>
-            <td><strong>Round ${rr.round}</strong></td>
-            <td class="num">${rr.count}</td>
-            <td class="num"><strong>${rr.avgPts.toFixed(1)}</strong></td>
-            <td style="font-size:12px; color:var(--win);">${bestTxt}</td>
-            <td style="font-size:12px; color:var(--loss);">${worstTxt}</td>
-          </tr>
-        `;
-      }).join("");
-
-      // 6. Drafted Players Kept at Season End
-      document.getElementById("draftKeptCards").innerHTML = [...managerRows]
-        .sort((a, b) => b.retainedCount - a.retainedCount)
-        .map(r => `
-          <div class="h2h-card" style="flex-direction:column; align-items:flex-start; gap:6px;">
-            <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-              <div class="manager-cell">
-                ${renderAvatar(r)}
-                <span class="manager-name">${r.name}</span>
-              </div>
-              <span class="badge badge-neutral">${r.retainedCount} of ${r.draftedCount} kept</span>
-            </div>
-            <div style="font-size:11px; color:var(--text-secondary); line-height:1.4;">
-              ${r.retainedNames.length > 0 ? r.retainedNames.join(" • ") : "No drafted players remained on final roster."}
-            </div>
-          </div>
-        `).join("");
-    }
-
-    function toggleInjuryLogDir() {
-      appData.injuryLogDir = appData.injuryLogDir === "asc" ? "desc" : "asc";
-      document.getElementById("injuryLogDirBtn").textContent = appData.injuryLogDir === "asc" ? "↑ Asc" : "↓ Desc";
-      renderInjuries();
     }
 
     function renderInjuries() {
       const filter = document.getElementById("injurySeasonFilter").value || "ALL";
-      const logSortBy = document.getElementById("injuryLogSortSelect").value || "round";
-      const { rows, casualtyLog } = computeInjuryAnalysis(filter);
-
-      rows.sort((a, b) => b.seasonEndingCount - a.seasonEndingCount || b.weeksMissed - a.weeksMissed);
+      const { rows: rawRows } = computeInjuryAnalysis(filter);
+      const rows = sortRowsGeneric(rawRows.filter(r => isIncludedTeam(r.user_id)), "injuries");
 
       document.getElementById("injuryBody").innerHTML = rows.map(r => `
         <tr class="clickable-row" onclick="openInjuryModal('${r.user_id}')">
@@ -3396,22 +3799,6 @@
           <td class="num">${r.winPct.toFixed(1)}%</td>
         </tr>
       `).join("");
-
-      const sortedLog = sortCasualtyList(casualtyLog, logSortBy, appData.injuryLogDir);
-
-      document.getElementById("injuryLogList").innerHTML = sortedLog.length > 0
-        ? sortedLog.map(c => `
-            <div class="versus-game-row clickable-row" onclick="openInjuryModal('${c.ownerId}')">
-              <div>
-                <strong>${c.playerName}</strong> <span style="color:var(--text-secondary);">(${c.pos})</span>
-                <div style="font-size:11px; color:var(--text-secondary);">
-                  <strong>${c.ownerName}</strong> • ${c.seasonStr} Rd ${c.round} • Lost Wk ${c.weekLostNum} (${c.weeksLostCount} wks lost)
-                </div>
-              </div>
-              <span class="badge badge-loss">${c.statusTag}</span>
-            </div>
-          `).join("")
-        : `<p style="font-size:13px; color:var(--text-secondary);">No season-ending drafted player injuries detected for this filter.</p>`;
     }
 
     function openInjuryModal(ownerUid) {
@@ -3611,7 +3998,7 @@
 
       const waiverData = computeWaiverBargains("ALL");
       const topWaivers = waiverData.bargains.slice(0, 8).map(b =>
-        `${b.playerLabel} (${b.starterPts.toFixed(1)} starter pts, $${b.bid} bid, ${b.ownerName}, ${b.season} Wk ${b.week})`
+        `${b.playerLabel} (${b.starterPts.toFixed(1)} starter pts, ${b.ownerName}, ${b.season} Wk ${b.week})`
       );
 
       return JSON.stringify({
@@ -3651,18 +4038,18 @@
         const top5 = sleepers.slice(0, 5).map((p, i) =>
           `${i + 1}. ${p.playerName} (${p.pos}) — ${p.totalPts.toFixed(1)} pts (Rd ${p.round}, ${p.ownerName}, ${p.season})`
         ).join("\n");
-        return `Top 5 Late-Round Sleeper Picks (Rd 9+, Excl. K & DEF):\n${top5}`;
+        return `Top 5 Late-Round Sleeper Picks (Rd 9+, Excl. QB, K & DEF):\n${top5}`;
       }
 
       // Waiver bargains / pickups
-      if (q.includes("waiver") || q.includes("bargain") || q.includes("pickup") || q.includes("faab") || q.includes("free agent")) {
+      if (q.includes("waiver") || q.includes("bargain") || q.includes("pickup") || q.includes("free agent")) {
         const { bargains, managerRows } = computeWaiverBargains("ALL");
         if (bargains.length === 0) return "No waiver or free-agent starter points recorded yet.";
         const top5 = bargains.slice(0, 5).map((b, i) =>
-          `${i + 1}. ${b.playerLabel} — ${b.starterPts.toFixed(1)} starter pts (${b.ownerName}, ${b.season} Wk ${b.week}, $${b.bid})`
+          `${i + 1}. ${b.playerLabel} — ${b.starterPts.toFixed(1)} starter pts (${b.ownerName}, ${b.season} Wk ${b.week})`
         ).join("\n");
         const topMgr = managerRows[0];
-        return `Top 5 Waiver Wire & Free-Agent Bargains:\n${top5}\n\nMost Total Wire Starter Points: ${topMgr.name} (${topMgr.wireStarterPts.toFixed(1)} pts on $${topMgr.faabSpent} FAAB).`;
+        return `Top 5 Waiver Wire & Free-Agent Bargains:\n${top5}\n\nMost Total Wire Starter Points: ${topMgr.name} (${topMgr.wireStarterPts.toFixed(1)} pts).`;
       }
 
       // Lineup efficiency / bench points
@@ -3715,7 +4102,9 @@
         for (const s of appData.seasons) {
           for (const [wkStr, entries] of Object.entries(s.matchups_by_week)) {
             for (const e of entries) {
-              if (e.points > 0) teamWeeks.push({ season: s.season, week: wkStr, owner: getManagerMeta(e.owner_id).name, pts: e.points });
+              if (e.points > 0) {
+                teamWeeks.push({ season: s.season, week: wkStr, owner: getManagerMeta(e.owner_id).name, pts: e.points });
+              }
             }
           }
         }
@@ -3762,11 +4151,28 @@
         ).join("\n");
       }
 
+      if (q.includes("pick trade") || q.includes("traded pick") || (q.includes("round") && q.includes("trade"))) {
+        const { managerRows } = computeDraftPickTradeAnalysis("ALL");
+        if (managerRows.length === 0) return "No draft pick trades recorded yet.";
+        return `Draft Pick Trade Summary (All-Time):\n` + managerRows.map((r, i) =>
+          `${i + 1}. ${r.name}: Sent [${r.sentRoundsLabel}] → Got ${r.returnStarterPpg.toFixed(1)} starter PPG (${r.returnStarterPts.toFixed(1)} pts) | Acq [${r.acqRoundsLabel}]`
+        ).join("\n");
+      }
+
+      if (q.includes("5th") || q.includes("6th") || q.includes("2nd") || q.includes("cutoff") || q.includes("median")) {
+        const { rows } = computeWeeklyRankLuck("ALL");
+        return `Weekly Rank Cutoff & Tough-Break Luck (All-Time):\n` + rows.map((r, i) =>
+          `${i + 1}. ${r.name}: 5th (2nd W)=${r.fifthCount}x, 6th (Extra L)=${r.sixthCount}x, 6th+Loss (Extra Unlucky)=${r.sixthAndLossCount}x, 2nd & Lost=${r.secondAndLossCount}x`
+        ).join("\n");
+      }
+
       if (q.includes("luck") || q.includes("all-play") || q.includes("unlucky")) {
         const lk = computeStatsForSeasons("ALL").rows.sort((a, b) => b.luck - a.luck);
+        const { rows: cRows } = computeWeeklyRankLuck("ALL");
+        const topUnlucky = [...cRows].sort((a, b) => (b.sixthAndLossCount + b.secondAndLossCount) - (a.sixthAndLossCount + a.secondAndLossCount))[0];
         return `All-Time Schedule Luck Index (Actual Wins minus All-Play Expected Wins):\n` + lk.map((r, i) =>
           `${i + 1}. ${r.name}: ${r.luck >= 0 ? "+" : ""}${r.luck.toFixed(1)} wins (${r.wins}-${r.losses} actual vs ${(r.apPct * 100).toFixed(1)}% all-play)`
-        ).join("\n");
+        ).join("\n") + (topUnlucky ? `\n\nMost Tough-Break Weeks (6th+Loss / 2nd&Lost): ${topUnlucky.name} (${topUnlucky.sixthAndLossCount}x 6th+Loss Extra Unlucky, ${topUnlucky.secondAndLossCount}x 2nd & Lost)` : "");
       }
 
       return `I can answer questions about player highs by position (QB, RB, WR, TE, K, DEF), worst 1st/2nd/3rd round picks, late-round sleepers, waiver wire bargains, lineup efficiency & bench points left, championships, trades, injuries/IR, and schedule luck.\n\nTip: Tap "🔑 Key" above if you want to connect a free Gemini key for open-ended questions.`;
@@ -3822,8 +4228,12 @@
        ========================================================================== */
     function renderLuck() {
       const filter = document.getElementById("luckSeasonFilter").value || "ALL";
-      const { rows } = computeStatsForSeasons(filter);
-      rows.sort((a, b) => b.luck - a.luck);
+      const { rows: rawRows } = computeStatsForSeasons(filter);
+      const rows = sortRowsGeneric(rawRows.filter(r => isIncludedTeam(r.user_id)), "luck", {
+        wins: r => r.wins + r.winPct * 0.001,
+        apWins: r => r.apWins + r.apPct * 0.001,
+        luckBar: r => r.luck
+      });
       const maxAbsLuck = Math.max(1, ...rows.map(r => Math.abs(r.luck)));
 
       document.getElementById("luckBody").innerHTML = rows.map(r => {
@@ -3854,6 +4264,51 @@
           </tr>
         `;
       }).join("");
+
+      // Render 5th/6th Cutoff & Tough-Break Luck (computed across all teams, filtered for display)
+      const { rows: rawCutoffRows } = computeWeeklyRankLuck(filter);
+      const cutoffRows = rawCutoffRows.filter(r => isIncludedTeam(r.user_id));
+
+      if (cutoffRows.length > 0) {
+        const most5th = [...cutoffRows].sort((a, b) => b.fifthCount - a.fifthCount)[0];
+        const most6th = [...cutoffRows].sort((a, b) => b.sixthCount - a.sixthCount)[0];
+        const mostExtraUnlucky = [...cutoffRows].sort((a, b) => b.sixthAndLossCount - a.sixthAndLossCount)[0];
+        const most2ndLost = [...cutoffRows].sort((a, b) => b.secondAndLossCount - a.secondAndLossCount)[0];
+
+        document.getElementById("cutoffLuckHighlightStrip").innerHTML = `
+          ${most5th.fifthCount > 0 ? `<span class="badge badge-win">Most 5th (Clutch 2nd W): ${most5th.name} (${most5th.fifthCount}x)</span>` : ""}
+          ${most6th.sixthCount > 0 ? `<span class="badge badge-neutral">Most 6th (Extra L): ${most6th.name} (${most6th.sixthCount}x)</span>` : ""}
+          ${mostExtraUnlucky.sixthAndLossCount > 0 ? `<span class="badge badge-loss">Extra Unlucky (6th + Loss): ${mostExtraUnlucky.name} (${mostExtraUnlucky.sixthAndLossCount}x)</span>` : ""}
+          ${most2ndLost.secondAndLossCount > 0 ? `<span class="badge badge-loss">2nd in Pts &amp; Lost: ${most2ndLost.name} (${most2ndLost.secondAndLossCount}x)</span>` : ""}
+        `;
+      } else {
+        document.getElementById("cutoffLuckHighlightStrip").innerHTML = "";
+      }
+
+      const sortedCutoffRows = sortRowsGeneric(cutoffRows, "cutoffLuck");
+
+      document.getElementById("cutoffLuckBody").innerHTML = sortedCutoffRows.map(r => `
+        <tr>
+          <td>
+            <div class="manager-cell">
+              ${renderAvatar(r)}
+              <span class="manager-name">${r.name}</span>
+            </div>
+          </td>
+          <td class="num"><span class="badge ${r.fifthCount > 0 ? "badge-win" : "badge-neutral"}">${r.fifthCount}</span></td>
+          <td class="num"><span class="badge badge-neutral">${r.sixthCount}</span></td>
+          <td class="num">
+            ${r.sixthAndLossCount > 0
+              ? `<span class="badge badge-loss">${r.sixthAndLossCount} (Extra Unlucky)</span>`
+              : `<span class="badge badge-neutral">0</span>`}
+          </td>
+          <td class="num">
+            ${r.secondAndLossCount > 0
+              ? `<span class="badge badge-loss">${r.secondAndLossCount}</span>`
+              : `<span class="badge badge-neutral">0</span>`}
+          </td>
+        </tr>
+      `).join("");
     }
 
     function renderTwoTeamMatchup() {
@@ -4020,7 +4475,9 @@
         }
       }
 
-      const list = Object.values(rivals).sort((a, b) => (b.wins + b.losses) - (a.wins + a.losses));
+      const list = Object.values(rivals)
+        .filter(r => isIncludedTeam(r.oppId))
+        .sort((a, b) => (b.wins + b.losses) - (a.wins + a.losses));
       if (list.length === 0) {
         document.getElementById("h2hGrid").innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">No games found for this filter.</p>`;
         return;
@@ -4048,77 +4505,6 @@
               <div style="font-size:11px; color:var(--text-secondary); margin-top:3px;">
                 ${r.pf.toFixed(0)} – ${r.pa.toFixed(0)}
               </div>
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function populateWeekDropdown() {
-      const seasonYear = document.getElementById("matchupSeasonSelect").value;
-      const seasonObj = appData.seasons.find(s => s.season === seasonYear);
-      if (!seasonObj) return;
-
-      const weeks = Object.keys(seasonObj.matchups_by_week).sort((a, b) => Number(b) - Number(a));
-      document.getElementById("matchupWeekSelect").innerHTML = weeks
-        .map(w => `<option value="${w}">Week ${w}${Number(w) >= seasonObj.playoff_week_start ? " (Playoffs)" : ""}</option>`)
-        .join("");
-
-      renderMatchups();
-    }
-
-    function renderMatchups() {
-      const seasonYear = document.getElementById("matchupSeasonSelect").value;
-      const weekStr = document.getElementById("matchupWeekSelect").value;
-      const seasonObj = appData.seasons.find(s => s.season === seasonYear);
-      const entries = seasonObj?.matchups_by_week?.[weekStr] || [];
-
-      if (entries.length === 0) {
-        document.getElementById("matchupsList").innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">No matchup data for this week.</p>`;
-        return;
-      }
-
-      const active = entries.filter(e => e.matchup_id !== null && e.matchup_id !== undefined);
-      const sortedByPts = [...active].sort((a, b) => b.points - a.points);
-      const topTeam = sortedByPts[0];
-      const lowTeam = sortedByPts[sortedByPts.length - 1];
-
-      document.getElementById("weekSummaryStrip").innerHTML = topTeam ? `
-        <span class="badge badge-win">High: ${getManagerMeta(topTeam.owner_id).name} (${topTeam.points.toFixed(2)})</span>
-        <span class="badge badge-loss">Low: ${getManagerMeta(lowTeam.owner_id).name} (${lowTeam.points.toFixed(2)})</span>
-      ` : "";
-
-      const grouped = {};
-      for (const e of active) {
-        if (!grouped[e.matchup_id]) grouped[e.matchup_id] = [];
-        grouped[e.matchup_id].push(e);
-      }
-
-      document.getElementById("matchupsList").innerHTML = Object.entries(grouped).map(([mid, pair]) => {
-        const [t1, t2] = pair;
-        if (!t2) {
-          const m1 = getManagerMeta(t1.owner_id);
-          return `<div class="matchup-card"><strong>${m1.name}</strong> — Bye Week (${t1.points.toFixed(2)} pts)</div>`;
-        }
-        const m1 = getManagerMeta(t1.owner_id);
-        const m2 = getManagerMeta(t2.owner_id);
-        const t1Win = t1.points > t2.points;
-        const t2Win = t2.points > t1.points;
-        const margin = Math.abs(t1.points - t2.points).toFixed(2);
-
-        return `
-          <div class="matchup-card">
-            <div class="matchup-row ${t1Win ? "winner" : ""}">
-              <div class="manager-cell">${renderAvatar(m1)}<span class="m-team">${m1.name}</span></div>
-              <div class="m-score">${t1.points.toFixed(2)}</div>
-            </div>
-            <div class="matchup-row ${t2Win ? "winner" : ""}">
-              <div class="manager-cell">${renderAvatar(m2)}<span class="m-team">${m2.name}</span></div>
-              <div class="m-score">${t2.points.toFixed(2)}</div>
-            </div>
-            <div class="matchup-meta">
-              <span>Matchup #${mid}</span>
-              <span>Margin: ${margin} pts</span>
             </div>
           </div>
         `;
