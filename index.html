@@ -122,6 +122,41 @@
       max-width: 940px;
       margin: 0 auto;
       padding: 12px;
+      overflow-x: clip;
+    }
+
+    .tab-panel {
+      will-change: transform, opacity;
+    }
+
+    @keyframes tabSlideInFromRight {
+      from {
+        opacity: 0.25;
+        transform: translateX(46px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes tabSlideInFromLeft {
+      from {
+        opacity: 0.25;
+        transform: translateX(-46px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .tab-enter-right {
+      animation: tabSlideInFromRight 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .tab-enter-left {
+      animation: tabSlideInFromLeft 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
     .card {
@@ -756,10 +791,11 @@
     }
 
     .nav-btn {
+      position: relative;
       flex: 1 0 64px;
       background: none;
       border: none;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -769,11 +805,28 @@
       font-weight: 600;
       cursor: pointer;
       padding: 0 4px;
+      transition: color 0.18s ease, background-color 0.18s ease;
+    }
+
+    .nav-btn::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 26%;
+      right: 26%;
+      height: 2px;
+      border-radius: 0 0 2px 2px;
+      background: transparent;
+      transition: background-color 0.18s ease;
     }
 
     .nav-btn.active {
-      color: var(--accent);
-      background: var(--bg-subtle);
+      color: var(--text-primary);
+      background: rgba(99, 164, 219, 0.07);
+    }
+
+    .nav-btn.active::before {
+      background: rgba(99, 164, 219, 0.5);
     }
 
     .nav-icon {
@@ -4514,11 +4567,49 @@
     /* ==========================================================================
        10. TAB NAVIGATION, EDGE-AWARE SWIPE & STATUS HELPERS
        ========================================================================== */
-    function switchTab(tabName) {
+    function getTabOrder() {
+      return Array.from(document.querySelectorAll(".bottom-nav .nav-btn[data-tab]"))
+        .map(btn => btn.dataset.tab);
+    }
+
+    function getActiveTabPanel() {
+      return document.querySelector(".tab-panel:not(.hidden)");
+    }
+
+    function switchTab(tabName, direction = null) {
       const targetPanel = document.getElementById(`tab-${tabName}`);
       if (!targetPanel) return;
-      document.querySelectorAll(".tab-panel").forEach(el => el.classList.add("hidden"));
+
+      const tabOrder = getTabOrder();
+      const activeBtn = document.querySelector(".bottom-nav .nav-btn.active");
+      const prevTab = activeBtn ? activeBtn.dataset.tab : null;
+      if (prevTab === tabName) return;
+
+      if (!direction && prevTab) {
+        const prevIdx = tabOrder.indexOf(prevTab);
+        const nextIdx = tabOrder.indexOf(tabName);
+        if (prevIdx !== -1 && nextIdx !== -1) {
+          direction = nextIdx > prevIdx ? "left" : "right";
+        }
+      }
+
+      document.querySelectorAll(".tab-panel").forEach(el => {
+        el.classList.add("hidden");
+        el.classList.remove("tab-enter-right", "tab-enter-left");
+        el.style.transform = "";
+        el.style.opacity = "";
+        el.style.transition = "";
+      });
+
       targetPanel.classList.remove("hidden");
+      if (direction === "left") {
+        void targetPanel.offsetWidth;
+        targetPanel.classList.add("tab-enter-right");
+      } else if (direction === "right") {
+        void targetPanel.offsetWidth;
+        targetPanel.classList.add("tab-enter-left");
+      }
+
       document.querySelectorAll(".nav-btn").forEach(btn => {
         const isActive = btn.dataset.tab === tabName;
         btn.classList.toggle("active", isActive);
@@ -4553,6 +4644,31 @@
         });
       }
 
+      function canSwipeDirection(scroller, startScrollLeft, dx) {
+        if (!scroller || scroller.scrollWidth <= scroller.clientWidth + 2) return true;
+        const maxScroll = scroller.scrollWidth - scroller.clientWidth;
+        const edgeTolerance = 4;
+        if (dx < 0) {
+          return startScrollLeft >= maxScroll - edgeTolerance && scroller.scrollLeft >= maxScroll - edgeTolerance;
+        } else {
+          return startScrollLeft <= edgeTolerance && scroller.scrollLeft <= edgeTolerance;
+        }
+      }
+
+      function resetPanelDrag(panel) {
+        if (!panel) return;
+        panel.style.transition = "transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease";
+        panel.style.transform = "translateX(0px)";
+        panel.style.opacity = "1";
+        setTimeout(() => {
+          if (panel) {
+            panel.style.transition = "";
+            panel.style.transform = "";
+            panel.style.opacity = "";
+          }
+        }, 230);
+      }
+
       document.addEventListener("touchstart", (e) => {
         if (e.touches.length !== 1 || isOverlayOpen()) {
           touchState = null;
@@ -4565,55 +4681,81 @@
         }
         const t = e.touches[0];
         const scroller = findHorizontalScroller(target);
+        const panel = getActiveTabPanel();
+        if (panel) {
+          panel.classList.remove("tab-enter-right", "tab-enter-left");
+          panel.style.transition = "none";
+        }
         touchState = {
           startX: t.clientX,
           startY: t.clientY,
           scroller,
-          startScrollLeft: scroller ? scroller.scrollLeft : 0
+          startScrollLeft: scroller ? scroller.scrollLeft : 0,
+          panel,
+          draggingTab: false
         };
+      }, { passive: true });
+
+      document.addEventListener("touchmove", (e) => {
+        if (!touchState || e.touches.length !== 1 || isOverlayOpen()) return;
+        const t = e.touches[0];
+        const dx = t.clientX - touchState.startX;
+        const dy = t.clientY - touchState.startY;
+
+        if (!touchState.draggingTab) {
+          if (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+          if (!canSwipeDirection(touchState.scroller, touchState.startScrollLeft, dx)) return;
+          touchState.draggingTab = true;
+        }
+
+        if (touchState.panel && canSwipeDirection(touchState.scroller, touchState.startScrollLeft, dx)) {
+          const tabOrder = getTabOrder();
+          const activeBtn = document.querySelector(".bottom-nav .nav-btn.active");
+          const currentIdx = activeBtn ? tabOrder.indexOf(activeBtn.dataset.tab) : 0;
+          const hasNext = dx < 0 ? currentIdx < tabOrder.length - 1 : currentIdx > 0;
+          const dampedDx = hasNext ? dx * 0.45 : dx * 0.16;
+          const fade = hasNext ? Math.max(0.55, 1 - Math.abs(dx) / 360) : 0.92;
+          touchState.panel.style.transform = `translateX(${dampedDx}px)`;
+          touchState.panel.style.opacity = String(fade);
+        }
       }, { passive: true });
 
       document.addEventListener("touchend", (e) => {
         if (!touchState || e.changedTouches.length !== 1 || isOverlayOpen()) {
+          if (touchState?.panel) resetPanelDrag(touchState.panel);
           touchState = null;
           return;
         }
         const t = e.changedTouches[0];
         const dx = t.clientX - touchState.startX;
         const dy = t.clientY - touchState.startY;
-        const { scroller, startScrollLeft } = touchState;
+        const { scroller, startScrollLeft, panel } = touchState;
         touchState = null;
 
-        // Require an intentional horizontal swipe
-        if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-
-        // If inside a horizontally scrollable table/container, only change tabs once fully at that edge
-        if (scroller && scroller.scrollWidth > scroller.clientWidth + 2) {
-          const maxScroll = scroller.scrollWidth - scroller.clientWidth;
-          const edgeTolerance = 4;
-          if (dx < 0) {
-            // Swiping left -> next tab: must already be fully scrolled right
-            const startedAtRight = startScrollLeft >= maxScroll - edgeTolerance;
-            const endedAtRight = scroller.scrollLeft >= maxScroll - edgeTolerance;
-            if (!startedAtRight || !endedAtRight) return;
-          } else {
-            // Swiping right -> previous tab: must already be fully scrolled left
-            const startedAtLeft = startScrollLeft <= edgeTolerance;
-            const endedAtLeft = scroller.scrollLeft <= edgeTolerance;
-            if (!startedAtLeft || !endedAtLeft) return;
-          }
+        if (Math.abs(dx) < 58 || Math.abs(dx) < Math.abs(dy) * 1.4 || !canSwipeDirection(scroller, startScrollLeft, dx)) {
+          resetPanelDrag(panel);
+          return;
         }
 
-        const tabOrder = Array.from(document.querySelectorAll(".bottom-nav .nav-btn[data-tab]"))
-          .map(btn => btn.dataset.tab);
+        const tabOrder = getTabOrder();
         const activeBtn = document.querySelector(".bottom-nav .nav-btn.active");
         const currentIdx = activeBtn ? tabOrder.indexOf(activeBtn.dataset.tab) : 0;
-        if (currentIdx === -1) return;
+        if (currentIdx === -1) {
+          resetPanelDrag(panel);
+          return;
+        }
 
         const nextIdx = dx < 0 ? currentIdx + 1 : currentIdx - 1;
         if (nextIdx >= 0 && nextIdx < tabOrder.length) {
-          switchTab(tabOrder[nextIdx]);
+          switchTab(tabOrder[nextIdx], dx < 0 ? "left" : "right");
+        } else {
+          resetPanelDrag(panel);
         }
+      }, { passive: true });
+
+      document.addEventListener("touchcancel", () => {
+        if (touchState?.panel) resetPanelDrag(touchState.panel);
+        touchState = null;
       }, { passive: true });
     })();
 
