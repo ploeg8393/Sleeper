@@ -898,11 +898,30 @@
       color: var(--text-primary);
     }
 
+    .waiver-player-link {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(99, 164, 219, 0.55);
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .waiver-player-link:hover {
+      color: var(--accent);
+      border-bottom-style: solid;
+      border-bottom-color: var(--accent);
+    }
+
     .waiver-player-name.taken {
       color: var(--text-muted);
       text-decoration: line-through;
       text-decoration-thickness: 1.5px;
       opacity: 0.78;
+    }
+
+    .waiver-player-name.taken .waiver-player-link {
+      border-bottom-color: transparent;
+      text-decoration: line-through;
+      text-decoration-thickness: 1.5px;
     }
 
     .waiver-subtext {
@@ -1575,8 +1594,8 @@
     const HARDCODED_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     const ARCHIVE_CACHE_KEY = "sleeper_vault_seasons_cache_v6";
-    const PLAYERS_CACHE_KEY = "sleeper_vault_players_compact_v3";
-    const PLAYERS_TS_KEY = "sleeper_vault_players_ts_v3";
+    const PLAYERS_CACHE_KEY = "sleeper_vault_players_compact_v4";
+    const PLAYERS_TS_KEY = "sleeper_vault_players_ts_v4";
     const GEMINI_KEY_STORAGE = "sleeper_vault_gemini_api_key";
 
     let appData = {
@@ -1753,7 +1772,8 @@
           compact[pid] = {
             n: name,
             p: p.position,
-            inj: p.injury_status || null
+            inj: p.injury_status || null,
+            eid: p.espn_id ? String(p.espn_id) : null
           };
         }
         appData.players = compact;
@@ -4974,6 +4994,23 @@
         .replace(/[^a-z0-9]/g, "");
     }
 
+    function slugifyPlayerName(name) {
+      return String(name || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    }
+
+    function getPlayerExternalUrl(pid, name) {
+      const entry = pid ? appData.players[pid] : null;
+      const espnId = (entry && typeof entry === "object" && entry.eid) ? entry.eid : null;
+      if (espnId) {
+        const slug = slugifyPlayerName(name);
+        return `https://www.espn.com/nfl/player/_/id/${encodeURIComponent(espnId)}${slug ? `/${slug}` : ""}`;
+      }
+      return `https://www.espn.com/search/_/q/${encodeURIComponent(name || "")}`;
+    }
+
     function isWaiverUnlocked() {
       return sessionStorage.getItem(WAIVER_SESSION_KEY) === "1";
     }
@@ -5106,6 +5143,15 @@
       const sourceFilter = document.getElementById("waiverSourceFilter")?.value || "ALL";
 
       const { ownerByPid, ownerByNormName, sleeperTrending } = appData.waiverIntel;
+      const pidByNormName = {};
+      for (const [pid, pObj] of Object.entries(appData.players)) {
+        const pName = typeof pObj === "string" ? pObj : pObj.n;
+        const norm = normalizePlayerNameKey(pName);
+        if (norm && !pidByNormName[norm]) {
+          pidByNormName[norm] = pid;
+        }
+      }
+
       const mergedMap = new Map();
 
       // 1. Seed with The Fantasy Footballers & FantasyPros picks
@@ -5116,7 +5162,7 @@
         if (item.fpRank) score += Math.max(12, 36 - item.fpRank * 3);
 
         mergedMap.set(norm, {
-          pid: null,
+          pid: pidByNormName[norm] || null,
           name: item.name,
           pos: item.pos,
           team: item.team,
@@ -5219,12 +5265,14 @@
           ? `<span class="badge badge-neutral" style="opacity:0.85;">Taken • ${c.takenBy}</span>`
           : `<span class="badge badge-win">Available</span>`;
 
+        const playerUrl = getPlayerExternalUrl(c.pid, c.name);
+
         return `
           <div class="waiver-item-row ${c.isTaken ? "taken" : ""}">
             <div style="min-width:0; flex:1;">
               <div>
                 <span class="waiver-player-name ${c.isTaken ? "taken" : ""}">
-                  #${idx + 1} ${c.name}
+                  #${idx + 1} <a class="waiver-player-link" href="${playerUrl}" target="_blank" rel="noopener noreferrer">${c.name}</a>
                 </span>
                 <span style="font-size:11.5px; color:var(--text-secondary); margin-left:4px;">
                   (${c.pos}${c.team ? ` • ${c.team}` : ""})
