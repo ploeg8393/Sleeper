@@ -858,6 +858,79 @@
       margin-bottom: 12px;
     }
 
+    /* Password Gate & Waiver Wire Page */
+    .pw-gate-box {
+      max-width: 360px;
+      margin: 28px auto;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 22px 18px;
+      text-align: center;
+    }
+
+    .pw-gate-icon {
+      font-size: 30px;
+      margin-bottom: 8px;
+    }
+
+    .waiver-item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 9px 10px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 7px;
+      gap: 10px;
+      transition: opacity 0.15s ease;
+    }
+
+    .waiver-item-row.taken {
+      background: rgba(31, 36, 43, 0.55);
+      border-color: var(--border);
+    }
+
+    .waiver-player-name {
+      font-weight: 700;
+      font-size: 13.5px;
+      color: var(--text-primary);
+    }
+
+    .waiver-player-name.taken {
+      color: var(--text-muted);
+      text-decoration: line-through;
+      text-decoration-thickness: 1.5px;
+      opacity: 0.78;
+    }
+
+    .waiver-subtext {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      line-height: 1.35;
+    }
+
+    .waiver-item-row.taken .waiver-subtext {
+      color: var(--text-muted);
+      opacity: 0.78;
+    }
+
+    .src-pill {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      margin-right: 4px;
+      margin-top: 4px;
+    }
+
+    .src-ffb { background: rgba(99, 164, 219, 0.16); color: #7db8ea; border: 1px solid rgba(99, 164, 219, 0.35); }
+    .src-fp { background: rgba(224, 179, 84, 0.16); color: #e0b354; border: 1px solid rgba(224, 179, 84, 0.35); }
+    .src-sleeper { background: rgba(76, 195, 138, 0.16); color: #4cc38a; border: 1px solid rgba(76, 195, 138, 0.35); }
+
     .hidden { display: none !important; }
   </style>
 </head>
@@ -1284,6 +1357,70 @@
         </div>
       </section>
 
+      <!-- TAB 9: PASSWORD-PROTECTED WAIVER WIRE TARGETS -->
+      <section id="tab-waivers" class="tab-panel hidden">
+        <!-- Password Gate -->
+        <div id="waiverLockGate" class="pw-gate-box">
+          <div class="pw-gate-icon">🔒</div>
+          <div class="card-title" style="margin-bottom:4px;">Protected Waiver Intel</div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px;">
+            Enter the 4-digit passcode to view this week's consensus waiver wire targets.
+          </p>
+          <div style="display:flex; gap:8px; justify-content:center;">
+            <input type="password" id="waiverPwInput" inputmode="numeric" maxlength="12" placeholder="Password"
+              style="width:150px; text-align:center; letter-spacing:0.15em;"
+              onkeydown="if(event.key==='Enter') unlockWaiverTab()" />
+            <button class="btn-primary" onclick="unlockWaiverTab()">Unlock</button>
+          </div>
+          <div id="waiverPwError" class="hidden" style="color:var(--loss); font-size:12px; font-weight:600; margin-top:10px;">
+            Incorrect password. Try again.
+          </div>
+        </div>
+
+        <!-- Unlocked Content -->
+        <div id="waiverUnlockedContent" class="hidden">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">This Week's Best Waiver Options</div>
+                <div style="font-size:11px; color:var(--text-secondary);" id="waiverIntelSubtitle">
+                  Combined from The Fantasy Footballers, FantasyPros &amp; Live Sleeper Trending
+                </div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button class="btn-icon" onclick="refreshWaiverWireIntel(true)" title="Refresh live Sleeper rosters & trending adds">↻ Sync</button>
+                <button class="btn-icon" onclick="lockWaiverTab()" title="Lock page">🔒 Lock</button>
+              </div>
+            </div>
+
+            <div class="controls-row">
+              <select id="waiverPosFilter" onchange="renderWaiverWireIntel()">
+                <option value="ALL">All Positions</option>
+                <option value="RB">RB</option>
+                <option value="WR">WR</option>
+                <option value="TE">TE</option>
+                <option value="QB">QB</option>
+                <option value="DEF">DEF</option>
+              </select>
+              <select id="waiverAvailFilter" onchange="renderWaiverWireIntel()">
+                <option value="ALL">Show All (Taken Struck Out)</option>
+                <option value="AVAILABLE">Available Only</option>
+              </select>
+              <select id="waiverSourceFilter" class="grow" onchange="renderWaiverWireIntel()">
+                <option value="ALL">All Sources (Consensus)</option>
+                <option value="MULTI">Multi-Source Consensus (2+)</option>
+                <option value="FFB">The Fantasy Footballers</option>
+                <option value="FP">FantasyPros</option>
+                <option value="SLEEPER">Sleeper Trending</option>
+              </select>
+            </div>
+
+            <div id="waiverIntelSummaryStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+            <div id="waiverIntelList"></div>
+          </div>
+        </div>
+      </section>
+
     </div>
   </main>
 
@@ -1425,6 +1562,10 @@
       <span class="nav-icon">⚔️</span>
       <span>H2H</span>
     </button>
+    <button class="nav-btn" data-tab="waivers" onclick="switchTab('waivers')">
+      <span class="nav-icon" id="waiverNavIcon">🔒</span>
+      <span>Waivers</span>
+    </button>
   </nav>
 
   <script>
@@ -1457,7 +1598,14 @@
         luck: { col: "luck", dir: "desc" },
         cutoffLuck: { col: "sixthAndLossCount", dir: "desc" }
       },
-      modalInjuryDir: "asc"
+      modalInjuryDir: "asc",
+      waiverIntel: {
+        liveRostersLoaded: false,
+        ownerByPid: {},
+        ownerByNormName: {},
+        sleeperTrending: [],
+        trendingLoaded: false
+      }
     };
 
     const TEXT_SORT_COLS = new Set(["name", "topPartnerLabel"]);
@@ -1895,6 +2043,9 @@
         updateAiModeBadge();
         populateFilters();
         renderAll();
+        if (isWaiverUnlocked()) {
+          refreshWaiverWireIntel(false);
+        }
 
         showStatus(
           `Synced ${seasons.length} season(s) at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
@@ -4617,6 +4768,10 @@
           btn.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
         }
       });
+
+      if (tabName === "waivers") {
+        syncWaiverGateUI();
+      }
     }
 
     (function initSwipeTabNavigation() {
@@ -4778,7 +4933,316 @@
       document.getElementById("errorBanner").classList.add("hidden");
     }
 
+    /* ==========================================================================
+       11. PASSWORD-PROTECTED WAIVER WIRE INTEL (FFB + FANTASYPROS + SLEEPER)
+       ========================================================================== */
+    const WAIVER_PASSCODE = "1235";
+    const WAIVER_SESSION_KEY = "sleeper_vault_waivers_unlocked_v1";
+
+    const EXPERT_WAIVER_TARGETS = [
+      { name: "Antonio Williams", pos: "WR", team: "WAS", ffbRank: 1, fpRank: 1, note: "9-122 on 11 targets; stepping into top WR volume after Terry McLaurin injury (vs ARI / TEN / HOU)." },
+      { name: "Chris Rodriguez Jr.", pos: "RB", team: "JAX", ffbRank: 2, fpRank: 3, note: "Heavy home favorite vs TEN with strong early-down and goal-line carry share." },
+      { name: "Kaelon Black", pos: "RB", team: "SF", ffbRank: 10, fpRank: 2, note: "Premier league-winning handcuff behind Christian McCaffrey in Kyle Shanahan's offense." },
+      { name: "Omar Cooper Jr.", pos: "WR", team: "NYJ", ffbRank: 6, fpRank: 5, note: "High-upside rookie WR dropped during byes; big-play ceiling vs MIA." },
+      { name: "Jack Bech", pos: "WR", team: "LV", ffbRank: 3, fpRank: null, note: "Top-3 Fantasy Footballers WR target with steady slot/intermediate volume (@ CLE)." },
+      { name: "Adonai Mitchell", pos: "WR", team: "NYJ", ffbRank: 4, fpRank: null, note: "Expanding perimeter target share and vertical upside (@ MIA)." },
+      { name: "Ted Hurst III", pos: "WR", team: "TB", ffbRank: 5, fpRank: null, note: "64% snap share with red-zone size advantage vs CAR." },
+      { name: "Caleb Douglas", pos: "WR", team: "MIA", ffbRank: null, fpRank: 4, note: "Commanded a 30.3% target share last game; favorable matchup vs NYJ." },
+      { name: "Jonah Coleman", pos: "RB", team: "DEN", ffbRank: 1, fpRank: 6, note: "85% snap share backfield takeover in Denver, relegating J.K. Dobbins." },
+      { name: "Kenny Gainwell", pos: "RB", team: "TB", ffbRank: 9, fpRank: null, note: "PPR receiving-down & change-of-pace flex value vs CAR." },
+      { name: "Malachi Fields", pos: "WR", team: "BUF", ffbRank: 7, fpRank: null, note: "87% snap share near-every-down role on a playoff contender." },
+      { name: "Roman Wilson", pos: "WR", team: "PIT", ffbRank: 11, fpRank: null, note: "Growing target share in Pittsburgh's passing attack vs DEN." },
+      { name: "Jauan Jennings", pos: "WR", team: "MIN", ffbRank: 14, fpRank: null, note: "Reliable third-down and red-zone target vs ATL." },
+      { name: "Konata Mumpfield", pos: "WR", team: "LAR", ffbRank: 15, fpRank: null, note: "Elevated receiver snaps in Los Angeles' passing game vs GB." },
+      { name: "Xavier Hutchinson", pos: "WR", team: "HOU", ffbRank: 24, fpRank: null, note: "Deep-league flex stash vs BAL." },
+      { name: "Bam Knight", pos: "RB", team: "ARI", ffbRank: 23, fpRank: null, note: "Rotational backfield touch share vs WAS." },
+      { name: "Samaje Perine", pos: "RB", team: "CIN", ffbRank: 26, fpRank: null, note: "Passing-down RB in high-scoring Cincinnati offense vs NO." },
+      { name: "Jacory Croskey-Merritt", pos: "RB", team: "WAS", ffbRank: 8, fpRank: null, note: "Scored TD in return from injury; red-zone backfield role." },
+      { name: "Dawson Knox", pos: "TE", team: "BUF", ffbRank: 20, fpRank: null, note: "Red-zone TE streamer in high-total matchup vs KC." },
+      { name: "Pat Freiermuth", pos: "TE", team: "PIT", ffbRank: 21, fpRank: null, note: "Steady PPR tight end floor vs DEN." },
+      { name: "Mike Gesicki", pos: "TE", team: "CIN", ffbRank: 25, fpRank: null, note: "Coming off team-high receiving yardage; faces NO." },
+      { name: "Chig Okonkwo", pos: "TE", team: "TEN", ffbRank: 16, fpRank: null, note: "Productive TE streamer with 4+ catches per week." },
+      { name: "Fernando Mendoza", pos: "QB", team: "LV", ffbRank: 12, fpRank: null, note: "Coming off 20+ fantasy points; streaming QB upside @ CLE." },
+      { name: "Anthony Richardson Sr.", pos: "QB", team: "IND", ffbRank: 19, fpRank: null, note: "High-ceiling rushing QB streamer vs NYG." },
+      { name: "Geno Smith", pos: "QB", team: "NYJ", ffbRank: 27, fpRank: null, note: "Viable QB streamer in favorable matchup @ MIA." }
+    ];
+
+    function normalizePlayerNameKey(name) {
+      return String(name || "")
+        .toLowerCase()
+        .replace(/(jr|sr|ii|iii|iv|v)/g, "")
+        .replace(/[^a-z0-9]/g, "");
+    }
+
+    function isWaiverUnlocked() {
+      return sessionStorage.getItem(WAIVER_SESSION_KEY) === "1";
+    }
+
+    function syncWaiverGateUI() {
+      const unlocked = isWaiverUnlocked();
+      const gate = document.getElementById("waiverLockGate");
+      const content = document.getElementById("waiverUnlockedContent");
+      const navIcon = document.getElementById("waiverNavIcon");
+      if (!gate || !content) return;
+
+      if (unlocked) {
+        gate.classList.add("hidden");
+        content.classList.remove("hidden");
+        if (navIcon) navIcon.textContent = "🔓";
+        refreshWaiverWireIntel(false);
+      } else {
+        gate.classList.remove("hidden");
+        content.classList.add("hidden");
+        if (navIcon) navIcon.textContent = "🔒";
+        setTimeout(() => {
+          const inp = document.getElementById("waiverPwInput");
+          if (inp) inp.focus();
+        }, 60);
+      }
+    }
+
+    function unlockWaiverTab() {
+      const inp = document.getElementById("waiverPwInput");
+      const err = document.getElementById("waiverPwError");
+      if (!inp) return;
+
+      if (inp.value.trim() === WAIVER_PASSCODE) {
+        sessionStorage.setItem(WAIVER_SESSION_KEY, "1");
+        inp.value = "";
+        if (err) err.classList.add("hidden");
+        syncWaiverGateUI();
+      } else {
+        if (err) err.classList.remove("hidden");
+        inp.value = "";
+        inp.focus();
+      }
+    }
+
+    function lockWaiverTab() {
+      sessionStorage.removeItem(WAIVER_SESSION_KEY);
+      syncWaiverGateUI();
+    }
+
+    function rebuildLeagueRosterLookup(rostersList, rosterOwnerMap) {
+      const ownerByPid = {};
+      const ownerByNormName = {};
+
+      for (const r of (rostersList || [])) {
+        const uid = r.owner_id || (rosterOwnerMap ? rosterOwnerMap[r.roster_id] : null);
+        const ownerName = uid ? getManagerMeta(uid).name : `Team #${r.roster_id}`;
+        const allIds = [...new Set([...(r.players || []), ...(r.reserve || []), ...(r.taxi || [])])];
+
+        for (const pid of allIds) {
+          ownerByPid[pid] = ownerName;
+          const pName = getPlayerNameOnly(pid);
+          const norm = normalizePlayerNameKey(pName);
+          if (norm) ownerByNormName[norm] = ownerName;
+        }
+      }
+
+      appData.waiverIntel.ownerByPid = ownerByPid;
+      appData.waiverIntel.ownerByNormName = ownerByNormName;
+    }
+
+    async function refreshWaiverWireIntel(force = false) {
+      if (!isWaiverUnlocked()) return;
+
+      const subEl = document.getElementById("waiverIntelSubtitle");
+      if (subEl && force) {
+        subEl.textContent = "Syncing live league rosters & Sleeper trending adds...";
+      }
+
+      // Seed roster lookup from latest loaded season immediately so taken players show right away
+      const latestSeason = appData.seasons[appData.seasons.length - 1];
+      if (latestSeason && !appData.waiverIntel.liveRostersLoaded) {
+        rebuildLeagueRosterLookup(latestSeason.rosters_final, latestSeason.roster_owner_map);
+      }
+      renderWaiverWireIntel();
+
+      const tasks = [];
+
+      if (force || !appData.waiverIntel.liveRostersLoaded) {
+        tasks.push(
+          fetchJson(`/league/${HARDCODED_LEAGUE_ID}/rosters`)
+            .then(liveRosters => {
+              rebuildLeagueRosterLookup(liveRosters, latestSeason?.roster_owner_map);
+              appData.waiverIntel.liveRostersLoaded = true;
+            })
+            .catch(() => {})
+        );
+      }
+
+      if (force || !appData.waiverIntel.trendingLoaded) {
+        tasks.push(
+          fetchJson("/players/nfl/trending/add?lookback_hours=24&limit=25")
+            .then(trending => {
+              if (Array.isArray(trending)) {
+                appData.waiverIntel.sleeperTrending = trending;
+                appData.waiverIntel.trendingLoaded = true;
+              }
+            })
+            .catch(() => {})
+        );
+      }
+
+      if (tasks.length > 0) {
+        await Promise.all(tasks);
+        renderWaiverWireIntel();
+      }
+
+      if (subEl) {
+        const wkLabel = appData.nflState?.week ? `Week ${appData.nflState.week}` : "This Week";
+        subEl.textContent = `${wkLabel} Consensus • The Fantasy Footballers, FantasyPros & Live Sleeper Trending`;
+      }
+    }
+
+    function renderWaiverWireIntel() {
+      const listEl = document.getElementById("waiverIntelList");
+      const stripEl = document.getElementById("waiverIntelSummaryStrip");
+      if (!listEl) return;
+
+      const posFilter = document.getElementById("waiverPosFilter")?.value || "ALL";
+      const availFilter = document.getElementById("waiverAvailFilter")?.value || "ALL";
+      const sourceFilter = document.getElementById("waiverSourceFilter")?.value || "ALL";
+
+      const { ownerByPid, ownerByNormName, sleeperTrending } = appData.waiverIntel;
+      const mergedMap = new Map();
+
+      // 1. Seed with The Fantasy Footballers & FantasyPros picks
+      for (const item of EXPERT_WAIVER_TARGETS) {
+        const norm = normalizePlayerNameKey(item.name);
+        let score = 0;
+        if (item.ffbRank) score += Math.max(8, 35 - item.ffbRank);
+        if (item.fpRank) score += Math.max(12, 36 - item.fpRank * 3);
+
+        mergedMap.set(norm, {
+          pid: null,
+          name: item.name,
+          pos: item.pos,
+          team: item.team,
+          ffbRank: item.ffbRank,
+          fpRank: item.fpRank,
+          sleeperAdds: 0,
+          sleeperRank: null,
+          note: item.note,
+          score
+        });
+      }
+
+      // 2. Merge live Sleeper Trending Adds
+      sleeperTrending.forEach((tr, idx) => {
+        const pid = String(tr.player_id);
+        const pEntry = appData.players[pid];
+        const rawName = pEntry ? (typeof pEntry === "string" ? pEntry : pEntry.n) : `Player #${pid}`;
+        const pos = getPlayerPos(pid);
+        if (!["QB", "RB", "WR", "TE", "DEF", "K"].includes(pos)) return;
+
+        const norm = normalizePlayerNameKey(rawName);
+        const addsCount = Number(tr.count || 0);
+        const trendBonus = Math.max(6, 26 - idx);
+
+        if (mergedMap.has(norm)) {
+          const existing = mergedMap.get(norm);
+          existing.pid = pid;
+          existing.sleeperAdds = addsCount;
+          existing.sleeperRank = idx + 1;
+          existing.score += trendBonus + 12; // Multi-source consensus boost
+        } else {
+          mergedMap.set(norm, {
+            pid,
+            name: rawName,
+            pos,
+            team: "",
+            ffbRank: null,
+            fpRank: null,
+            sleeperAdds: addsCount,
+            sleeperRank: idx + 1,
+            note: `Trending #${idx + 1} on Sleeper with +${addsCount.toLocaleString()} adds in the last 24h.`,
+            score: trendBonus
+          });
+        }
+      });
+
+      // 3. Determine Taken vs Available in the user's league
+      const allCandidates = Array.from(mergedMap.values()).map(p => {
+        const norm = normalizePlayerNameKey(p.name);
+        const takenBy = (p.pid && ownerByPid[p.pid]) || ownerByNormName[norm] || null;
+        const sourceCount = (p.ffbRank ? 1 : 0) + (p.fpRank ? 1 : 0) + (p.sleeperAdds > 0 ? 1 : 0);
+        return {
+          ...p,
+          takenBy,
+          isTaken: Boolean(takenBy),
+          sourceCount
+        };
+      }).sort((a, b) => b.score - a.score || (a.ffbRank || 99) - (b.ffbRank || 99));
+
+      const availableTotal = allCandidates.filter(c => !c.isTaken).length;
+      const takenTotal = allCandidates.filter(c => c.isTaken).length;
+      const multiCount = allCandidates.filter(c => c.sourceCount >= 2 && !c.isTaken).length;
+
+      if (stripEl) {
+        stripEl.innerHTML = `
+          <span class="badge badge-win">${availableTotal} Available in League</span>
+          <span class="badge badge-gold">${multiCount} Multi-Source Consensus Free Agents</span>
+          <span class="badge badge-neutral">${takenTotal} Already Rostered</span>
+        `;
+      }
+
+      const filtered = allCandidates.filter(c => {
+        if (posFilter !== "ALL" && c.pos !== posFilter) return false;
+        if (availFilter === "AVAILABLE" && c.isTaken) return false;
+        if (sourceFilter === "MULTI" && c.sourceCount < 2) return false;
+        if (sourceFilter === "FFB" && !c.ffbRank) return false;
+        if (sourceFilter === "FP" && !c.fpRank) return false;
+        if (sourceFilter === "SLEEPER" && !c.sleeperAdds) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">No waiver targets match the selected filters.</p>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map((c, idx) => {
+        const badges = [];
+        if (c.ffbRank) {
+          badges.push(`<span class="src-pill src-ffb">Fantasy Footballers #${c.ffbRank}</span>`);
+        }
+        if (c.fpRank) {
+          badges.push(`<span class="src-pill src-fp">FantasyPros #${c.fpRank}</span>`);
+        }
+        if (c.sleeperAdds > 0) {
+          badges.push(`<span class="src-pill src-sleeper">Sleeper Trending +${c.sleeperAdds.toLocaleString()}</span>`);
+        }
+
+        const statusBadge = c.isTaken
+          ? `<span class="badge badge-neutral" style="opacity:0.85;">Taken • ${c.takenBy}</span>`
+          : `<span class="badge badge-win">Available</span>`;
+
+        return `
+          <div class="waiver-item-row ${c.isTaken ? "taken" : ""}">
+            <div style="min-width:0; flex:1;">
+              <div>
+                <span class="waiver-player-name ${c.isTaken ? "taken" : ""}">
+                  #${idx + 1} ${c.name}
+                </span>
+                <span style="font-size:11.5px; color:var(--text-secondary); margin-left:4px;">
+                  (${c.pos}${c.team ? ` • ${c.team}` : ""})
+                </span>
+              </div>
+              <div class="waiver-subtext">${c.note}</div>
+              <div>${badges.join("")}</div>
+            </div>
+            <div style="flex-shrink:0; text-align:right;">
+              ${statusBadge}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
+      syncWaiverGateUI();
       syncNow(false);
     });
   </script>
