@@ -88,6 +88,13 @@
       min-width: 0;
     }
 
+    .brand-title-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
     .brand-title {
       font-size: 15px;
       font-weight: 700;
@@ -95,6 +102,19 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .version-pill {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--border-strong);
+      flex-shrink: 0;
     }
 
     .brand-sub {
@@ -1009,7 +1029,10 @@
 
   <header class="topbar">
     <div class="brand">
-      <div class="brand-title" id="headerTitle">Sleeper League Vault</div>
+      <div class="brand-title-row">
+        <div class="brand-title" id="headerTitle">Sleeper League Vault</div>
+        <span class="version-pill" id="appVersionBadge">V1.0</span>
+      </div>
       <div class="brand-sub" id="headerSub">League 1389754082821947392</div>
     </div>
     <div class="topbar-controls">
@@ -1178,7 +1201,7 @@
             <div class="card-title">Draft Pick Trade Analysis (By Manager)</div>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
-            Tracks which draft rounds each owner traded away, the post-trade <strong>Starter PPG</strong> &amp; total points received in return, and what acquired picks turned into when drafted.
+            Tracks each manager's average draft round given away, acquired picks by round, and average draft round acquired.
           </p>
           <div id="pickTradeHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
           <div class="table-wrap">
@@ -1186,13 +1209,9 @@
               <thead>
                 <tr>
                   <th data-col="name" onclick="sortTable('pickTrades', 'name')">Manager</th>
-                  <th data-col="sentCount" onclick="sortTable('pickTrades', 'sentCount')">Picks Sent (Rds)</th>
                   <th class="num" data-col="avgRoundGiven" onclick="sortTable('pickTrades', 'avgRoundGiven')">Avg Rd Given</th>
-                  <th class="num" data-col="returnStarterPpg" onclick="sortTable('pickTrades', 'returnStarterPpg')">Return PPG</th>
-                  <th class="num" data-col="returnStarterPts" onclick="sortTable('pickTrades', 'returnStarterPts')">Return Start Pts</th>
                   <th data-col="acqCount" onclick="sortTable('pickTrades', 'acqCount')">Picks Acq (Rds)</th>
                   <th class="num" data-col="avgRoundAcq" onclick="sortTable('pickTrades', 'avgRoundAcq')">Avg Rd Acq</th>
-                  <th data-col="acquiredDraftedPts" onclick="sortTable('pickTrades', 'acquiredDraftedPts')">Acq Draft Outcome</th>
                 </tr>
               </thead>
               <tbody id="pickTradeManagerBody"></tbody>
@@ -1677,6 +1696,7 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
+    const APP_VERSION = "V1.0";
     const HARDCODED_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     const ARCHIVE_CACHE_KEY = "sleeper_vault_seasons_cache_v6";
@@ -1696,7 +1716,7 @@
         positions: { col: "QB", dir: "desc" },
         efficiency: { col: "efficiencyPct", dir: "desc" },
         activity: { col: "totalWire", dir: "desc" },
-        pickTrades: { col: "sentCount", dir: "desc" },
+        pickTrades: { col: "acqCount", dir: "desc" },
         waiverRoi: { col: "wireStarterPts", dir: "desc" },
         draft: { col: "draftOnlyPf", dir: "desc" },
         injuries: { col: "seasonEndingCount", dir: "desc" },
@@ -3832,13 +3852,11 @@
 
       const stripPickRows = pickMgrRows.filter(r => isIncludedTeam(r.user_id));
       if (stripPickRows.length > 0) {
-        const topSeller = [...stripPickRows].sort((a, b) => b.sentCount - a.sentCount)[0];
         const topBuyer = [...stripPickRows].sort((a, b) => b.acqCount - a.acqCount)[0];
-        const bestReturn = [...stripPickRows].filter(r => r.returnStarts > 0).sort((a, b) => b.returnStarterPpg - a.returnStarterPpg)[0];
+        const earliestAcq = [...stripPickRows].filter(r => r.avgRoundAcq !== null).sort((a, b) => a.avgRoundAcq - b.avgRoundAcq)[0];
         document.getElementById("pickTradeHighlightStrip").innerHTML = `
-          <span class="badge badge-neutral">Most Picks Sent: ${topSeller.name} (${topSeller.sentCount} pick${topSeller.sentCount === 1 ? "" : "s"})</span>
           <span class="badge badge-gold">Most Picks Acq: ${topBuyer.name} (${topBuyer.acqCount} pick${topBuyer.acqCount === 1 ? "" : "s"})</span>
-          ${bestReturn ? `<span class="badge badge-win">Top Return PPG: ${bestReturn.name} (${bestReturn.returnStarterPpg.toFixed(1)} PPG)</span>` : ""}
+          ${earliestAcq ? `<span class="badge badge-win">Best Avg Rd Acq: ${earliestAcq.name} (Rd ${earliestAcq.avgRoundAcq.toFixed(1)})</span>` : ""}
         `;
       } else {
         document.getElementById("pickTradeHighlightStrip").innerHTML = "";
@@ -3846,7 +3864,6 @@
 
       const visiblePickMgrRows = pickMgrRows.filter(r => isIncludedTeam(r.user_id));
       const sortedPickMgrRows = sortRowsGeneric(visiblePickMgrRows, "pickTrades", {
-        sentCount: r => r.sentCount + (r.sentPicks.reduce((s, p) => s + (20 - p.round), 0) * 0.001),
         acqCount: r => r.acqCount + (r.acquiredPicks.reduce((s, p) => s + (20 - p.round), 0) * 0.001),
         avgRoundGiven: r => r.avgRoundGiven ?? 999,
         avgRoundAcq: r => r.avgRoundAcq ?? 999
@@ -3854,9 +3871,6 @@
 
       document.getElementById("pickTradeManagerBody").innerHTML = sortedPickMgrRows.length > 0
         ? sortedPickMgrRows.map(r => {
-            const acqOutcomeTxt = r.acquiredDraftedGames > 0
-              ? `${r.acquiredDraftedPts.toFixed(1)} pts (${r.acqDraftedPpg.toFixed(1)} PPG)`
-              : (r.acqCount > 0 ? "Future / Pending" : "-");
             const avgGivenTxt = r.avgRoundGiven !== null ? `Rd ${r.avgRoundGiven.toFixed(1)}` : "-";
             const avgAcqTxt = r.avgRoundAcq !== null ? `Rd ${r.avgRoundAcq.toFixed(1)}` : "-";
             return `
@@ -3867,17 +3881,13 @@
                     <span class="manager-name">${r.name}</span>
                   </div>
                 </td>
-                <td style="font-size:12px;">${r.sentRoundsLabel}</td>
                 <td class="num"><span class="badge badge-neutral">${avgGivenTxt}</span></td>
-                <td class="num"><strong>${r.returnStarts > 0 ? r.returnStarterPpg.toFixed(1) : "-"}</strong></td>
-                <td class="num">${r.returnStarterPts > 0 ? r.returnStarterPts.toFixed(1) : "-"}</td>
                 <td style="font-size:12px;">${r.acqRoundsLabel}</td>
                 <td class="num"><span class="badge ${r.avgRoundAcq !== null ? "badge-gold" : "badge-neutral"}">${avgAcqTxt}</span></td>
-                <td style="font-size:12px; color:var(--text-secondary);">${acqOutcomeTxt}</td>
               </tr>
             `;
           }).join("")
-        : `<tr><td colspan="8" style="color:var(--text-secondary);">No draft pick trades recorded for this filter.</td></tr>`;
+        : `<tr><td colspan="4" style="color:var(--text-secondary);">No draft pick trades recorded for this filter.</td></tr>`;
 
       const { managerRows: rawWaiverMgrRows, bargains: rawBargains } = computeWaiverBargains(filter);
       const managerRows = rawWaiverMgrRows.filter(r => isIncludedTeam(r.user_id));
@@ -5620,6 +5630,8 @@
     }
 
     window.addEventListener("DOMContentLoaded", () => {
+      const vBadge = document.getElementById("appVersionBadge");
+      if (vBadge) vBadge.textContent = APP_VERSION;
       syncWaiverGateUI();
       syncNow(false);
     });
