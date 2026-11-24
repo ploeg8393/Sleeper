@@ -353,6 +353,42 @@
       text-decoration: none;
     }
 
+    .luck-pill-btn {
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: underline;
+      font-variant-numeric: tabular-nums;
+      display: inline-block;
+    }
+
+    .luck-pill-btn.win {
+      background: var(--win-bg);
+      color: var(--win);
+      border: 1px solid var(--win);
+    }
+
+    .luck-pill-btn.loss {
+      background: var(--loss-bg);
+      color: var(--loss);
+      border: 1px solid var(--loss);
+    }
+
+    .luck-pill-btn.gold {
+      background: var(--gold-bg);
+      color: var(--gold);
+      border: 1px solid var(--gold);
+    }
+
+    .luck-pill-btn.zero {
+      background: var(--bg-subtle);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      text-decoration: none;
+    }
+
     .luck-bar-track {
       width: 72px;
       height: 8px;
@@ -1547,6 +1583,33 @@
     </div>
   </div>
 
+  <!-- MODAL WINDOW 3: LUCK CUTOFF & LEAGUE MEDIAN BREAKDOWN -->
+  <div id="luckModalBackdrop" class="modal-backdrop hidden" onclick="closeLuckModalOnBackdrop(event)">
+    <div class="modal-window" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div>
+          <div class="card-title" id="luckModalTitle">Weekly Cutoff &amp; League Median</div>
+          <div style="font-size:11px; color:var(--text-secondary);" id="luckModalSub">Sleeper Extra Game vs. League Median Breakdown</div>
+        </div>
+        <button class="btn-icon" onclick="closeLuckModal()">✕ Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="controls-row">
+          <select id="modalLuckOwnerSelect" class="grow" onchange="renderLuckModalContent()"></select>
+          <select id="modalLuckTypeSelect" class="grow" onchange="renderLuckModalContent()">
+            <option value="FIFTH">5th Place (2nd W Cutoff)</option>
+            <option value="SIXTH">6th Place (Extra L Cutoff)</option>
+            <option value="EXTRA_UNLUCKY">6th + H2H Loss (Extra Unlucky)</option>
+            <option value="SECOND_LOST">2nd in Pts &amp; Lost H2H</option>
+          </select>
+          <select id="modalLuckSeasonSelect" onchange="renderLuckModalContent()"></select>
+        </div>
+        <div id="luckModalSummary" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+        <div id="luckModalContainer"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- BOTTOM NAVIGATION (9 SCROLLABLE TABS) -->
   <nav class="bottom-nav">
     <button class="nav-btn active" data-tab="standings" onclick="switchTab('standings')">
@@ -1648,6 +1711,9 @@
       }
       if (!document.getElementById("injuryModalBackdrop").classList.contains("hidden")) {
         renderInjuryModalContent();
+      }
+      if (!document.getElementById("luckModalBackdrop").classList.contains("hidden")) {
+        renderLuckModalContent();
       }
     }
 
@@ -3173,6 +3239,17 @@
           );
           if (entries.length === 0 || entries.every(e => e.points === 0)) continue;
 
+          // Sort descending to compute Sleeper's exact League Median (average of two middle scores) & League Avg
+          const sortedScores = entries.map(e => Number(e.points || 0)).sort((a, b) => b - a);
+          const n = sortedScores.length;
+          const mid = Math.floor(n / 2);
+          const leagueMedian = n % 2 === 0
+            ? (sortedScores[mid - 1] + sortedScores[mid]) / 2
+            : sortedScores[mid];
+          const leagueAvg = sortedScores.reduce((sum, v) => sum + v, 0) / n;
+          const fifthPts = sortedScores[mid - 1] ?? leagueMedian;
+          const sixthPts = sortedScores[mid] ?? leagueMedian;
+
           // Build H2H matchup lookup
           const byMatchup = {};
           for (const e of entries) {
@@ -3189,58 +3266,51 @@
             const wonH2H = opp ? (e.points > opp.points) : false;
             const oppName = opp ? getManagerMeta(opp.owner_id).name : "Bye";
             const oppPts = opp ? opp.points : 0;
+            const diffFromMedian = e.points - leagueMedian;
+            const diffFromAvg = e.points - leagueAvg;
+
+            const baseEvent = {
+              season: s.season,
+              week: Number(wkStr),
+              ownerId: e.owner_id,
+              ownerName: rec.name,
+              pts: e.points,
+              ptsRank,
+              leagueMedian,
+              leagueAvg,
+              fifthPts,
+              sixthPts,
+              diffFromMedian,
+              diffFromAvg,
+              lostH2H,
+              wonH2H,
+              oppName,
+              oppPts
+            };
 
             if (ptsRank === 5) {
               rec.fifthCount += 1;
               events.push({
+                ...baseEvent,
                 type: "FIFTH",
-                season: s.season,
-                week: Number(wkStr),
-                ownerId: e.owner_id,
-                ownerName: rec.name,
-                pts: e.points,
-                ptsRank,
-                lostH2H,
-                wonH2H,
-                oppName,
-                oppPts,
-                note: `5th in Pts (Cutoff 2nd W) • ${wonH2H ? "Won H2H (2-0 wk)" : lostH2H ? "Lost H2H (1-1 wk)" : "Tied H2H"}`
+                note: `5th in Pts (2nd W Cutoff) • ${wonH2H ? `Won H2H vs ${oppName} (2-0 wk)` : lostH2H ? `Lost H2H vs ${oppName} (1-1 wk)` : "Tied H2H"}`
               });
             }
 
             if (ptsRank === 6) {
               rec.sixthCount += 1;
+              events.push({
+                ...baseEvent,
+                type: "SIXTH",
+                note: `6th in Pts (Extra L Cutoff) • ${wonH2H ? `Won H2H vs ${oppName} (1-1 wk)` : lostH2H ? `Lost H2H vs ${oppName} (0-2 wk)` : "Tied H2H"}`
+              });
               if (lostH2H) {
                 rec.sixthAndLossCount += 1;
                 rec.notes.push(`${s.season} W${wkStr}: 6th + Loss vs ${oppName} (Extra Unlucky)`);
                 events.push({
+                  ...baseEvent,
                   type: "EXTRA_UNLUCKY",
-                  season: s.season,
-                  week: Number(wkStr),
-                  ownerId: e.owner_id,
-                  ownerName: rec.name,
-                  pts: e.points,
-                  ptsRank,
-                  lostH2H: true,
-                  wonH2H: false,
-                  oppName,
-                  oppPts,
-                  note: `EXTRA UNLUCKY: 6th in Pts (missed 2nd W by 1 spot) AND lost H2H to ${oppName} (${e.points.toFixed(2)}–${oppPts.toFixed(2)})`
-                });
-              } else {
-                events.push({
-                  type: "SIXTH",
-                  season: s.season,
-                  week: Number(wkStr),
-                  ownerId: e.owner_id,
-                  ownerName: rec.name,
-                  pts: e.points,
-                  ptsRank,
-                  lostH2H: false,
-                  wonH2H,
-                  oppName,
-                  oppPts,
-                  note: `6th in Pts (Took Extra L) • ${wonH2H ? `Won H2H vs ${oppName} (1-1 wk)` : "Tied H2H"}`
+                  note: `6th in Pts (missed median by ${Math.abs(diffFromMedian).toFixed(2)} pts) & lost H2H to ${oppName} (${e.points.toFixed(2)}–${oppPts.toFixed(2)})`
                 });
               }
             }
@@ -3249,17 +3319,8 @@
               rec.secondAndLossCount += 1;
               rec.notes.push(`${s.season} W${wkStr}: 2nd in Pts, lost to #1 ${oppName}`);
               events.push({
+                ...baseEvent,
                 type: "SECOND_LOST",
-                season: s.season,
-                week: Number(wkStr),
-                ownerId: e.owner_id,
-                ownerName: rec.name,
-                pts: e.points,
-                ptsRank,
-                lostH2H: true,
-                wonH2H: false,
-                oppName,
-                oppPts,
                 note: `2nd in Pts (#1 loser) & Lost H2H to ${oppName} (${e.points.toFixed(2)}–${oppPts.toFixed(2)})`
               });
             }
@@ -3306,6 +3367,7 @@
       document.getElementById("injurySeasonFilter").innerHTML = seasonOpts;
       document.getElementById("modalInjurySeasonSelect").innerHTML = seasonOpts;
       document.getElementById("luckSeasonFilter").innerHTML = seasonOpts;
+      document.getElementById("modalLuckSeasonSelect").innerHTML = seasonOpts;
 
       populateManagerDropdowns();
     }
@@ -3335,6 +3397,7 @@
       applySelect("modalOwnerASelect", managerOpts, 0);
       applySelect("modalOwnerBSelect", `<option value="ALL">All Trade Partners</option>` + managerOpts, 0, true);
       applySelect("modalInjuryOwnerSelect", managerOpts, 0);
+      applySelect("modalLuckOwnerSelect", managerOpts, 0);
     }
 
     function renderAll() {
@@ -4519,20 +4582,116 @@
               <span class="manager-name">${r.name}</span>
             </div>
           </td>
-          <td class="num"><span class="badge ${r.fifthCount > 0 ? "badge-win" : "badge-neutral"}">${r.fifthCount}</span></td>
-          <td class="num"><span class="badge badge-neutral">${r.sixthCount}</span></td>
           <td class="num">
-            ${r.sixthAndLossCount > 0
-              ? `<span class="badge badge-loss">${r.sixthAndLossCount} (Extra Unlucky)</span>`
-              : `<span class="badge badge-neutral">0</span>`}
+            <button type="button" class="luck-pill-btn ${r.fifthCount > 0 ? "win" : "zero"}"
+              onclick="openLuckModal('${r.user_id}', 'FIFTH')">${r.fifthCount}</button>
           </td>
           <td class="num">
-            ${r.secondAndLossCount > 0
-              ? `<span class="badge badge-loss">${r.secondAndLossCount}</span>`
-              : `<span class="badge badge-neutral">0</span>`}
+            <button type="button" class="luck-pill-btn ${r.sixthCount > 0 ? "gold" : "zero"}"
+              onclick="openLuckModal('${r.user_id}', 'SIXTH')">${r.sixthCount}</button>
+          </td>
+          <td class="num">
+            <button type="button" class="luck-pill-btn ${r.sixthAndLossCount > 0 ? "loss" : "zero"}"
+              onclick="openLuckModal('${r.user_id}', 'EXTRA_UNLUCKY')">
+              ${r.sixthAndLossCount > 0 ? `${r.sixthAndLossCount} (Extra Unlucky)` : "0"}
+            </button>
+          </td>
+          <td class="num">
+            <button type="button" class="luck-pill-btn ${r.secondAndLossCount > 0 ? "loss" : "zero"}"
+              onclick="openLuckModal('${r.user_id}', 'SECOND_LOST')">${r.secondAndLossCount}</button>
           </td>
         </tr>
       `).join("");
+    }
+
+    function openLuckModal(ownerUid, eventType = "FIFTH") {
+      const currentSeasonFilter = document.getElementById("luckSeasonFilter").value || "ALL";
+      document.getElementById("modalLuckOwnerSelect").value = ownerUid;
+      document.getElementById("modalLuckTypeSelect").value = eventType;
+      document.getElementById("modalLuckSeasonSelect").value = currentSeasonFilter;
+      document.getElementById("luckModalBackdrop").classList.remove("hidden");
+      renderLuckModalContent();
+    }
+
+    function closeLuckModal() {
+      document.getElementById("luckModalBackdrop").classList.add("hidden");
+    }
+
+    function closeLuckModalOnBackdrop(e) {
+      if (e.target.id === "luckModalBackdrop") closeLuckModal();
+    }
+
+    function renderLuckModalContent() {
+      const ownerUid = document.getElementById("modalLuckOwnerSelect").value;
+      const eventType = document.getElementById("modalLuckTypeSelect").value || "FIFTH";
+      const seasonFilter = document.getElementById("modalLuckSeasonSelect").value || "ALL";
+      const meta = getManagerMeta(ownerUid);
+
+      const typeLabels = {
+        FIFTH: "5th Place (2nd W Cutoff)",
+        SIXTH: "6th Place (Extra L Cutoff)",
+        EXTRA_UNLUCKY: "6th + H2H Loss (Extra Unlucky)",
+        SECOND_LOST: "2nd in Pts & Lost H2H"
+      };
+
+      document.getElementById("luckModalTitle").textContent = `${meta.name} — ${typeLabels[eventType] || "Cutoff Weeks"}`;
+      document.getElementById("luckModalSub").textContent =
+        "Sleeper awards an extra W/L using the League Median (midpoint of 5th & 6th highest scores)";
+
+      const { events } = computeWeeklyRankLuck(seasonFilter);
+      const matching = events.filter(ev => ev.ownerId === ownerUid && ev.type === eventType);
+
+      const avgDiffMedian = matching.length > 0
+        ? matching.reduce((sum, ev) => sum + ev.diffFromMedian, 0) / matching.length
+        : 0;
+      const signMed = avgDiffMedian >= 0 ? "+" : "";
+
+      document.getElementById("luckModalSummary").innerHTML = `
+        <span class="badge ${eventType === "FIFTH" ? "badge-win" : "badge-loss"}">${matching.length} Week${matching.length === 1 ? "" : "s"}</span>
+        ${matching.length > 0 ? `<span class="badge badge-neutral">Avg vs League Median: ${signMed}${avgDiffMedian.toFixed(2)} pts</span>` : ""}
+      `;
+
+      document.getElementById("luckModalContainer").innerHTML = matching.length > 0
+        ? matching.map(ev => {
+            const medDiffSign = ev.diffFromMedian >= 0 ? "+" : "";
+            const avgDiffSign = ev.diffFromAvg >= 0 ? "+" : "";
+            const medBadgeCls = ev.diffFromMedian >= 0 ? "badge-win" : "badge-loss";
+            const h2hStatus = ev.wonH2H
+              ? `Won H2H vs ${ev.oppName} (${ev.pts.toFixed(2)}–${ev.oppPts.toFixed(2)})`
+              : ev.lostH2H
+                ? `Lost H2H vs ${ev.oppName} (${ev.pts.toFixed(2)}–${ev.oppPts.toFixed(2)})`
+                : `Tied H2H vs ${ev.oppName}`;
+
+            return `
+              <div class="inj-detail-card">
+                <div class="inj-detail-top">
+                  <div>
+                    <strong style="font-size:13px;">${ev.season} • Week ${ev.week}</strong>
+                    <span style="font-size:11.5px; color:var(--text-secondary); margin-left:6px;">(#${ev.ptsRank} in Pts)</span>
+                  </div>
+                  <span class="badge ${medBadgeCls}">${medDiffSign}${ev.diffFromMedian.toFixed(2)} vs Median</span>
+                </div>
+                <div class="inj-detail-grid">
+                  <div>
+                    <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Team Score</div>
+                    <strong>${ev.pts.toFixed(2)} pts</strong>
+                  </div>
+                  <div>
+                    <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">League Median</div>
+                    <strong>${ev.leagueMedian.toFixed(2)} pts</strong>
+                  </div>
+                  <div>
+                    <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">League Avg</div>
+                    <strong>${ev.leagueAvg.toFixed(2)} (${avgDiffSign}${ev.diffFromAvg.toFixed(2)})</strong>
+                  </div>
+                </div>
+                <div style="font-size:11px; color:var(--text-secondary); margin-top:6px; padding-top:5px; border-top:1px dashed var(--border);">
+                  5th/6th Cutoff: ${ev.fifthPts.toFixed(2)} / ${ev.sixthPts.toFixed(2)} • ${h2hStatus}
+                </div>
+              </div>
+            `;
+          }).join("")
+        : `<p style="font-size:13px; color:var(--text-secondary);">No weeks recorded for ${meta.name} in this category and timeframe.</p>`;
     }
 
     function renderTwoTeamMatchup() {
@@ -4812,7 +4971,7 @@
       }
 
       function isOverlayOpen() {
-        const ids = ["tradeModalBackdrop", "injuryModalBackdrop", "aiDrawer"];
+        const ids = ["tradeModalBackdrop", "injuryModalBackdrop", "luckModalBackdrop", "aiDrawer"];
         return ids.some(id => {
           const el = document.getElementById(id);
           return el && !el.classList.contains("hidden");
