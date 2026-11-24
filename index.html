@@ -1187,9 +1187,11 @@
                 <tr>
                   <th data-col="name" onclick="sortTable('pickTrades', 'name')">Manager</th>
                   <th data-col="sentCount" onclick="sortTable('pickTrades', 'sentCount')">Picks Sent (Rds)</th>
+                  <th class="num" data-col="avgRoundGiven" onclick="sortTable('pickTrades', 'avgRoundGiven')">Avg Rd Given</th>
                   <th class="num" data-col="returnStarterPpg" onclick="sortTable('pickTrades', 'returnStarterPpg')">Return PPG</th>
                   <th class="num" data-col="returnStarterPts" onclick="sortTable('pickTrades', 'returnStarterPts')">Return Start Pts</th>
                   <th data-col="acqCount" onclick="sortTable('pickTrades', 'acqCount')">Picks Acq (Rds)</th>
+                  <th class="num" data-col="avgRoundAcq" onclick="sortTable('pickTrades', 'avgRoundAcq')">Avg Rd Acq</th>
                   <th data-col="acquiredDraftedPts" onclick="sortTable('pickTrades', 'acquiredDraftedPts')">Acq Draft Outcome</th>
                 </tr>
               </thead>
@@ -1316,10 +1318,10 @@
       <section id="tab-injuries" class="tab-panel hidden">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">Drafted Player Injuries & Season Losses</div>
+            <div class="card-title">Rostered Player Injuries &amp; IR Losses</div>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
-            Click any manager's <strong>Lost for Yr</strong> number to open a sortable popup showing the drafted players who went on IR, their draft round, week lost, and weeks missed.
+            Tracks players who were <strong>on a manager's team when they went on IR</strong> (both drafted players still on their roster and waiver/trade acquisitions). Tap <strong>Lost for Yr</strong> for the full sortable breakdown.
           </p>
           <div class="table-wrap">
             <table data-sort-table="injuries">
@@ -1327,8 +1329,10 @@
                 <tr>
                   <th data-col="name" onclick="sortTable('injuries', 'name')">Manager</th>
                   <th class="num" data-col="seasonEndingCount" onclick="sortTable('injuries', 'seasonEndingCount')">Lost for Yr</th>
-                  <th class="num" data-col="earlyRoundLost" onclick="sortTable('injuries', 'earlyRoundLost')">Rds 1–5 Lost</th>
-                  <th class="num" data-col="weeksMissed" onclick="sortTable('injuries', 'weeksMissed')">Wks Missed</th>
+                  <th class="num" data-col="draftedLostCount" onclick="sortTable('injuries', 'draftedLostCount')">Drafted</th>
+                  <th class="num" data-col="nonDraftedLostCount" onclick="sortTable('injuries', 'nonDraftedLostCount')">Waiver/Trade</th>
+                  <th class="num" data-col="earlyRoundLost" onclick="sortTable('injuries', 'earlyRoundLost')">Rds 1–5</th>
+                  <th class="num" data-col="weeksMissed" onclick="sortTable('injuries', 'weeksMissed')">Wks Lost</th>
                   <th class="num" data-col="activeIrOutCount" onclick="sortTable('injuries', 'activeIrOutCount')">Active IR/Out</th>
                   <th class="num" data-col="winPct" onclick="sortTable('injuries', 'winPct')">Actual Win%</th>
                 </tr>
@@ -1567,13 +1571,13 @@
     </div>
   </div>
 
-  <!-- MODAL WINDOW 2: DRAFTED PLAYERS LOST TO IR / SEASON-ENDING INJURY (SORTABLE) -->
+  <!-- MODAL WINDOW 2: ROSTERED PLAYERS LOST TO IR / SEASON-ENDING INJURY (SORTABLE) -->
   <div id="injuryModalBackdrop" class="modal-backdrop hidden" onclick="closeInjuryModalOnBackdrop(event)">
     <div class="modal-window" onclick="event.stopPropagation()">
       <div class="modal-head">
         <div>
-          <div class="card-title" id="injuryModalTitle">Drafted Players Lost</div>
-          <div style="font-size:11px; color:var(--text-secondary);" id="injuryModalSub">IR & Season-Ending Casualties</div>
+          <div class="card-title" id="injuryModalTitle">Players Lost on IR</div>
+          <div style="font-size:11px; color:var(--text-secondary);" id="injuryModalSub">Rostered IR &amp; Season-Ending Casualties</div>
         </div>
         <button class="btn-icon" onclick="closeInjuryModal()">✕ Close</button>
       </div>
@@ -1583,6 +1587,11 @@
           <select id="modalInjurySeasonSelect" onchange="renderInjuryModalContent()"></select>
         </div>
         <div class="controls-row">
+          <select id="modalInjurySourceSelect" onchange="renderInjuryModalContent()">
+            <option value="ALL">All Rostered IR</option>
+            <option value="DRAFTED">Drafted Only</option>
+            <option value="NON_DRAFTED">Waiver / Trade Only</option>
+          </select>
           <select id="modalInjurySortSelect" class="grow" onchange="renderInjuryModalContent()">
             <option value="round">Sort by: Draft Round</option>
             <option value="weekLost">Sort by: Week Lost</option>
@@ -2875,6 +2884,8 @@
             name: meta.name,
             avatar: meta.avatar,
             seasonEndingCount: 0,
+            draftedLostCount: 0,
+            nonDraftedLostCount: 0,
             earlyRoundLost: 0,
             weeksMissed: 0,
             activeIrOutCount: 0,
@@ -2894,11 +2905,28 @@
           .sort((a, b) => a - b);
 
         const leagueWeeklyPts = {};
+        const ownersByWeek = {};
+        const firstWeekByOwnerPid = {};
+        const lastWeekByOwnerPid = {};
+        const candidatePids = new Set();
+
         for (const wk of weekNums) {
           leagueWeeklyPts[wk] = {};
+          ownersByWeek[wk] = {};
           for (const e of (s.matchups_by_week[String(wk)] || [])) {
+            if (e.owner_id) ensure(e.owner_id);
             for (const [pid, pts] of Object.entries(e.players_points || {})) {
               leagueWeeklyPts[wk][pid] = Number(pts || 0);
+              candidatePids.add(pid);
+            }
+            for (const pid of (e.players || [])) {
+              candidatePids.add(pid);
+              if (e.owner_id) {
+                ownersByWeek[wk][pid] = e.owner_id;
+                const key = `${e.owner_id}_${pid}`;
+                if (firstWeekByOwnerPid[key] === undefined) firstWeekByOwnerPid[key] = wk;
+                lastWeekByOwnerPid[key] = wk;
+              }
             }
           }
         }
@@ -2923,24 +2951,47 @@
         }
 
         const reserveSetByOwner = {};
+        const finalPlayersByOwner = {};
+        const reserveOwnerByPid = {};
         for (const rf of (s.rosters_final || [])) {
+          if (!rf.owner_id) continue;
+          ensure(rf.owner_id);
           reserveSetByOwner[rf.owner_id] = new Set(rf.reserve || []);
+          finalPlayersByOwner[rf.owner_id] = new Set(rf.players || []);
+          for (const pid of (rf.reserve || [])) {
+            candidatePids.add(pid);
+            reserveOwnerByPid[pid] = rf.owner_id;
+          }
+          for (const pid of (rf.players || [])) {
+            candidatePids.add(pid);
+          }
           if (isCurrentSeason) {
             const rec = ensure(rf.owner_id);
-            for (const pid of (rf.players || [])) {
+            const activeIrPids = new Set();
+            for (const pid of [...(rf.players || []), ...(rf.reserve || [])]) {
               const inj = getPlayerLiveInjury(pid);
-              if (inj && ["IR", "Out", "PUP"].includes(inj)) {
-                rec.activeIrOutCount += 1;
+              if (reserveSetByOwner[rf.owner_id].has(pid) || (inj && ["IR", "Out", "PUP"].includes(inj))) {
+                activeIrPids.add(pid);
               }
             }
+            rec.activeIrOutCount += activeIrPids.size;
           }
         }
 
+        const draftPickByOwnerPid = {};
+        const draftPickByPid = {};
         for (const pk of (s.draft_picks || [])) {
-          if (!pk.owner_id || !pk.player_id || weekNums.length === 0) continue;
-          const rec = ensure(pk.owner_id);
-          const pid = pk.player_id;
+          if (!pk.owner_id || !pk.player_id) continue;
+          candidatePids.add(pk.player_id);
+          draftPickByOwnerPid[`${pk.owner_id}_${pk.player_id}`] = pk;
+          if (!draftPickByPid[pk.player_id]) draftPickByPid[pk.player_id] = pk;
+        }
 
+        if (weekNums.length === 0) continue;
+        const firstWk = weekNums[0];
+        const lastWk = weekNums[weekNums.length - 1];
+
+        for (const pid of candidatePids) {
           let lastActiveWeek = 0;
           const missedWeekList = [];
 
@@ -2953,42 +3004,93 @@
             }
           }
 
-          rec.weeksMissed += missedWeekList.length;
-
-          const endedOnIR = (reserveSetByOwner[pk.owner_id] || new Set()).has(pid);
+          const weekLostNum = lastActiveWeek > 0 ? lastActiveWeek + 1 : firstWk;
+          const missedFinalStreak = lastWk - lastActiveWeek;
+          const endedOnIR = Boolean(reserveOwnerByPid[pid]);
           const liveInj = isCurrentSeason ? getPlayerLiveInjury(pid) : null;
-          const missedFinalStreak = weekNums[weekNums.length - 1] - lastActiveWeek;
 
-          const isSeasonEnding = endedOnIR || liveInj === "IR" || liveInj === "PUP" || (weekNums.length >= 5 && missedFinalStreak >= 4);
+          // Identify which manager had the player on their team when the player went on IR
+          const ownerAtWeekLost = ownersByWeek[weekLostNum]?.[pid] || null;
+          const ownerAtLastActive = lastActiveWeek > 0 ? (ownersByWeek[lastActiveWeek]?.[pid] || null) : null;
+          const irOwner = reserveOwnerByPid[pid] || null;
+          const draftFallbackOwner = (lastActiveWeek === 0 && draftPickByPid[pid])
+            ? draftPickByPid[pid].owner_id
+            : null;
 
-          if (isSeasonEnding) {
-            rec.seasonEndingCount += 1;
-            if (Number(pk.round) <= 5) rec.earlyRoundLost += 1;
+          const injuryOwnerUid = ownerAtWeekLost || irOwner || ownerAtLastActive || draftFallbackOwner;
+          if (!injuryOwnerUid) continue;
 
-            const postInjuryWeeks = missedWeekList.filter(w => w > lastActiveWeek);
-            const weeksLostCount = postInjuryWeeks.length > 0 ? postInjuryWeeks.length : missedWeekList.length;
-            const weekLostNum = lastActiveWeek + 1;
+          const ownerPidKey = `${injuryOwnerUid}_${pid}`;
+          const draftPick = draftPickByOwnerPid[ownerPidKey] || null;
+          const isDraftedByOwner = Boolean(draftPick);
+          const firstOwnerWk = firstWeekByOwnerPid[ownerPidKey];
+          const lastOwnerWk = lastWeekByOwnerPid[ownerPidKey];
+          const ownerHasOnIR = Boolean(reserveSetByOwner[injuryOwnerUid]?.has(pid));
+          const ownerHasFinal = Boolean(finalPlayersByOwner[injuryOwnerUid]?.has(pid));
 
-            const casualtyItem = {
-              season: Number(s.season),
-              seasonStr: s.season,
-              ownerId: pk.owner_id,
-              ownerName: rec.name,
-              playerName: pk.player_name || getPlayerLabel(pid),
-              pos: pk.pos || getPlayerPos(pid),
-              round: Number(pk.round || 99),
-              pickNo: Number(pk.pick_no || 999),
-              lastActiveWeek,
-              weekLostNum,
-              weeksMissed: missedWeekList.length,
-              weeksLostCount,
-              weeksLabel: formatWeekRanges(postInjuryWeeks.length > 0 ? postInjuryWeeks : missedWeekList),
-              statusTag: liveInj || (endedOnIR ? "Season-End IR" : `Out Wk ${weekLostNum}+`)
-            };
+          // Verify the player was actually on this team before/at injury (not picked up after already injured)
+          const wasOnTeamBeforeOrAtInjury = isDraftedByOwner ||
+            (firstOwnerWk !== undefined && firstOwnerWk <= Math.max(firstWk, lastActiveWeek)) ||
+            ownerHasOnIR;
 
-            rec.casualties.push(casualtyItem);
-            casualtyLog.push(casualtyItem);
+          // Verify the player was still on this team when they went on IR (not dropped while healthy)
+          const stillOnTeamWhenInjured =
+            ownerAtWeekLost === injuryOwnerUid ||
+            ownerHasOnIR ||
+            (lastOwnerWk !== undefined && lastOwnerWk >= weekLostNum) ||
+            (ownerHasFinal && lastActiveWeek === lastWk);
+
+          if (!wasOnTeamBeforeOrAtInjury || !stillOnTeamWhenInjured) continue;
+
+          const isSeasonEnding = ownerHasOnIR ||
+            endedOnIR ||
+            liveInj === "IR" ||
+            liveInj === "PUP" ||
+            (weekNums.length >= 5 && missedFinalStreak >= 4);
+
+          if (!isSeasonEnding) continue;
+
+          const rec = ensure(injuryOwnerUid);
+          rec.seasonEndingCount += 1;
+
+          const roundNum = isDraftedByOwner ? Number(draftPick.round || 99) : 999;
+          const pickNoNum = isDraftedByOwner ? Number(draftPick.pick_no || 999) : 999;
+
+          if (isDraftedByOwner) {
+            rec.draftedLostCount += 1;
+            if (roundNum <= 5) rec.earlyRoundLost += 1;
+          } else {
+            rec.nonDraftedLostCount += 1;
           }
+
+          const postInjuryWeeks = missedWeekList.filter(w => w > lastActiveWeek);
+          const weeksLostCount = postInjuryWeeks.length > 0 ? postInjuryWeeks.length : missedWeekList.length;
+          rec.weeksMissed += weeksLostCount;
+
+          const anyPickMeta = draftPick || draftPickByPid[pid];
+          const pName = anyPickMeta?.player_name || getPlayerNameOnly(pid);
+          const pPos = anyPickMeta?.pos || getPlayerPos(pid);
+
+          const casualtyItem = {
+            season: Number(s.season),
+            seasonStr: s.season,
+            ownerId: injuryOwnerUid,
+            ownerName: rec.name,
+            playerName: pName,
+            pos: pPos,
+            isDrafted: isDraftedByOwner,
+            round: roundNum,
+            pickNo: pickNoNum,
+            lastActiveWeek,
+            weekLostNum,
+            weeksMissed: missedWeekList.length,
+            weeksLostCount,
+            weeksLabel: formatWeekRanges(postInjuryWeeks.length > 0 ? postInjuryWeeks : missedWeekList),
+            statusTag: liveInj || (ownerHasOnIR ? "Season-End IR" : `Out Wk ${weekLostNum}+`)
+          };
+
+          rec.casualties.push(casualtyItem);
+          casualtyLog.push(casualtyItem);
         }
       }
 
@@ -3227,15 +3329,25 @@
 
       const managerRows = Object.values(managerStats)
         .filter(r => r.sentPicks.length > 0 || r.acquiredPicks.length > 0)
-        .map(r => ({
-          ...r,
-          sentCount: r.sentPicks.length,
-          acqCount: r.acquiredPicks.length,
-          sentRoundsLabel: formatRoundSummary(r.sentPicks),
-          acqRoundsLabel: formatRoundSummary(r.acquiredPicks),
-          returnStarterPpg: r.returnStarts > 0 ? r.returnStarterPts / r.returnStarts : 0,
-          acqDraftedPpg: r.acquiredDraftedGames > 0 ? r.acquiredDraftedPts / r.acquiredDraftedGames : 0
-        }))
+        .map(r => {
+          const avgRoundGiven = r.sentPicks.length > 0
+            ? r.sentPicks.reduce((sum, p) => sum + Number(p.round), 0) / r.sentPicks.length
+            : null;
+          const avgRoundAcq = r.acquiredPicks.length > 0
+            ? r.acquiredPicks.reduce((sum, p) => sum + Number(p.round), 0) / r.acquiredPicks.length
+            : null;
+          return {
+            ...r,
+            sentCount: r.sentPicks.length,
+            acqCount: r.acquiredPicks.length,
+            avgRoundGiven,
+            avgRoundAcq,
+            sentRoundsLabel: formatRoundSummary(r.sentPicks),
+            acqRoundsLabel: formatRoundSummary(r.acquiredPicks),
+            returnStarterPpg: r.returnStarts > 0 ? r.returnStarterPts / r.returnStarts : 0,
+            acqDraftedPpg: r.acquiredDraftedGames > 0 ? r.acquiredDraftedPts / r.acquiredDraftedGames : 0
+          };
+        })
         .sort((a, b) => b.sentCount - a.sentCount || b.acqCount - a.acqCount);
 
       return { managerRows, pickTrades };
@@ -3735,7 +3847,9 @@
       const visiblePickMgrRows = pickMgrRows.filter(r => isIncludedTeam(r.user_id));
       const sortedPickMgrRows = sortRowsGeneric(visiblePickMgrRows, "pickTrades", {
         sentCount: r => r.sentCount + (r.sentPicks.reduce((s, p) => s + (20 - p.round), 0) * 0.001),
-        acqCount: r => r.acqCount + (r.acquiredPicks.reduce((s, p) => s + (20 - p.round), 0) * 0.001)
+        acqCount: r => r.acqCount + (r.acquiredPicks.reduce((s, p) => s + (20 - p.round), 0) * 0.001),
+        avgRoundGiven: r => r.avgRoundGiven ?? 999,
+        avgRoundAcq: r => r.avgRoundAcq ?? 999
       });
 
       document.getElementById("pickTradeManagerBody").innerHTML = sortedPickMgrRows.length > 0
@@ -3743,6 +3857,8 @@
             const acqOutcomeTxt = r.acquiredDraftedGames > 0
               ? `${r.acquiredDraftedPts.toFixed(1)} pts (${r.acqDraftedPpg.toFixed(1)} PPG)`
               : (r.acqCount > 0 ? "Future / Pending" : "-");
+            const avgGivenTxt = r.avgRoundGiven !== null ? `Rd ${r.avgRoundGiven.toFixed(1)}` : "-";
+            const avgAcqTxt = r.avgRoundAcq !== null ? `Rd ${r.avgRoundAcq.toFixed(1)}` : "-";
             return `
               <tr>
                 <td>
@@ -3752,14 +3868,16 @@
                   </div>
                 </td>
                 <td style="font-size:12px;">${r.sentRoundsLabel}</td>
+                <td class="num"><span class="badge badge-neutral">${avgGivenTxt}</span></td>
                 <td class="num"><strong>${r.returnStarts > 0 ? r.returnStarterPpg.toFixed(1) : "-"}</strong></td>
                 <td class="num">${r.returnStarterPts > 0 ? r.returnStarterPts.toFixed(1) : "-"}</td>
                 <td style="font-size:12px;">${r.acqRoundsLabel}</td>
+                <td class="num"><span class="badge ${r.avgRoundAcq !== null ? "badge-gold" : "badge-neutral"}">${avgAcqTxt}</span></td>
                 <td style="font-size:12px; color:var(--text-secondary);">${acqOutcomeTxt}</td>
               </tr>
             `;
           }).join("")
-        : `<tr><td colspan="6" style="color:var(--text-secondary);">No draft pick trades recorded for this filter.</td></tr>`;
+        : `<tr><td colspan="8" style="color:var(--text-secondary);">No draft pick trades recorded for this filter.</td></tr>`;
 
       const { managerRows: rawWaiverMgrRows, bargains: rawBargains } = computeWaiverBargains(filter);
       const managerRows = rawWaiverMgrRows.filter(r => isIncludedTeam(r.user_id));
@@ -4116,6 +4234,8 @@
               ${r.seasonEndingCount}
             </button>
           </td>
+          <td class="num">${r.draftedLostCount}</td>
+          <td class="num">${r.nonDraftedLostCount}</td>
           <td class="num">${r.earlyRoundLost}</td>
           <td class="num">${r.weeksMissed}</td>
           <td class="num">${r.activeIrOutCount}</td>
@@ -4124,10 +4244,12 @@
       `).join("");
     }
 
-    function openInjuryModal(ownerUid) {
+    function openInjuryModal(ownerUid, sourceFilter = "ALL") {
       const currentSeasonFilter = getSelectedSeason();
       document.getElementById("modalInjuryOwnerSelect").value = ownerUid;
       document.getElementById("modalInjurySeasonSelect").value = currentSeasonFilter;
+      const srcSel = document.getElementById("modalInjurySourceSelect");
+      if (srcSel) srcSel.value = sourceFilter;
       document.getElementById("injuryModalBackdrop").classList.remove("hidden");
       renderInjuryModalContent();
     }
@@ -4149,53 +4271,66 @@
     function renderInjuryModalContent() {
       const ownerUid = document.getElementById("modalInjuryOwnerSelect").value;
       const seasonFilter = document.getElementById("modalInjurySeasonSelect").value || "ALL";
+      const sourceFilter = document.getElementById("modalInjurySourceSelect")?.value || "ALL";
       const sortBy = document.getElementById("modalInjurySortSelect").value || "round";
       const meta = getManagerMeta(ownerUid);
       const { rows } = computeInjuryAnalysis(seasonFilter);
       const managerRow = rows.find(r => r.user_id === ownerUid);
-      const rawCasualties = managerRow ? managerRow.casualties : [];
-      const casualties = sortCasualtyList(rawCasualties, sortBy, appData.modalInjuryDir);
+      const allCasualties = managerRow ? managerRow.casualties : [];
+      const filteredCasualties = allCasualties.filter(c => {
+        if (sourceFilter === "DRAFTED") return c.isDrafted;
+        if (sourceFilter === "NON_DRAFTED") return !c.isDrafted;
+        return true;
+      });
+      const casualties = sortCasualtyList(filteredCasualties, sortBy, appData.modalInjuryDir);
 
-      document.getElementById("injuryModalTitle").textContent = `${meta.name} — Drafted Players Lost`;
+      document.getElementById("injuryModalTitle").textContent = `${meta.name} — Rostered Players Lost on IR`;
       document.getElementById("injuryModalSub").textContent =
-        seasonFilter === "ALL" ? "All-Time IR & Season-Ending Injuries" : `${seasonFilter} Season IR & Season-Ending Injuries`;
+        seasonFilter === "ALL" ? "All-Time Rostered IR & Season-Ending Injuries" : `${seasonFilter} Season Rostered IR & Season-Ending Injuries`;
 
       const totalPostWeeks = casualties.reduce((sum, c) => sum + c.weeksLostCount, 0);
-      const earlyRoundCount = casualties.filter(c => Number(c.round) <= 5).length;
+      const draftedCount = casualties.filter(c => c.isDrafted).length;
+      const nonDraftedCount = casualties.filter(c => !c.isDrafted).length;
 
       document.getElementById("modalInjurySummary").innerHTML = `
         <span class="badge badge-loss">${casualties.length} Lost for Year</span>
-        <span class="badge badge-gold">${earlyRoundCount} in Rounds 1–5</span>
+        <span class="badge badge-gold">${draftedCount} Drafted (Kept)</span>
+        <span class="badge badge-neutral">${nonDraftedCount} Waiver / Trade</span>
         <span class="badge badge-neutral">${totalPostWeeks} Total Wks Lost</span>
       `;
 
       document.getElementById("modalInjuryContainer").innerHTML = casualties.length > 0
-        ? casualties.map(c => `
-            <div class="inj-detail-card">
-              <div class="inj-detail-top">
-                <div>
-                  <strong style="font-size:13px;">${c.playerName}</strong>
-                  <span style="font-size:12px; color:var(--text-secondary);">(${c.pos})</span>
+        ? casualties.map(c => {
+            const acqText = c.isDrafted
+              ? `${c.seasonStr} • Rd ${c.round}${c.pickNo < 999 ? ` (#${c.pickNo})` : ""}`
+              : `${c.seasonStr} • Waiver / Trade`;
+            return `
+              <div class="inj-detail-card">
+                <div class="inj-detail-top">
+                  <div>
+                    <strong style="font-size:13px;">${c.playerName}</strong>
+                    <span style="font-size:12px; color:var(--text-secondary);">(${c.pos})</span>
+                  </div>
+                  <span class="badge badge-loss">${c.statusTag}</span>
                 </div>
-                <span class="badge badge-loss">${c.statusTag}</span>
+                <div class="inj-detail-grid">
+                  <div>
+                    <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Acquired</div>
+                    <strong>${acqText}</strong>
+                  </div>
+                  <div>
+                    <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Week Lost</div>
+                    <strong>Week ${c.weekLostNum}</strong>
+                  </div>
+                  <div>
+                    <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Weeks Lost</div>
+                    <strong>${c.weeksLostCount} wk${c.weeksLostCount === 1 ? "" : "s"} (${c.weeksLabel})</strong>
+                  </div>
+                </div>
               </div>
-              <div class="inj-detail-grid">
-                <div>
-                  <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Drafted</div>
-                  <strong>${c.seasonStr} • Rd ${c.round}${c.pickNo < 999 ? ` (#${c.pickNo})` : ""}</strong>
-                </div>
-                <div>
-                  <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Week Lost</div>
-                  <strong>Week ${c.weekLostNum}</strong>
-                </div>
-                <div>
-                  <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Weeks Lost</div>
-                  <strong>${c.weeksLostCount} wk${c.weeksLostCount === 1 ? "" : "s"} (${c.weeksLabel})</strong>
-                </div>
-              </div>
-            </div>
-          `).join("")
-        : `<p style="font-size:13px; color:var(--text-secondary);">No drafted players were lost to IR or season-ending injury for ${meta.name} in this timeframe.</p>`;
+            `;
+          }).join("")
+        : `<p style="font-size:13px; color:var(--text-secondary);">No rostered players were lost to IR or season-ending injury for ${meta.name} in this filter.</p>`;
     }
 
     /* ==========================================================================
