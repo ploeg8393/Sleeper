@@ -30,7 +30,7 @@
       --gold: #e0b354;
       --gold-bg: #382f1d;
       --nav-height: 62px;
-      --header-height: 56px;
+      --header-height: 76px;
       --radius: 10px;
     }
 
@@ -62,8 +62,24 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 14px;
+      gap: 10px;
+      padding: 6px 14px;
       z-index: 40;
+    }
+
+    .topbar-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex-shrink: 0;
+      min-width: 132px;
+    }
+
+    .topbar-controls select {
+      width: 100%;
+      font-size: 11.5px;
+      padding: 4px 8px;
+      border-radius: 7px;
     }
 
     .brand {
@@ -996,10 +1012,15 @@
       <div class="brand-title" id="headerTitle">Sleeper League Vault</div>
       <div class="brand-sub" id="headerSub">League 1389754082821947392</div>
     </div>
-    <select id="teamScopeFilter" onchange="onTeamScopeChange()" aria-label="Team Scope Filter" style="font-size:12px; padding:6px 8px; flex-shrink:0;">
-      <option value="CURRENT" selected>Current Teams</option>
-      <option value="ALL">All-Time Teams</option>
-    </select>
+    <div class="topbar-controls">
+      <select id="teamScopeFilter" onchange="onTeamScopeChange()" aria-label="Team Scope Filter">
+        <option value="CURRENT" selected>Current Teams</option>
+        <option value="ALL">All-Time Teams</option>
+      </select>
+      <select id="globalSeasonFilter" onchange="onGlobalSeasonChange()" aria-label="Season Year Filter">
+        <option value="ALL">All-Time</option>
+      </select>
+    </div>
   </header>
 
   <main class="container">
@@ -1015,7 +1036,6 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">Standings & Lineup Efficiency</div>
-            <select id="standingsSeasonFilter" onchange="renderStandings()"></select>
           </div>
           <div class="table-wrap">
             <table data-sort-table="standings">
@@ -1077,7 +1097,6 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">Avg Weekly Starter Score by Slot</div>
-            <select id="posSeasonFilter" onchange="renderPositions()"></select>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
             Average weekly starter points by lineup slot (QB, RB, WR, FLEX, K, DEF).
@@ -1103,7 +1122,6 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">Lineup Efficiency & Bench Blunders</div>
-            <select id="effSeasonFilter" onchange="renderEfficiencyCard()"></select>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
             Compares <strong>Actual PF</strong> against <strong>Optimal Max PF</strong> (best legal starting lineup possible from each week's roster) to measure points left on the bench.
@@ -1134,7 +1152,6 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">Trades, Partners & Waiver Activity</div>
-            <select id="activitySeasonFilter" onchange="renderActivityAndWaivers()"></select>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
             Tap any manager row to open a window showing all trades between that owner and their trade partners.
@@ -1217,7 +1234,6 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">Draft Retention & No-Transactions Sim</div>
-            <select id="draftSeasonFilter" onchange="renderDraftAnalysis()"></select>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
             <strong>Retained:</strong> Drafted players still on roster at season end. <strong>Draft-Only PF:</strong> Optimal weekly starting lineup score if the team made <em>zero</em> trades or waiver moves all year.
@@ -1301,7 +1317,6 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">Drafted Player Injuries & Season Losses</div>
-            <select id="injurySeasonFilter" onchange="renderInjuries()"></select>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
             Click any manager's <strong>Lost for Yr</strong> number to open a sortable popup showing the drafted players who went on IR, their draft round, week lost, and weeks missed.
@@ -1330,7 +1345,6 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">All-Play & Schedule Luck</div>
-            <select id="luckSeasonFilter" onchange="renderLuck()"></select>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
             <strong>Luck Index</strong> = Actual Wins minus Expected All-Play Wins (your record if you played every team every week).
@@ -1695,6 +1709,27 @@
 
     function getTeamScope() {
       return document.getElementById("teamScopeFilter")?.value || "CURRENT";
+    }
+
+    function getSelectedSeason() {
+      return document.getElementById("globalSeasonFilter")?.value || "ALL";
+    }
+
+    function onGlobalSeasonChange() {
+      const yr = getSelectedSeason();
+      const playoffSel = document.getElementById("playoffSeasonSelect");
+      if (yr !== "ALL" && playoffSel) {
+        playoffSel.value = yr;
+      }
+      renderAll();
+      if (!document.getElementById("injuryModalBackdrop").classList.contains("hidden")) {
+        document.getElementById("modalInjurySeasonSelect").value = yr;
+        renderInjuryModalContent();
+      }
+      if (!document.getElementById("luckModalBackdrop").classList.contains("hidden")) {
+        document.getElementById("modalLuckSeasonSelect").value = yr;
+        renderLuckModalContent();
+      }
     }
 
     function isIncludedTeam(uid) {
@@ -3358,15 +3393,16 @@
         .map(s => `<option value="${s.season}">${s.season} Season</option>`)
         .join("");
 
-      document.getElementById("standingsSeasonFilter").innerHTML = seasonOpts;
+      const globalSel = document.getElementById("globalSeasonFilter");
+      const prevGlobal = globalSel ? globalSel.value : "ALL";
+      if (globalSel) {
+        globalSel.innerHTML = seasonOpts;
+        if (prevGlobal && Array.from(globalSel.options).some(o => o.value === prevGlobal)) {
+          globalSel.value = prevGlobal;
+        }
+      }
       document.getElementById("playoffSeasonSelect").innerHTML = singleSeasonOpts;
-      document.getElementById("posSeasonFilter").innerHTML = seasonOpts;
-      document.getElementById("effSeasonFilter").innerHTML = seasonOpts;
-      document.getElementById("activitySeasonFilter").innerHTML = seasonOpts;
-      document.getElementById("draftSeasonFilter").innerHTML = seasonOpts;
-      document.getElementById("injurySeasonFilter").innerHTML = seasonOpts;
       document.getElementById("modalInjurySeasonSelect").innerHTML = seasonOpts;
-      document.getElementById("luckSeasonFilter").innerHTML = seasonOpts;
       document.getElementById("modalLuckSeasonSelect").innerHTML = seasonOpts;
 
       populateManagerDropdowns();
@@ -3414,7 +3450,7 @@
     }
 
     function renderStandings() {
-      const filter = document.getElementById("standingsSeasonFilter").value || "ALL";
+      const filter = getSelectedSeason();
       const { rows } = computeStatsForSeasons(filter);
 
       // Assign baseline standings rank across all teams before filtering displayed teams
@@ -3454,7 +3490,7 @@
     }
 
     function renderEfficiencyCard() {
-      const filter = document.getElementById("effSeasonFilter").value || "ALL";
+      const filter = getSelectedSeason();
       const { rows: rawRows } = computeStatsForSeasons(filter);
       const rows = sortRowsGeneric(rawRows.filter(r => isIncludedTeam(r.user_id)), "efficiency", {
         worstBenchDiff: r => r.worstBench?.diff || 0
@@ -3619,7 +3655,7 @@
     }
 
     function renderPositions() {
-      const filter = document.getElementById("posSeasonFilter").value || "ALL";
+      const filter = getSelectedSeason();
       const rows = computePositionsAndActivity(filter);
 
       const POS_KEYS = ["QB", "RB", "WR", "FLEX", "K", "DEF"];
@@ -3656,7 +3692,7 @@
     }
 
     function renderActivityAndWaivers() {
-      const filter = document.getElementById("activitySeasonFilter").value || "ALL";
+      const filter = getSelectedSeason();
       const rows = computePositionsAndActivity(filter);
       const actSorted = sortRowsGeneric(rows.filter(r => isIncludedTeam(r.user_id)), "activity");
 
@@ -3914,7 +3950,7 @@
        7. DRAFT ANALYSIS & INJURIES RENDERING + SORTABLE INJURY DETAIL MODAL
        ========================================================================== */
     function renderDraftAnalysis() {
-      const filter = document.getElementById("draftSeasonFilter").value || "ALL";
+      const filter = getSelectedSeason();
       const {
         managerRows: rawManagerRows,
         roundRows,
@@ -4062,7 +4098,7 @@
     }
 
     function renderInjuries() {
-      const filter = document.getElementById("injurySeasonFilter").value || "ALL";
+      const filter = getSelectedSeason();
       const { rows: rawRows } = computeInjuryAnalysis(filter);
       const rows = sortRowsGeneric(rawRows.filter(r => isIncludedTeam(r.user_id)), "injuries");
 
@@ -4089,7 +4125,7 @@
     }
 
     function openInjuryModal(ownerUid) {
-      const currentSeasonFilter = document.getElementById("injurySeasonFilter").value || "ALL";
+      const currentSeasonFilter = getSelectedSeason();
       document.getElementById("modalInjuryOwnerSelect").value = ownerUid;
       document.getElementById("modalInjurySeasonSelect").value = currentSeasonFilter;
       document.getElementById("injuryModalBackdrop").classList.remove("hidden");
@@ -4514,7 +4550,7 @@
        9. LUCK, H2H & WEEKLY MATCHUPS RENDERING
        ========================================================================== */
     function renderLuck() {
-      const filter = document.getElementById("luckSeasonFilter").value || "ALL";
+      const filter = getSelectedSeason();
       const { rows: rawRows } = computeStatsForSeasons(filter);
       const rows = sortRowsGeneric(rawRows.filter(r => isIncludedTeam(r.user_id)), "luck", {
         wins: r => r.wins + r.winPct * 0.001,
@@ -4605,7 +4641,7 @@
     }
 
     function openLuckModal(ownerUid, eventType = "FIFTH") {
-      const currentSeasonFilter = document.getElementById("luckSeasonFilter").value || "ALL";
+      const currentSeasonFilter = getSelectedSeason();
       document.getElementById("modalLuckOwnerSelect").value = ownerUid;
       document.getElementById("modalLuckTypeSelect").value = eventType;
       document.getElementById("modalLuckSeasonSelect").value = currentSeasonFilter;
