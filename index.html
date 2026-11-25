@@ -1097,7 +1097,7 @@
     <div class="brand">
       <div class="brand-title-row">
         <div class="brand-title" id="headerTitle">Sleeper League Vault</div>
-        <span class="version-pill" id="appVersionBadge">V1.2</span>
+        <span class="version-pill" id="appVersionBadge">V2.0</span>
       </div>
       <div class="brand-sub" id="headerSub">League 1389754082821947392</div>
     </div>
@@ -1185,19 +1185,21 @@
       <section id="tab-positions" class="tab-panel hidden">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">Avg Weekly Starter Score by Slot</div>
+            <div class="card-title">Avg Weekly Starter Score by Lineup Slot</div>
           </div>
-          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
-            Average weekly starter points by lineup slot (QB, RB, WR, FLEX, K, DEF).
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;" id="positionsSubDesc">
+            Average weekly single-starter points for each actual starting lineup slot (e.g., QB, RB1, RB2, WR1, WR2, FLEX, K, DEF).
           </p>
           <div class="table-wrap">
             <table data-sort-table="positions">
-              <thead>
+              <thead id="positionsHead">
                 <tr>
                   <th data-col="name" onclick="sortTable('positions', 'name')">Manager</th>
                   <th class="num" data-col="QB" onclick="sortTable('positions', 'QB')">QB</th>
-                  <th class="num" data-col="RB" onclick="sortTable('positions', 'RB')">RB</th>
-                  <th class="num" data-col="WR" onclick="sortTable('positions', 'WR')">WR</th>
+                  <th class="num" data-col="RB1" onclick="sortTable('positions', 'RB1')">RB1</th>
+                  <th class="num" data-col="RB2" onclick="sortTable('positions', 'RB2')">RB2</th>
+                  <th class="num" data-col="WR1" onclick="sortTable('positions', 'WR1')">WR1</th>
+                  <th class="num" data-col="WR2" onclick="sortTable('positions', 'WR2')">WR2</th>
                   <th class="num" data-col="FLEX" onclick="sortTable('positions', 'FLEX')">FLEX</th>
                   <th class="num" data-col="K" onclick="sortTable('positions', 'K')">K</th>
                   <th class="num" data-col="DEF" onclick="sortTable('positions', 'DEF')">DEF</th>
@@ -1268,10 +1270,10 @@
             <div class="card-title">Commissioner Transactions &amp; Roster Adjustments</div>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
-            Tracks all commissioner-executed roster moves (adds, drops, and pick adjustments) logged in Sleeper's transaction history.
+            Tap any manager's <strong>Commish Moves</strong> value to open a popup with the full transaction details.
           </p>
           <div id="commishHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
-          <div class="table-wrap" style="margin-bottom:12px;">
+          <div class="table-wrap">
             <table data-sort-table="commish">
               <thead>
                 <tr>
@@ -1285,7 +1287,6 @@
               <tbody id="commishSummaryBody"></tbody>
             </table>
           </div>
-          <div id="commishLogList"></div>
         </div>
 
         <div class="card">
@@ -1584,7 +1585,7 @@
               <span class="badge badge-gold">Dues</span>
             </div>
             <div class="rule-body">
-              If you are trading away a draft pick, you <strong>must post NEXT YEAR's buy-in</strong> before the deal stands.
+              If you are trading away a better draft pick for a worse one, you <strong>must post NEXT YEAR's buy-in</strong> before the trade will process.
             </div>
           </div>
 
@@ -1837,6 +1838,27 @@
     </div>
   </div>
 
+  <!-- MODAL WINDOW 4: COMMISSIONER TRANSACTIONS DETAILS POPUP -->
+  <div id="commishModalBackdrop" class="modal-backdrop hidden" onclick="closeCommishModalOnBackdrop(event)">
+    <div class="modal-window" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div>
+          <div class="card-title" id="commishModalTitle">Commissioner Transactions</div>
+          <div style="font-size:11px; color:var(--text-secondary);" id="commishModalSub">Commissioner-executed roster &amp; pick moves</div>
+        </div>
+        <button class="btn-icon" onclick="closeCommishModal()">✕ Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="controls-row">
+          <select id="modalCommishOwnerSelect" class="grow" onchange="renderCommishModalContent()"></select>
+          <select id="modalCommishSeasonSelect" onchange="renderCommishModalContent()"></select>
+        </div>
+        <div id="commishModalSummary" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+        <div id="commishModalContainer"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- BOTTOM NAVIGATION (9 SCROLLABLE TABS) -->
   <nav class="bottom-nav">
     <button class="nav-btn active" data-tab="standings" onclick="switchTab('standings')">
@@ -1885,7 +1907,7 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V1.2";
+    const APP_VERSION = "V2.0";
     const HARDCODED_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     const ARCHIVE_CACHE_KEY = "sleeper_vault_seasons_cache_v6";
@@ -1949,6 +1971,10 @@
         document.getElementById("modalLuckSeasonSelect").value = yr;
         renderLuckModalContent();
       }
+      if (!document.getElementById("commishModalBackdrop").classList.contains("hidden")) {
+        document.getElementById("modalCommishSeasonSelect").value = yr;
+        renderCommishModalContent();
+      }
     }
 
     function isIncludedTeam(uid) {
@@ -1968,6 +1994,9 @@
       }
       if (!document.getElementById("luckModalBackdrop").classList.contains("hidden")) {
         renderLuckModalContent();
+      }
+      if (!document.getElementById("commishModalBackdrop").classList.contains("hidden")) {
+        renderCommishModalContent();
       }
     }
 
@@ -2638,16 +2667,28 @@
       );
     }
 
-    function normalizeSlotBucket(slotLabel) {
-      if (!slotLabel) return null;
-      if (slotLabel === "QB") return "QB";
-      if (slotLabel === "RB") return "RB";
-      if (slotLabel === "WR") return "WR";
-      if (slotLabel === "TE") return "TE";
-      if (slotLabel === "K") return "K";
-      if (slotLabel === "DEF") return "DEF";
-      if (slotLabel.includes("FLEX")) return "FLEX";
-      return null;
+    function buildSeasonSlotDefs(rawSlots) {
+      const baseList = (rawSlots && rawSlots.length > 0)
+        ? rawSlots
+        : ["QB", "RB", "RB", "WR", "WR", "FLEX", "K", "DEF"];
+      const normalized = baseList.map(s => {
+        if (!s) return "FLEX";
+        if (s === "SUPER_FLEX") return "SFLEX";
+        if (s === "REC_FLEX") return "RFLEX";
+        if (s.includes("FLEX")) return "FLEX";
+        return s;
+      });
+      const totals = {};
+      for (const base of normalized) {
+        totals[base] = (totals[base] || 0) + 1;
+      }
+      const seen = {};
+      return normalized.map(base => {
+        seen[base] = (seen[base] || 0) + 1;
+        const idx = seen[base];
+        const key = totals[base] > 1 ? `${base}${idx}` : base;
+        return { key, label: key, base };
+      });
     }
 
     function computePositionsAndActivity(seasonFilter) {
@@ -2655,7 +2696,19 @@
         ? appData.seasons
         : appData.seasons.filter(s => s.season === seasonFilter);
 
-      const POS_KEYS = ["QB", "RB", "WR", "FLEX", "K", "DEF"];
+      const slotSchemaMap = new Map();
+      // Seed slot columns in chronological order starting from the most recent target season so active slots appear first
+      for (const s of [...targetSeasons].reverse()) {
+        for (const def of buildSeasonSlotDefs(s.roster_positions)) {
+          if (!slotSchemaMap.has(def.key)) {
+            slotSchemaMap.set(def.key, def);
+          }
+        }
+      }
+      const slotDefs = slotSchemaMap.size > 0
+        ? Array.from(slotSchemaMap.values())
+        : buildSeasonSlotDefs(null);
+
       const managersMap = {};
 
       const ensure = (uid) => {
@@ -2666,7 +2719,8 @@
             name: meta.name,
             avatar: meta.avatar,
             weeksPlayed: 0,
-            posTotals: { QB: 0, RB: 0, WR: 0, FLEX: 0, K: 0, DEF: 0 },
+            slotTotals: {},
+            slotWeeks: {},
             tradesCount: 0,
             partners: {},
             waiversCount: 0,
@@ -2678,7 +2732,7 @@
       };
 
       for (const s of targetSeasons) {
-        const slots = s.roster_positions || [];
+        const seasonSlotDefs = buildSeasonSlotDefs(s.roster_positions);
         const ownerMap = s.roster_owner_map || {};
 
         for (const entries of Object.values(s.matchups_by_week)) {
@@ -2693,12 +2747,13 @@
             const sPts = e.starters_points || [];
             const pPtsMap = e.players_points || {};
 
-            starters.forEach((pid, idx) => {
-              const slotName = slots[idx];
-              const bucket = normalizeSlotBucket(slotName) || normalizeSlotBucket(getPlayerPos(pid));
-              if (!bucket || !POS_KEYS.includes(bucket)) return;
-              const pts = sPts[idx] !== undefined ? Number(sPts[idx] || 0) : Number(pPtsMap[pid] || 0);
-              rec.posTotals[bucket] += pts;
+            seasonSlotDefs.forEach((def, idx) => {
+              const pid = starters[idx];
+              const pts = sPts[idx] !== undefined
+                ? Number(sPts[idx] || 0)
+                : (pid ? Number(pPtsMap[pid] || 0) : 0);
+              rec.slotTotals[def.key] = (rec.slotTotals[def.key] || 0) + pts;
+              rec.slotWeeks[def.key] = (rec.slotWeeks[def.key] || 0) + 1;
             });
           }
         }
@@ -2732,10 +2787,11 @@
         }
       }
 
-      return Object.values(managersMap).map(r => {
+      const rows = Object.values(managersMap).map(r => {
         const avgs = {};
-        for (const k of POS_KEYS) {
-          avgs[k] = r.weeksPlayed > 0 ? r.posTotals[k] / r.weeksPlayed : 0;
+        for (const def of slotDefs) {
+          const wks = r.slotWeeks[def.key] || 0;
+          avgs[def.key] = wks > 0 ? (r.slotTotals[def.key] || 0) / wks : null;
         }
 
         const sortedPartners = Object.entries(r.partners).sort((a, b) => b[1] - a[1]);
@@ -2761,6 +2817,8 @@
           totalWire: r.waiversCount + r.faCount
         };
       });
+
+      return { rows, slotDefs };
     }
 
     function computeCommissionerActivity(seasonFilter) {
@@ -3836,6 +3894,7 @@
       document.getElementById("playoffSeasonSelect").innerHTML = singleSeasonOpts;
       document.getElementById("modalInjurySeasonSelect").innerHTML = seasonOpts;
       document.getElementById("modalLuckSeasonSelect").innerHTML = seasonOpts;
+      document.getElementById("modalCommishSeasonSelect").innerHTML = seasonOpts;
 
       populateManagerDropdowns();
     }
@@ -3866,6 +3925,7 @@
       applySelect("modalOwnerBSelect", `<option value="ALL">All Trade Partners</option>` + managerOpts, 0, true);
       applySelect("modalInjuryOwnerSelect", managerOpts, 0);
       applySelect("modalLuckOwnerSelect", managerOpts, 0);
+      applySelect("modalCommishOwnerSelect", `<option value="ALL">All Managers</option>` + managerOpts, 0, true);
     }
 
     function renderAll() {
@@ -4088,15 +4148,34 @@
 
     function renderPositions() {
       const filter = getSelectedSeason();
-      const rows = computePositionsAndActivity(filter);
+      const { rows, slotDefs } = computePositionsAndActivity(filter);
+      const slotKeys = slotDefs.map(d => d.key);
 
-      const POS_KEYS = ["QB", "RB", "WR", "FLEX", "K", "DEF"];
+      const headEl = document.getElementById("positionsHead");
+      if (headEl) {
+        headEl.innerHTML = `
+          <tr>
+            <th data-col="name" onclick="sortTable('positions', 'name')">Manager</th>
+            ${slotDefs.map(d => `<th class="num" data-col="${d.key}" onclick="sortTable('positions', '${d.key}')">${d.label}</th>`).join("")}
+          </tr>
+        `;
+      }
+
+      const descEl = document.getElementById("positionsSubDesc");
+      if (descEl) {
+        descEl.textContent = `Average weekly single-starter points for each actual lineup slot (${slotDefs.map(d => d.label).join(", ")}).`;
+      }
+
+      if (!slotKeys.includes(appData.tableSorts.positions.col) && appData.tableSorts.positions.col !== "name") {
+        appData.tableSorts.positions.col = slotKeys[0] || "QB";
+      }
+
       const leagueAvgs = {};
-      for (const k of POS_KEYS) {
-        const activeRows = rows.filter(r => r.weeksPlayed > 0);
+      for (const k of slotKeys) {
+        const activeRows = rows.filter(r => r[k] !== null && r[k] !== undefined);
         leagueAvgs[k] = activeRows.length
           ? activeRows.reduce((sum, r) => sum + r[k], 0) / activeRows.length
-          : 0;
+          : null;
       }
 
       const posSorted = sortRowsGeneric(rows.filter(r => isIncludedTeam(r.user_id)), "positions");
@@ -4109,14 +4188,14 @@
               <span class="manager-name">${r.name}</span>
             </div>
           </td>
-          ${POS_KEYS.map(k => `<td class="num">${r.weeksPlayed > 0 ? r[k].toFixed(1) : "-"}</td>`).join("")}
+          ${slotKeys.map(k => `<td class="num">${r[k] !== null && r[k] !== undefined ? r[k].toFixed(1) : "-"}</td>`).join("")}
         </tr>
       `).join("");
 
       const summaryRow = `
         <tr class="summary-row">
           <td>League Avg</td>
-          ${POS_KEYS.map(k => `<td class="num">${leagueAvgs[k].toFixed(1)}</td>`).join("")}
+          ${slotKeys.map(k => `<td class="num">${leagueAvgs[k] !== null ? leagueAvgs[k].toFixed(1) : "-"}</td>`).join("")}
         </tr>
       `;
 
@@ -4125,7 +4204,7 @@
 
     function renderActivityAndWaivers() {
       const filter = getSelectedSeason();
-      const rows = computePositionsAndActivity(filter);
+      const { rows } = computePositionsAndActivity(filter);
       const actSorted = sortRowsGeneric(rows.filter(r => isIncludedTeam(r.user_id)), "activity");
 
       document.getElementById("activityBody").innerHTML = actSorted.map(r => `
@@ -4145,7 +4224,10 @@
           <td class="num">${r.waiversCount}</td>
           <td class="num">${r.faCount}</td>
           <td class="num"><span class="badge badge-neutral">${r.totalWire}</span></td>
-          <td class="num"><span class="badge ${r.commishCount > 0 ? "badge-gold" : "badge-neutral"}">${r.commishCount}</span></td>
+          <td class="num">
+            <button type="button" class="luck-pill-btn ${r.commishCount > 0 ? "gold" : "zero"}"
+              onclick="event.stopPropagation(); openCommishModal('${r.user_id}')">${r.commishCount}</button>
+          </td>
         </tr>
       `).join("");
 
@@ -4161,7 +4243,9 @@
       const topCommishTarget = [...visibleCommishRows].filter(r => r.commishCount > 0).sort((a, b) => b.commishCount - a.commishCount)[0];
 
       document.getElementById("commishHighlightStrip").innerHTML = `
-        <span class="badge ${totalCommishMoves > 0 ? "badge-gold" : "badge-neutral"}">${totalCommishMoves} Commish Action${totalCommishMoves === 1 ? "" : "s"}</span>
+        <button type="button" class="luck-pill-btn ${totalCommishMoves > 0 ? "gold" : "zero"}" onclick="openCommishModal('ALL')">
+          ${totalCommishMoves} Commish Action${totalCommishMoves === 1 ? "" : "s"}
+        </button>
         <span class="badge badge-win">+${totalCommishAdds} Player Add${totalCommishAdds === 1 ? "" : "s"}</span>
         <span class="badge badge-loss">-${totalCommishDrops} Player Drop${totalCommishDrops === 1 ? "" : "s"}</span>
         ${topCommishTarget ? `<span class="badge badge-neutral">Most Adjusted: ${topCommishTarget.name} (${topCommishTarget.commishCount}x)</span>` : ""}
@@ -4169,44 +4253,22 @@
 
       const sortedCommishRows = sortRowsGeneric(visibleCommishRows, "commish");
       document.getElementById("commishSummaryBody").innerHTML = sortedCommishRows.map(r => `
-        <tr>
+        <tr class="clickable-row" onclick="openCommishModal('${r.user_id}')">
           <td>
             <div class="manager-cell">
               ${renderAvatar(r)}
               <span class="manager-name">${r.name}</span>
             </div>
           </td>
-          <td class="num"><strong>${r.commishCount}</strong></td>
+          <td class="num">
+            <button type="button" class="luck-pill-btn ${r.commishCount > 0 ? "gold" : "zero"}"
+              onclick="event.stopPropagation(); openCommishModal('${r.user_id}')">${r.commishCount}</button>
+          </td>
           <td class="num">${r.playersAdded}</td>
           <td class="num">${r.playersDropped}</td>
           <td class="num">${r.picksAdjusted}</td>
         </tr>
       `).join("");
-
-      document.getElementById("commishLogList").innerHTML = visibleCommishLog.length > 0
-        ? visibleCommishLog.slice(0, 15).map(item => {
-            const dateTxt = item.created
-              ? new Date(item.created).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
-              : "";
-            const detailTxt = item.actions.length > 0
-              ? item.actions.join(" • ")
-              : (item.notes || "Commissioner roster/setting adjustment");
-            return `
-              <div class="versus-game-row">
-                <div style="min-width:0; flex:1;">
-                  <strong>${item.teamsLabel}</strong>
-                  <div style="font-size:11px; color:var(--text-secondary);">
-                    ${detailTxt}
-                  </div>
-                </div>
-                <div style="flex-shrink:0; text-align:right;">
-                  <span class="badge badge-gold">${item.season} Wk ${item.week}</span>
-                  ${dateTxt ? `<div style="font-size:10px; color:var(--text-muted); margin-top:2px;">${dateTxt}</div>` : ""}
-                </div>
-              </div>
-            `;
-          }).join("")
-        : `<p style="font-size:12.5px; color:var(--text-secondary);">No commissioner roster transactions recorded for this timeframe.</p>`;
 
       const { managerRows: pickMgrRows, pickTrades } = computeDraftPickTradeAnalysis(filter);
 
@@ -4320,6 +4382,94 @@
 
     function closeTradeModalOnBackdrop(e) {
       if (e.target.id === "tradeModalBackdrop") closeTradeModal();
+    }
+
+    function openCommishModal(ownerUid = "ALL") {
+      const currentSeasonFilter = getSelectedSeason();
+      const ownerSel = document.getElementById("modalCommishOwnerSelect");
+      const seasonSel = document.getElementById("modalCommishSeasonSelect");
+      if (ownerSel) ownerSel.value = ownerUid || "ALL";
+      if (seasonSel) seasonSel.value = currentSeasonFilter;
+      document.getElementById("commishModalBackdrop").classList.remove("hidden");
+      renderCommishModalContent();
+    }
+
+    function closeCommishModal() {
+      document.getElementById("commishModalBackdrop").classList.add("hidden");
+    }
+
+    function closeCommishModalOnBackdrop(e) {
+      if (e.target.id === "commishModalBackdrop") closeCommishModal();
+    }
+
+    function renderCommishModalContent() {
+      const ownerUid = document.getElementById("modalCommishOwnerSelect").value || "ALL";
+      const seasonFilter = document.getElementById("modalCommishSeasonSelect").value || "ALL";
+      const isAllOwners = ownerUid === "ALL";
+      const meta = isAllOwners ? null : getManagerMeta(ownerUid);
+
+      document.getElementById("commishModalTitle").textContent = meta
+        ? `${meta.name} — Commissioner Moves`
+        : "All Commissioner Transactions";
+      document.getElementById("commishModalSub").textContent =
+        seasonFilter === "ALL" ? "All-Time Commissioner Roster & Pick Adjustments" : `${seasonFilter} Season Commissioner Adjustments`;
+
+      const { log } = computeCommissionerActivity(seasonFilter);
+      const filteredLog = log.filter(item => {
+        if (!isAllOwners) return item.uids.includes(ownerUid);
+        return item.uids.length === 0 || item.uids.some(uid => isIncludedTeam(uid));
+      });
+
+      const addsCount = filteredLog.reduce(
+        (sum, item) => sum + item.actions.filter(a => a.startsWith("+ ")).length,
+        0
+      );
+      const dropsCount = filteredLog.reduce(
+        (sum, item) => sum + item.actions.filter(a => a.startsWith("- ")).length,
+        0
+      );
+      const picksCount = filteredLog.reduce(
+        (sum, item) => sum + item.actions.filter(a => a.startsWith("Pick:")).length,
+        0
+      );
+
+      document.getElementById("commishModalSummary").innerHTML = `
+        <span class="badge badge-gold">${filteredLog.length} Move${filteredLog.length === 1 ? "" : "s"}</span>
+        <span class="badge badge-win">+${addsCount} Added</span>
+        <span class="badge badge-loss">-${dropsCount} Dropped</span>
+        <span class="badge badge-neutral">${picksCount} Pick Adj</span>
+      `;
+
+      document.getElementById("commishModalContainer").innerHTML = filteredLog.length > 0
+        ? filteredLog.map(item => {
+            const dateTxt = item.created
+              ? new Date(item.created).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
+              : "";
+            const actionsHtml = item.actions.length > 0
+              ? item.actions.map(act => {
+                  const colorStyle = act.startsWith("+ ")
+                    ? "color:var(--win);"
+                    : act.startsWith("- ")
+                      ? "color:var(--loss);"
+                      : "color:var(--gold);";
+                  return `<div class="trade-asset"><span style="${colorStyle}">${act}</span></div>`;
+                }).join("")
+              : `<div class="trade-asset"><span>${item.notes || "Commissioner roster/setting adjustment"}</span></div>`;
+
+            return `
+              <div class="inj-detail-card">
+                <div class="inj-detail-top">
+                  <div>
+                    <strong style="font-size:13px;">${item.teamsLabel}</strong>
+                  </div>
+                  <span class="badge badge-gold">${item.season} • Week ${item.week}${dateTxt ? ` (${dateTxt})` : ""}</span>
+                </div>
+                ${actionsHtml}
+                ${item.notes && item.actions.length > 0 ? `<div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">Note: ${item.notes}</div>` : ""}
+              </div>
+            `;
+          }).join("")
+        : `<p style="font-size:13px; color:var(--text-secondary);">No commissioner transactions found for ${meta ? meta.name : "this filter"}.</p>`;
     }
 
     function renderModalTrades() {
@@ -4957,7 +5107,7 @@
       }
 
       if (q.includes("trade") || q.includes("active") || q.includes("transaction")) {
-        const act = computePositionsAndActivity("ALL").sort((a, b) => b.tradesCount - a.tradesCount);
+        const act = computePositionsAndActivity("ALL").rows.sort((a, b) => b.tradesCount - a.tradesCount);
         return `All-Time Trade & Waiver Leaders:\n` + act.map((a, i) =>
           `${i + 1}. ${a.name}: ${a.tradesCount} trades (Top partner: ${a.topPartnerLabel}), ${a.totalWire} wire moves`
         ).join("\n");
@@ -5510,7 +5660,7 @@
       }
 
       function isOverlayOpen() {
-        const ids = ["tradeModalBackdrop", "injuryModalBackdrop", "luckModalBackdrop", "aiDrawer"];
+        const ids = ["tradeModalBackdrop", "injuryModalBackdrop", "luckModalBackdrop", "commishModalBackdrop", "aiDrawer"];
         return ids.some(id => {
           const el = document.getElementById(id);
           return el && !el.classList.contains("hidden");
