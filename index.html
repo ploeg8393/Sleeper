@@ -1031,7 +1031,7 @@
     <div class="brand">
       <div class="brand-title-row">
         <div class="brand-title" id="headerTitle">Sleeper League Vault</div>
-        <span class="version-pill" id="appVersionBadge">V1.0</span>
+        <span class="version-pill" id="appVersionBadge">V1.1</span>
       </div>
       <div class="brand-sub" id="headerSub">League 1389754082821947392</div>
     </div>
@@ -1201,7 +1201,7 @@
             <div class="card-title">Draft Pick Trade Analysis (By Manager)</div>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
-            Tracks each manager's average draft round given away, acquired picks by round, and average draft round acquired.
+            Tracks each manager's average draft round given away and average draft round acquired.
           </p>
           <div id="pickTradeHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
           <div class="table-wrap">
@@ -1210,7 +1210,6 @@
                 <tr>
                   <th data-col="name" onclick="sortTable('pickTrades', 'name')">Manager</th>
                   <th class="num" data-col="avgRoundGiven" onclick="sortTable('pickTrades', 'avgRoundGiven')">Avg Rd Given</th>
-                  <th data-col="acqCount" onclick="sortTable('pickTrades', 'acqCount')">Picks Acq (Rds)</th>
                   <th class="num" data-col="avgRoundAcq" onclick="sortTable('pickTrades', 'avgRoundAcq')">Avg Rd Acq</th>
                 </tr>
               </thead>
@@ -1333,21 +1332,21 @@
         </div>
       </section>
 
-      <!-- TAB 6: INJURIES & SEASON-ENDING IR -->
+      <!-- TAB 6: INJURIES & SEASON-ENDING IR / OUT -->
       <section id="tab-injuries" class="tab-panel hidden">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">Rostered Player Injuries &amp; IR Losses</div>
+            <div class="card-title">Rostered Player Injuries &amp; IR / Out Losses</div>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
-            Tracks players who were <strong>on a manager's team when they went on IR</strong> (both drafted players still on their roster and waiver/trade acquisitions). Tap <strong>Lost for Yr</strong> for the full sortable breakdown.
+            Tracks players who were <strong>on a manager's team when they went on IR or Out</strong> (both drafted players still on their roster and waiver/trade acquisitions). Tap <strong>IR / Out</strong> for the full sortable breakdown.
           </p>
           <div class="table-wrap">
             <table data-sort-table="injuries">
               <thead>
                 <tr>
                   <th data-col="name" onclick="sortTable('injuries', 'name')">Manager</th>
-                  <th class="num" data-col="seasonEndingCount" onclick="sortTable('injuries', 'seasonEndingCount')">Lost for Yr</th>
+                  <th class="num" data-col="seasonEndingCount" onclick="sortTable('injuries', 'seasonEndingCount')">IR / Out</th>
                   <th class="num" data-col="draftedLostCount" onclick="sortTable('injuries', 'draftedLostCount')">Drafted</th>
                   <th class="num" data-col="nonDraftedLostCount" onclick="sortTable('injuries', 'nonDraftedLostCount')">Waiver/Trade</th>
                   <th class="num" data-col="earlyRoundLost" onclick="sortTable('injuries', 'earlyRoundLost')">Rds 1–5</th>
@@ -1595,8 +1594,8 @@
     <div class="modal-window" onclick="event.stopPropagation()">
       <div class="modal-head">
         <div>
-          <div class="card-title" id="injuryModalTitle">Players Lost on IR</div>
-          <div style="font-size:11px; color:var(--text-secondary);" id="injuryModalSub">Rostered IR &amp; Season-Ending Casualties</div>
+          <div class="card-title" id="injuryModalTitle">Players on IR / Out</div>
+          <div style="font-size:11px; color:var(--text-secondary);" id="injuryModalSub">Rostered IR, Out &amp; Season-Ending Casualties</div>
         </div>
         <button class="btn-icon" onclick="closeInjuryModal()">✕ Close</button>
       </div>
@@ -1607,7 +1606,7 @@
         </div>
         <div class="controls-row">
           <select id="modalInjurySourceSelect" onchange="renderInjuryModalContent()">
-            <option value="ALL">All Rostered IR</option>
+            <option value="ALL">All Rostered IR / Out</option>
             <option value="DRAFTED">Drafted Only</option>
             <option value="NON_DRAFTED">Waiver / Trade Only</option>
           </select>
@@ -1696,7 +1695,7 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V1.0";
+    const APP_VERSION = "V1.1";
     const HARDCODED_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     const ARCHIVE_CACHE_KEY = "sleeper_vault_seasons_cache_v6";
@@ -1716,7 +1715,7 @@
         positions: { col: "QB", dir: "desc" },
         efficiency: { col: "efficiencyPct", dir: "desc" },
         activity: { col: "totalWire", dir: "desc" },
-        pickTrades: { col: "acqCount", dir: "desc" },
+        pickTrades: { col: "avgRoundAcq", dir: "asc" },
         waiverRoi: { col: "wireStarterPts", dir: "desc" },
         draft: { col: "draftOnlyPf", dir: "desc" },
         injuries: { col: "seasonEndingCount", dir: "desc" },
@@ -2529,12 +2528,15 @@
         let topPartnerLabel = "-";
         let topPartnerUid = null;
         if (sortedPartners.length > 0) {
-          topPartnerUid = sortedPartners[0][0];
           const maxCnt = sortedPartners[0][1];
-          const topNames = sortedPartners
-            .filter(([, cnt]) => cnt === maxCnt)
-            .map(([pUid]) => getManagerMeta(pUid).name);
-          topPartnerLabel = `${topNames.join(", ")} (${maxCnt}x)`;
+          const tiedPartners = sortedPartners.filter(([, cnt]) => cnt === maxCnt);
+          if (tiedPartners.length > 1) {
+            topPartnerUid = "ALL";
+            topPartnerLabel = `${maxCnt}x`;
+          } else {
+            topPartnerUid = tiedPartners[0][0];
+            topPartnerLabel = `${getManagerMeta(topPartnerUid).name} (${maxCnt}x)`;
+          }
         }
 
         return {
@@ -3029,15 +3031,20 @@
           const endedOnIR = Boolean(reserveOwnerByPid[pid]);
           const liveInj = isCurrentSeason ? getPlayerLiveInjury(pid) : null;
 
-          // Identify which manager had the player on their team when the player went on IR
+          const isLiveIrOrOut = Boolean(liveInj && ["IR", "Out", "PUP"].includes(liveInj));
+
+          // Identify which manager had the player on their team when the player went on IR or Out
           const ownerAtWeekLost = ownersByWeek[weekLostNum]?.[pid] || null;
           const ownerAtLastActive = lastActiveWeek > 0 ? (ownersByWeek[lastActiveWeek]?.[pid] || null) : null;
           const irOwner = reserveOwnerByPid[pid] || null;
+          const currentRosterOwner = isCurrentSeason
+            ? (Object.entries(finalPlayersByOwner).find(([, pSet]) => pSet.has(pid))?.[0] || null)
+            : null;
           const draftFallbackOwner = (lastActiveWeek === 0 && draftPickByPid[pid])
             ? draftPickByPid[pid].owner_id
             : null;
 
-          const injuryOwnerUid = ownerAtWeekLost || irOwner || ownerAtLastActive || draftFallbackOwner;
+          const injuryOwnerUid = ownerAtWeekLost || irOwner || (isLiveIrOrOut ? currentRosterOwner : null) || ownerAtLastActive || draftFallbackOwner;
           if (!injuryOwnerUid) continue;
 
           const ownerPidKey = `${injuryOwnerUid}_${pid}`;
@@ -3051,12 +3058,14 @@
           // Verify the player was actually on this team before/at injury (not picked up after already injured)
           const wasOnTeamBeforeOrAtInjury = isDraftedByOwner ||
             (firstOwnerWk !== undefined && firstOwnerWk <= Math.max(firstWk, lastActiveWeek)) ||
-            ownerHasOnIR;
+            ownerHasOnIR ||
+            (isLiveIrOrOut && ownerHasFinal);
 
-          // Verify the player was still on this team when they went on IR (not dropped while healthy)
+          // Verify the player was still on this team when they went on IR or Out (not dropped while healthy)
           const stillOnTeamWhenInjured =
             ownerAtWeekLost === injuryOwnerUid ||
             ownerHasOnIR ||
+            (isLiveIrOrOut && ownerHasFinal) ||
             (lastOwnerWk !== undefined && lastOwnerWk >= weekLostNum) ||
             (ownerHasFinal && lastActiveWeek === lastWk);
 
@@ -3064,8 +3073,7 @@
 
           const isSeasonEnding = ownerHasOnIR ||
             endedOnIR ||
-            liveInj === "IR" ||
-            liveInj === "PUP" ||
+            isLiveIrOrOut ||
             (weekNums.length >= 5 && missedFinalStreak >= 4);
 
           if (!isSeasonEnding) continue;
@@ -3864,7 +3872,6 @@
 
       const visiblePickMgrRows = pickMgrRows.filter(r => isIncludedTeam(r.user_id));
       const sortedPickMgrRows = sortRowsGeneric(visiblePickMgrRows, "pickTrades", {
-        acqCount: r => r.acqCount + (r.acquiredPicks.reduce((s, p) => s + (20 - p.round), 0) * 0.001),
         avgRoundGiven: r => r.avgRoundGiven ?? 999,
         avgRoundAcq: r => r.avgRoundAcq ?? 999
       });
@@ -3882,12 +3889,11 @@
                   </div>
                 </td>
                 <td class="num"><span class="badge badge-neutral">${avgGivenTxt}</span></td>
-                <td style="font-size:12px;">${r.acqRoundsLabel}</td>
                 <td class="num"><span class="badge ${r.avgRoundAcq !== null ? "badge-gold" : "badge-neutral"}">${avgAcqTxt}</span></td>
               </tr>
             `;
           }).join("")
-        : `<tr><td colspan="4" style="color:var(--text-secondary);">No draft pick trades recorded for this filter.</td></tr>`;
+        : `<tr><td colspan="3" style="color:var(--text-secondary);">No draft pick trades recorded for this filter.</td></tr>`;
 
       const { managerRows: rawWaiverMgrRows, bargains: rawBargains } = computeWaiverBargains(filter);
       const managerRows = rawWaiverMgrRows.filter(r => isIncludedTeam(r.user_id));
@@ -4294,16 +4300,16 @@
       });
       const casualties = sortCasualtyList(filteredCasualties, sortBy, appData.modalInjuryDir);
 
-      document.getElementById("injuryModalTitle").textContent = `${meta.name} — Rostered Players Lost on IR`;
+      document.getElementById("injuryModalTitle").textContent = `${meta.name} — Rostered Players on IR / Out`;
       document.getElementById("injuryModalSub").textContent =
-        seasonFilter === "ALL" ? "All-Time Rostered IR & Season-Ending Injuries" : `${seasonFilter} Season Rostered IR & Season-Ending Injuries`;
+        seasonFilter === "ALL" ? "All-Time Rostered IR, Out & Season-Ending Injuries" : `${seasonFilter} Season Rostered IR, Out & Season-Ending Injuries`;
 
       const totalPostWeeks = casualties.reduce((sum, c) => sum + c.weeksLostCount, 0);
       const draftedCount = casualties.filter(c => c.isDrafted).length;
       const nonDraftedCount = casualties.filter(c => !c.isDrafted).length;
 
       document.getElementById("modalInjurySummary").innerHTML = `
-        <span class="badge badge-loss">${casualties.length} Lost for Year</span>
+        <span class="badge badge-loss">${casualties.length} IR / Out</span>
         <span class="badge badge-gold">${draftedCount} Drafted (Kept)</span>
         <span class="badge badge-neutral">${nonDraftedCount} Waiver / Trade</span>
         <span class="badge badge-neutral">${totalPostWeeks} Total Wks Lost</span>
