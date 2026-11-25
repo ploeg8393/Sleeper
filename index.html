@@ -1022,6 +1022,72 @@
     .src-fp { background: rgba(224, 179, 84, 0.16); color: #e0b354; border: 1px solid rgba(224, 179, 84, 0.35); }
     .src-sleeper { background: rgba(76, 195, 138, 0.16); color: #4cc38a; border: 1px solid rgba(76, 195, 138, 0.35); }
 
+    /* League Rules Styling */
+    .rule-item {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 11px 13px;
+      margin-bottom: 9px;
+    }
+
+    .rule-item.warn {
+      border-left-color: var(--gold);
+    }
+
+    .rule-item.lock {
+      border-left-color: var(--loss);
+    }
+
+    .rule-heading {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .rule-body {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      line-height: 1.48;
+    }
+
+    .rule-body strong {
+      color: var(--text-primary);
+    }
+
+    .og-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    @media (min-width: 540px) {
+      .og-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .og-chip {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 7px;
+      padding: 6px 9px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .hidden { display: none !important; }
   </style>
 </head>
@@ -1031,7 +1097,7 @@
     <div class="brand">
       <div class="brand-title-row">
         <div class="brand-title" id="headerTitle">Sleeper League Vault</div>
-        <span class="version-pill" id="appVersionBadge">V1.1</span>
+        <span class="version-pill" id="appVersionBadge">V1.2</span>
       </div>
       <div class="brand-sub" id="headerSub">League 1389754082821947392</div>
     </div>
@@ -1189,11 +1255,37 @@
                   <th class="num" data-col="waiversCount" onclick="sortTable('activity', 'waiversCount')">Waivers</th>
                   <th class="num" data-col="faCount" onclick="sortTable('activity', 'faCount')">FA Adds</th>
                   <th class="num" data-col="totalWire" onclick="sortTable('activity', 'totalWire')">Total Wire</th>
+                  <th class="num" data-col="commishCount" onclick="sortTable('activity', 'commishCount')">Commish</th>
                 </tr>
               </thead>
               <tbody id="activityBody"></tbody>
             </table>
           </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Commissioner Transactions &amp; Roster Adjustments</div>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            Tracks all commissioner-executed roster moves (adds, drops, and pick adjustments) logged in Sleeper's transaction history.
+          </p>
+          <div id="commishHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+          <div class="table-wrap" style="margin-bottom:12px;">
+            <table data-sort-table="commish">
+              <thead>
+                <tr>
+                  <th data-col="name" onclick="sortTable('commish', 'name')">Manager</th>
+                  <th class="num" data-col="commishCount" onclick="sortTable('commish', 'commishCount')">Commish Moves</th>
+                  <th class="num" data-col="playersAdded" onclick="sortTable('commish', 'playersAdded')">Players Added</th>
+                  <th class="num" data-col="playersDropped" onclick="sortTable('commish', 'playersDropped')">Players Dropped</th>
+                  <th class="num" data-col="picksAdjusted" onclick="sortTable('commish', 'picksAdjusted')">Picks Adj</th>
+                </tr>
+              </thead>
+              <tbody id="commishSummaryBody"></tbody>
+            </table>
+          </div>
+          <div id="commishLogList"></div>
         </div>
 
         <div class="card">
@@ -1448,7 +1540,101 @@
         </div>
       </section>
 
-      <!-- TAB 9: PASSWORD-PROTECTED WAIVER WIRE TARGETS -->
+      <!-- TAB 9: LEAGUE CONSTITUTION & RULES -->
+      <section id="tab-rules" class="tab-panel hidden">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">League Rules &amp; Constitution</div>
+            <span class="badge badge-gold">Official Charter</span>
+          </div>
+
+          <div class="rule-item">
+            <div class="rule-heading">
+              <span>1. Trade Cancellations</span>
+              <span class="badge badge-neutral">Trades</span>
+            </div>
+            <div class="rule-body">
+              Trades <strong>cannot be cancelled</strong> unless <strong>both parties agree</strong>.
+            </div>
+          </div>
+
+          <div class="rule-item">
+            <div class="rule-heading">
+              <span>2. The 24-Hour Counter Rule</span>
+              <span class="badge badge-win">24h Window</span>
+            </div>
+            <div class="rule-body">
+              Once a trade is accepted, other teams in the league have a <strong>24-hour timeframe</strong> to submit a counter-offer on that trade.
+            </div>
+          </div>
+
+          <div class="rule-item warn">
+            <div class="rule-heading">
+              <span>3. Draft Pick Trading Cap (Round 4+)</span>
+              <span class="badge badge-gold">Draft Capital</span>
+            </div>
+            <div class="rule-body">
+              Draft picks higher than the <strong>4th round</strong> (Rounds 1, 2, and 3) <strong>cannot be traded</strong>.
+            </div>
+          </div>
+
+          <div class="rule-item warn">
+            <div class="rule-heading">
+              <span>4. Trading Picks Requires Next Year's Buy-In</span>
+              <span class="badge badge-gold">Dues</span>
+            </div>
+            <div class="rule-body">
+              If you are trading away a draft pick, you <strong>must post NEXT YEAR's buy-in</strong> before the deal stands.
+            </div>
+          </div>
+
+          <div class="rule-item">
+            <div class="rule-heading">
+              <span>5. Full Starting Lineup Requirement</span>
+              <span class="badge badge-neutral">Lineup Integrity</span>
+            </div>
+            <div class="rule-body">
+              If the commissioner sees that you have the roster space available but fail to start a full lineup, adjustments may be made at the <strong>commissioner's discretion</strong> to help maintain fairness and keep the league competitive.
+            </div>
+          </div>
+
+          <div class="rule-item warn">
+            <div class="rule-heading">
+              <span>6. Tanking for Draft Picks &amp; Post-Week 9 Top Player Rule</span>
+              <span class="badge badge-loss">Post-Week 9</span>
+            </div>
+            <div class="rule-body">
+              Tanking for draft picks is allowed (and sometimes encouraged), but to prevent convoluted deals: if we are <strong>past Week 9</strong> and a team trades a <strong>"Top Player"</strong> away for draft picks, that team <strong>MUST take a counter based on draft picks alone</strong>, regardless of the incoming players—unless you are truly wanting to improve, in which case you <strong>must get a Top Player back</strong> in the trade.
+              <div style="margin-top:7px; padding-top:7px; border-top:1px dashed var(--border);">
+                <strong>Top Player Definition:</strong> Any player ranked inside the <strong>Flex Top 20</strong> (RB/WR/TE), <strong>QB Top 5</strong>, or <strong>DEF Top 3</strong>.
+              </div>
+            </div>
+          </div>
+
+          <div class="rule-item lock">
+            <div class="rule-heading">
+              <span>7. Non-Returning Teams &amp; OG Governance</span>
+              <span class="badge badge-loss">Roster Lock</span>
+            </div>
+            <div class="rule-body">
+              A team can be designated as <strong>"Non-Returning"</strong> if a <strong>majority vote from the league's OGs</strong> decides. Any non-returning team's roster will be <strong>locked</strong> except for changes due to <strong>injuries and bye weeks</strong>, and that team will be <strong>ineligible for trades</strong>.
+              <div style="margin-top:8px; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-secondary);">
+                Current League OGs (6)
+              </div>
+              <div class="og-grid">
+                <div class="og-chip"><span>🛡️</span><span>Bleedgreen020</span></div>
+                <div class="og-chip"><span>🛡️</span><span>Chenchodadon</span></div>
+                <div class="og-chip"><span>🛡️</span><span>UnderDawgLew</span></div>
+                <div class="og-chip"><span>🛡️</span><span>EdwardMillet821</span></div>
+                <div class="og-chip"><span>🛡️</span><span>Ploeg8393</span></div>
+                <div class="og-chip"><span>🛡️</span><span>PlaygroundBully</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 10: PASSWORD-PROTECTED WAIVER WIRE TARGETS -->
       <section id="tab-waivers" class="tab-panel hidden">
         <!-- Password Gate -->
         <div id="waiverLockGate" class="pw-gate-box">
@@ -1685,6 +1871,10 @@
       <span class="nav-icon">⚔️</span>
       <span>H2H</span>
     </button>
+    <button class="nav-btn" data-tab="rules" onclick="switchTab('rules')">
+      <span class="nav-icon">📜</span>
+      <span>Rules</span>
+    </button>
     <button class="nav-btn" data-tab="waivers" onclick="switchTab('waivers')">
       <span class="nav-icon" id="waiverNavIcon">🔒</span>
       <span>Waivers</span>
@@ -1695,7 +1885,7 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V1.1";
+    const APP_VERSION = "V1.2";
     const HARDCODED_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     const ARCHIVE_CACHE_KEY = "sleeper_vault_seasons_cache_v6";
@@ -1715,6 +1905,7 @@
         positions: { col: "QB", dir: "desc" },
         efficiency: { col: "efficiencyPct", dir: "desc" },
         activity: { col: "totalWire", dir: "desc" },
+        commish: { col: "commishCount", dir: "desc" },
         pickTrades: { col: "avgRoundAcq", dir: "asc" },
         waiverRoi: { col: "wireStarterPts", dir: "desc" },
         draft: { col: "draftOnlyPf", dir: "desc" },
@@ -1794,7 +1985,7 @@
       else if (tableKey === "playoffs") renderPlayoffHistory();
       else if (tableKey === "positions") renderPositions();
       else if (tableKey === "efficiency") renderEfficiencyCard();
-      else if (tableKey === "activity" || tableKey === "pickTrades" || tableKey === "waiverRoi") renderActivityAndWaivers();
+      else if (tableKey === "activity" || tableKey === "commish" || tableKey === "pickTrades" || tableKey === "waiverRoi") renderActivityAndWaivers();
       else if (tableKey === "draft") renderDraftAnalysis();
       else if (tableKey === "injuries") renderInjuries();
       else if (tableKey === "luck" || tableKey === "cutoffLuck") renderLuck();
@@ -2044,6 +2235,7 @@
 
       const tradeMap = new Map();
       const wireTxMap = new Map();
+      const commishTxMap = new Map();
 
       rawTxWeeks.forEach((txList, idx) => {
         if (!Array.isArray(txList)) return;
@@ -2069,6 +2261,18 @@
               roster_ids: tx.roster_ids || [],
               adds: tx.adds || {},
               drops: tx.drops || {}
+            });
+          } else if (tx.type === "commissioner") {
+            if (commishTxMap.has(tx.transaction_id)) continue;
+            commishTxMap.set(tx.transaction_id, {
+              transaction_id: tx.transaction_id,
+              week: tx.leg || (idx + 1),
+              created: tx.status_updated || tx.created || 0,
+              roster_ids: tx.roster_ids || [],
+              adds: tx.adds || {},
+              drops: tx.drops || {},
+              draft_picks: tx.draft_picks || [],
+              notes: tx.metadata?.notes || ""
             });
           }
         }
@@ -2104,7 +2308,8 @@
         })),
         matchups_by_week: matchupsByWeek,
         trades: Array.from(tradeMap.values()).sort((a, b) => b.created - a.created),
-        wire_transactions: Array.from(wireTxMap.values())
+        wire_transactions: Array.from(wireTxMap.values()),
+        commissioner_transactions: Array.from(commishTxMap.values()).sort((a, b) => b.created - a.created)
       };
     }
 
@@ -2154,7 +2359,8 @@
             Array.isArray(cItem.winners_bracket) &&
             Array.isArray(cItem.draft_picks) &&
             Array.isArray(cItem.rosters_final) &&
-            Array.isArray(cItem.wire_transactions)
+            Array.isArray(cItem.wire_transactions) &&
+            Array.isArray(cItem.commissioner_transactions)
           ) {
             seasons.push(cItem);
             cachedCount++;
@@ -2464,7 +2670,8 @@
             tradesCount: 0,
             partners: {},
             waiversCount: 0,
-            faCount: 0
+            faCount: 0,
+            commishCount: 0
           };
         }
         return managersMap[uid];
@@ -2516,6 +2723,13 @@
             else if (wtx.type === "free_agent") rec.faCount += 1;
           }
         }
+
+        for (const ctx of (s.commissioner_transactions || [])) {
+          const uids = [...new Set((ctx.roster_ids || []).map(rid => ownerMap[rid]).filter(Boolean))];
+          for (const uid of uids) {
+            ensure(uid).commishCount += 1;
+          }
+        }
       }
 
       return Object.values(managersMap).map(r => {
@@ -2547,6 +2761,84 @@
           totalWire: r.waiversCount + r.faCount
         };
       });
+    }
+
+    function computeCommissionerActivity(seasonFilter) {
+      const targetSeasons = seasonFilter === "ALL"
+        ? appData.seasons
+        : appData.seasons.filter(s => s.season === seasonFilter);
+
+      const managerStats = {};
+      const log = [];
+
+      const ensure = (uid) => {
+        if (!managerStats[uid]) {
+          const meta = getManagerMeta(uid);
+          managerStats[uid] = {
+            user_id: uid,
+            name: meta.name,
+            avatar: meta.avatar,
+            commishCount: 0,
+            playersAdded: 0,
+            playersDropped: 0,
+            picksAdjusted: 0
+          };
+        }
+        return managerStats[uid];
+      };
+
+      for (const s of targetSeasons) {
+        const ownerMap = s.roster_owner_map || {};
+        for (const uid of Object.values(ownerMap)) {
+          if (uid) ensure(uid);
+        }
+
+        for (const ctx of (s.commissioner_transactions || [])) {
+          const uids = [...new Set((ctx.roster_ids || []).map(rid => ownerMap[rid]).filter(Boolean))];
+          const teamNames = uids.map(uid => getManagerMeta(uid).name);
+
+          const addedLabels = [];
+          for (const [pid, rid] of Object.entries(ctx.adds || {})) {
+            const uid = ownerMap[rid];
+            if (uid) ensure(uid).playersAdded += 1;
+            addedLabels.push(`+ ${getPlayerLabel(pid)}${uid ? ` (${getManagerMeta(uid).name})` : ""}`);
+          }
+
+          const droppedLabels = [];
+          for (const [pid, rid] of Object.entries(ctx.drops || {})) {
+            const uid = ownerMap[rid];
+            if (uid) ensure(uid).playersDropped += 1;
+            droppedLabels.push(`- ${getPlayerLabel(pid)}${uid ? ` (${getManagerMeta(uid).name})` : ""}`);
+          }
+
+          const pickLabels = [];
+          for (const dp of (ctx.draft_picks || [])) {
+            const uid = ownerMap[dp.owner_id];
+            if (uid) ensure(uid).picksAdjusted += 1;
+            pickLabels.push(`Pick: ${dp.season} Rd ${dp.round}${uid ? ` → ${getManagerMeta(uid).name}` : ""}`);
+          }
+
+          for (const uid of uids) {
+            ensure(uid).commishCount += 1;
+          }
+
+          log.push({
+            season: s.season,
+            week: ctx.week,
+            created: ctx.created || 0,
+            uids,
+            teamsLabel: teamNames.join(", ") || "League",
+            actions: [...addedLabels, ...droppedLabels, ...pickLabels],
+            notes: ctx.notes || ""
+          });
+        }
+      }
+
+      log.sort((a, b) => Number(b.season) - Number(a.season) || b.week - a.week || b.created - a.created);
+      return {
+        managerRows: Object.values(managerStats),
+        log
+      };
     }
 
     function computeWaiverBargains(seasonFilter) {
@@ -3853,8 +4145,68 @@
           <td class="num">${r.waiversCount}</td>
           <td class="num">${r.faCount}</td>
           <td class="num"><span class="badge badge-neutral">${r.totalWire}</span></td>
+          <td class="num"><span class="badge ${r.commishCount > 0 ? "badge-gold" : "badge-neutral"}">${r.commishCount}</span></td>
         </tr>
       `).join("");
+
+      const { managerRows: rawCommishRows, log: rawCommishLog } = computeCommissionerActivity(filter);
+      const visibleCommishRows = rawCommishRows.filter(r => isIncludedTeam(r.user_id));
+      const visibleCommishLog = rawCommishLog.filter(item =>
+        item.uids.length === 0 || item.uids.some(uid => isIncludedTeam(uid))
+      );
+
+      const totalCommishMoves = visibleCommishLog.length;
+      const totalCommishAdds = visibleCommishRows.reduce((sum, r) => sum + r.playersAdded, 0);
+      const totalCommishDrops = visibleCommishRows.reduce((sum, r) => sum + r.playersDropped, 0);
+      const topCommishTarget = [...visibleCommishRows].filter(r => r.commishCount > 0).sort((a, b) => b.commishCount - a.commishCount)[0];
+
+      document.getElementById("commishHighlightStrip").innerHTML = `
+        <span class="badge ${totalCommishMoves > 0 ? "badge-gold" : "badge-neutral"}">${totalCommishMoves} Commish Action${totalCommishMoves === 1 ? "" : "s"}</span>
+        <span class="badge badge-win">+${totalCommishAdds} Player Add${totalCommishAdds === 1 ? "" : "s"}</span>
+        <span class="badge badge-loss">-${totalCommishDrops} Player Drop${totalCommishDrops === 1 ? "" : "s"}</span>
+        ${topCommishTarget ? `<span class="badge badge-neutral">Most Adjusted: ${topCommishTarget.name} (${topCommishTarget.commishCount}x)</span>` : ""}
+      `;
+
+      const sortedCommishRows = sortRowsGeneric(visibleCommishRows, "commish");
+      document.getElementById("commishSummaryBody").innerHTML = sortedCommishRows.map(r => `
+        <tr>
+          <td>
+            <div class="manager-cell">
+              ${renderAvatar(r)}
+              <span class="manager-name">${r.name}</span>
+            </div>
+          </td>
+          <td class="num"><strong>${r.commishCount}</strong></td>
+          <td class="num">${r.playersAdded}</td>
+          <td class="num">${r.playersDropped}</td>
+          <td class="num">${r.picksAdjusted}</td>
+        </tr>
+      `).join("");
+
+      document.getElementById("commishLogList").innerHTML = visibleCommishLog.length > 0
+        ? visibleCommishLog.slice(0, 15).map(item => {
+            const dateTxt = item.created
+              ? new Date(item.created).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
+              : "";
+            const detailTxt = item.actions.length > 0
+              ? item.actions.join(" • ")
+              : (item.notes || "Commissioner roster/setting adjustment");
+            return `
+              <div class="versus-game-row">
+                <div style="min-width:0; flex:1;">
+                  <strong>${item.teamsLabel}</strong>
+                  <div style="font-size:11px; color:var(--text-secondary);">
+                    ${detailTxt}
+                  </div>
+                </div>
+                <div style="flex-shrink:0; text-align:right;">
+                  <span class="badge badge-gold">${item.season} Wk ${item.week}</span>
+                  ${dateTxt ? `<div style="font-size:10px; color:var(--text-muted); margin-top:2px;">${dateTxt}</div>` : ""}
+                </div>
+              </div>
+            `;
+          }).join("")
+        : `<p style="font-size:12.5px; color:var(--text-secondary);">No commissioner roster transactions recorded for this timeframe.</p>`;
 
       const { managerRows: pickMgrRows, pickTrades } = computeDraftPickTradeAnalysis(filter);
 
