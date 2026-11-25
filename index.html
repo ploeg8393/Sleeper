@@ -1022,19 +1022,56 @@
     .src-fp { background: rgba(224, 179, 84, 0.16); color: #e0b354; border: 1px solid rgba(224, 179, 84, 0.35); }
     .src-sleeper { background: rgba(76, 195, 138, 0.16); color: #4cc38a; border: 1px solid rgba(76, 195, 138, 0.35); }
 
-    /* League Rules Styling */
+    /* League Rules Styling — Per-Section Color Themes */
+    .rules-section {
+      --sec-color: #63a4db;
+      --sec-bg: rgba(99, 164, 219, 0.09);
+      --sec-border: rgba(99, 164, 219, 0.32);
+      margin-top: 16px;
+    }
+
+    .rules-section:first-of-type {
+      margin-top: 4px;
+    }
+
+    /* Section 1: General (Slate Blue) */
+    .rules-section.sec-general {
+      --sec-color: #63a4db;
+      --sec-bg: rgba(99, 164, 219, 0.09);
+      --sec-border: rgba(99, 164, 219, 0.34);
+    }
+
+    /* Section 2: Participation (Warm Gold) */
+    .rules-section.sec-participation {
+      --sec-color: #e0b354;
+      --sec-bg: rgba(224, 179, 84, 0.09);
+      --sec-border: rgba(224, 179, 84, 0.34);
+    }
+
+    /* Section 3: Trades (Crimson / Coral) */
+    .rules-section.sec-trades {
+      --sec-color: #e57373;
+      --sec-bg: rgba(229, 115, 115, 0.09);
+      --sec-border: rgba(229, 115, 115, 0.34);
+    }
+
+    /* Section 4: Apprentices (Emerald Green) */
+    .rules-section.sec-apprentices {
+      --sec-color: #4cc38a;
+      --sec-bg: rgba(76, 195, 138, 0.09);
+      --sec-border: rgba(76, 195, 138, 0.34);
+    }
+
     .rules-section-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      margin: 16px 0 8px 0;
-      padding-bottom: 5px;
-      border-bottom: 1px solid var(--border-strong);
-    }
-
-    .rules-section-header:first-of-type {
-      margin-top: 4px;
+      margin: 0 0 8px 0;
+      padding: 6px 10px;
+      border-radius: 7px;
+      background: var(--sec-bg);
+      border: 1px solid var(--sec-border);
     }
 
     .rules-section-title {
@@ -1042,24 +1079,27 @@
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: var(--accent);
+      color: var(--sec-color);
+    }
+
+    .sec-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--sec-bg);
+      color: var(--sec-color);
+      border: 1px solid var(--sec-border);
     }
 
     .rule-item {
       background: var(--bg-subtle);
       border: 1px solid var(--border);
-      border-left: 3px solid var(--accent);
+      border-left: 3.5px solid var(--sec-color);
       border-radius: 8px;
       padding: 11px 13px;
       margin-bottom: 9px;
-    }
-
-    .rule-item.warn {
-      border-left-color: var(--gold);
-    }
-
-    .rule-item.lock {
-      border-left-color: var(--loss);
     }
 
     .rule-heading {
@@ -1119,7 +1159,7 @@
     <div class="brand">
       <div class="brand-title-row">
         <div class="brand-title" id="headerTitle">Sleeper League Vault</div>
-        <span class="version-pill" id="appVersionBadge">V2.1</span>
+        <span class="version-pill" id="appVersionBadge">V2.2</span>
       </div>
       <div class="brand-sub" id="headerSub">League 1389754082821947392</div>
     </div>
@@ -1571,161 +1611,176 @@
             <span class="badge badge-gold">Official Charter</span>
           </div>
 
-          <!-- SECTION 1: GENERAL -->
-          <div class="rules-section-header">
-            <span class="rules-section-title">Section 1: General</span>
-            <span class="badge badge-neutral">1.1 – 1.4</span>
-          </div>
+          <!-- SECTION 1: GENERAL (BLUE) -->
+          <div class="rules-section sec-general">
+            <div class="rules-section-header">
+              <span class="rules-section-title">Section 1: General</span>
+              <span class="sec-badge">1.1 – 1.5</span>
+            </div>
 
-          <div class="rule-item warn">
-            <div class="rule-heading">
-              <span>1.1 Buy-In</span>
-              <span class="badge badge-gold">$25</span>
-            </div>
-            <div class="rule-body">
-              League buy-in is <strong>$25</strong>.
-            </div>
-          </div>
-
-          <div class="rule-item warn">
-            <div class="rule-heading">
-              <span>1.2 Pre-Draft Payment</span>
-              <span class="badge badge-gold">Dues</span>
-            </div>
-            <div class="rule-body">
-              <strong>Full buy-in is required before the draft.</strong>
-            </div>
-          </div>
-
-          <div class="rule-item">
-            <div class="rule-heading">
-              <span>1.3 Co-Commissioners</span>
-              <span class="badge badge-neutral">Leadership</span>
-            </div>
-            <div class="rule-body">
-              <strong>Ploeg8393</strong> and <strong>BleedGreen020</strong> are Co-Commissioners.
-            </div>
-          </div>
-
-          <div class="rule-item lock">
-            <div class="rule-heading">
-              <span>1.4 League Chat Conduct</span>
-              <span class="badge badge-loss">Clean Chat</span>
-            </div>
-            <div class="rule-body">
-              Chat must remain relatively clean. If apprentices (<strong>10–16 yrs</strong>) are in the league, <strong>no curse words or derogatory talk</strong>, and <strong>no vulgar images or GIFs</strong>.
-            </div>
-          </div>
-
-          <!-- SECTION 2: PARTICIPATION -->
-          <div class="rules-section-header">
-            <span class="rules-section-title">Section 2: Participation</span>
-            <span class="badge badge-neutral">2.1 – 2.2</span>
-          </div>
-
-          <div class="rule-item">
-            <div class="rule-heading">
-              <span>2.1 Starting Lineup</span>
-              <span class="badge badge-neutral">Lineup Integrity</span>
-            </div>
-            <div class="rule-body">
-              If the commissioner sees that you have the roster space available but fail to start a full lineup, adjustments may be made at the <strong>commissioner's discretion</strong> to help maintain fairness and keep the league competitive.
-            </div>
-          </div>
-
-          <div class="rule-item lock">
-            <div class="rule-heading">
-              <span>2.2 Non-Returning Teams</span>
-              <span class="badge badge-loss">Roster Lock</span>
-            </div>
-            <div class="rule-body">
-              A team can be designated as <strong>"Non-Returning"</strong> if a <strong>majority vote from the league's OGs</strong> decides. Any non-returning team's roster will be <strong>locked</strong> except for changes due to <strong>injuries and bye weeks</strong>, and that team will be <strong>ineligible for trades</strong>.
-              <div style="margin-top:8px; font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-secondary);">
-                Current League OGs (6)
+            <div class="rule-item">
+              <div class="rule-heading">
+                <span>1.1 Buy-In</span>
+                <span class="sec-badge">$25</span>
               </div>
-              <div class="og-grid">
-                <div class="og-chip"><span>🛡️</span><span>Bleedgreen020</span></div>
-                <div class="og-chip"><span>🛡️</span><span>Chenchodadon</span></div>
-                <div class="og-chip"><span>🛡️</span><span>UnderDawgLew</span></div>
-                <div class="og-chip"><span>🛡️</span><span>EdwardMillet821</span></div>
-                <div class="og-chip"><span>🛡️</span><span>Ploeg8393</span></div>
-                <div class="og-chip"><span>🛡️</span><span>PlaygroundBully</span></div>
+              <div class="rule-body">
+                League buy-in is <strong>$25</strong>.
+              </div>
+            </div>
+
+            <div class="rule-item">
+              <div class="rule-heading">
+                <span>1.2 Pre-Draft Payment</span>
+                <span class="sec-badge">Dues</span>
+              </div>
+              <div class="rule-body">
+                <strong>Full buy-in is required before the draft.</strong>
+              </div>
+            </div>
+
+            <div class="rule-item">
+              <div class="rule-heading">
+                <span>1.3 Co-Commissioners</span>
+                <span class="sec-badge">Leadership</span>
+              </div>
+              <div class="rule-body">
+                <strong>Ploeg8393</strong> and <strong>BleedGreen020</strong> are Co-Commissioners.
+              </div>
+            </div>
+
+            <div class="rule-item">
+              <div class="rule-heading">
+                <span>1.4 League Chat Conduct</span>
+                <span class="sec-badge">Clean Chat</span>
+              </div>
+              <div class="rule-body">
+                Chat must remain relatively clean. If apprentices (<strong>10–16 yrs</strong>) are in the league, <strong>no curse words or derogatory talk</strong>, and <strong>no vulgar images or GIFs</strong>.
+              </div>
+            </div>
+
+            <div class="rule-item">
+              <div class="rule-heading">
+                <span>1.5 Current League OGs (6)</span>
+                <span class="sec-badge">Founders</span>
+              </div>
+              <div class="rule-body">
+                Founding and core league members holding voting authority on league governance and non-returning team designations:
+                <div class="og-grid">
+                  <div class="og-chip"><span>🛡️</span><span>Bleedgreen020</span></div>
+                  <div class="og-chip"><span>🛡️</span><span>Chenchodadon</span></div>
+                  <div class="og-chip"><span>🛡️</span><span>UnderDawgLew</span></div>
+                  <div class="og-chip"><span>🛡️</span><span>EdwardMillet821</span></div>
+                  <div class="og-chip"><span>🛡️</span><span>Ploeg8393</span></div>
+                  <div class="og-chip"><span>🛡️</span><span>PlaygroundBully</span></div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- SECTION 3: TRADES -->
-          <div class="rules-section-header">
-            <span class="rules-section-title">Section 3: Trades</span>
-            <span class="badge badge-neutral">3.1 – 3.5</span>
-          </div>
+          <!-- SECTION 2: PARTICIPATION (GOLD) -->
+          <div class="rules-section sec-participation">
+            <div class="rules-section-header">
+              <span class="rules-section-title">Section 2: Participation</span>
+              <span class="sec-badge">2.1 – 2.2</span>
+            </div>
 
-          <div class="rule-item">
-            <div class="rule-heading">
-              <span>3.1 24-Hour Counter Rule</span>
-              <span class="badge badge-win">24h Window</span>
+            <div class="rule-item">
+              <div class="rule-heading">
+                <span>2.1 Starting Lineup</span>
+                <span class="sec-badge">Lineup Integrity</span>
+              </div>
+              <div class="rule-body">
+                If the commissioner sees that you have the roster space available but fail to start a full lineup, adjustments may be made at the <strong>commissioner's discretion</strong> to help maintain fairness and keep the league competitive.
+              </div>
             </div>
-            <div class="rule-body">
-              Once a trade is accepted, other teams in the league have a <strong>24-hour timeframe</strong> to submit a counter-offer on that trade.
-            </div>
-          </div>
 
-          <div class="rule-item">
-            <div class="rule-heading">
-              <span>3.2 Trade Cancellation</span>
-              <span class="badge badge-neutral">Trades</span>
-            </div>
-            <div class="rule-body">
-              Trades <strong>cannot be cancelled</strong> unless <strong>both parties agree</strong>.
-            </div>
-          </div>
-
-          <div class="rule-item warn">
-            <div class="rule-heading">
-              <span>3.3 Draft Pick Cap</span>
-              <span class="badge badge-gold">Round 4+</span>
-            </div>
-            <div class="rule-body">
-              Draft picks higher than the <strong>4th round</strong> (Rounds 1, 2, and 3) <strong>cannot be traded</strong>.
-            </div>
-          </div>
-
-          <div class="rule-item warn">
-            <div class="rule-heading">
-              <span>3.4 Next Year Buy-In</span>
-              <span class="badge badge-gold">Dues</span>
-            </div>
-            <div class="rule-body">
-              If you are trading away a better draft pick for a worse one, you <strong>must post NEXT YEAR's buy-in</strong> before the trade will process.
-            </div>
-          </div>
-
-          <div class="rule-item warn">
-            <div class="rule-heading">
-              <span>3.5 Tanking</span>
-              <span class="badge badge-loss">Post-Week 9</span>
-            </div>
-            <div class="rule-body">
-              Tanking for draft picks is allowed (and sometimes encouraged), but to prevent convoluted deals: if we are <strong>past Week 9</strong> and a team trades a <strong>"Top Player"</strong> away for draft picks, that team <strong>MUST take a counter based on draft picks alone</strong>, regardless of the incoming players—unless you are truly wanting to improve, in which case you <strong>must get a Top Player back</strong> in the trade.
-              <div style="margin-top:7px; padding-top:7px; border-top:1px dashed var(--border);">
-                <strong>Top Player Definition:</strong> Any player ranked inside the <strong>Flex Top 20</strong> (RB/WR/TE), <strong>QB Top 5</strong>, or <strong>DEF Top 3</strong>.
+            <div class="rule-item">
+              <div class="rule-heading">
+                <span>2.2 Non-Returning Teams</span>
+                <span class="sec-badge">Roster Lock</span>
+              </div>
+              <div class="rule-body">
+                A team can be designated as <strong>"Non-Returning"</strong> if a <strong>majority vote from the league's OGs</strong> (listed in <strong>Rule 1.5</strong>) decides. Any non-returning team's roster will be <strong>locked</strong> except for changes due to <strong>injuries and bye weeks</strong>, and that team will be <strong>ineligible for trades</strong>.
               </div>
             </div>
           </div>
 
-          <!-- SECTION 4: APPRENTICES -->
-          <div class="rules-section-header">
-            <span class="rules-section-title">Section 4: Apprentices</span>
-            <span class="badge badge-win">Ages 10–16</span>
+          <!-- SECTION 3: TRADES (CORAL / RED) -->
+          <div class="rules-section sec-trades">
+            <div class="rules-section-header">
+              <span class="rules-section-title">Section 3: Trades</span>
+              <span class="sec-badge">3.1 – 3.5</span>
+            </div>
+
+            <div class="rule-item">
+              <div class="rule-heading">
+                <span>3.1 24-Hour Counter Rule</span>
+                <span class="sec-badge">24h Window</span>
+              </div>
+              <div class="rule-body">
+                Once a trade is accepted, other teams in the league have a <strong>24-hour timeframe</strong> to submit a counter-offer on that trade.
+              </div>
+            </div>
+
+            <div class="rule-item">
+              <div class="rule-heading">
+                <span>3.2 Trade Cancellation</span>
+                <span class="sec-badge">Trades</span>
+              </div>
+              <div class="rule-body">
+                Trades <strong>cannot be cancelled</strong> unless <strong>both parties agree</strong>.
+              </div>
+            </div>
+
+            <div class="rule-item">
+              <div class="rule-heading">
+                <span>3.3 Draft Pick Cap</span>
+                <span class="sec-badge">Round 4+</span>
+              </div>
+              <div class="rule-body">
+                Draft picks higher than the <strong>4th round</strong> (Rounds 1, 2, and 3) <strong>cannot be traded</strong>.
+              </div>
+            </div>
+
+            <div class="rule-item">
+              <div class="rule-heading">
+                <span>3.4 Next Year Buy-In</span>
+                <span class="sec-badge">Dues</span>
+              </div>
+              <div class="rule-body">
+                If you are trading away a better draft pick for a worse one, you <strong>must post NEXT YEAR's buy-in</strong> before the trade will process.
+              </div>
+            </div>
+
+            <div class="rule-item">
+              <div class="rule-heading">
+                <span>3.5 Tanking</span>
+                <span class="sec-badge">Post-Week 9</span>
+              </div>
+              <div class="rule-body">
+                Tanking for draft picks is allowed (and sometimes encouraged), but to prevent convoluted deals: if we are <strong>past Week 9</strong> and a team trades a <strong>"Top Player"</strong> away for draft picks, that team <strong>MUST take a counter based on draft picks alone</strong>, regardless of the incoming players—unless you are truly wanting to improve, in which case you <strong>must get a Top Player back</strong> in the trade.
+                <div style="margin-top:7px; padding-top:7px; border-top:1px dashed var(--border);">
+                  <strong>Top Player Definition:</strong> Any player ranked inside the <strong>Flex Top 20</strong> (RB/WR/TE), <strong>QB Top 5</strong>, or <strong>DEF Top 3</strong>.
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="rule-item">
-            <div class="rule-heading">
-              <span>4.1 Youth Apprentice Managers (10–16 yrs)</span>
-              <span class="badge badge-win">Youth Division</span>
+          <!-- SECTION 4: APPRENTICES (EMERALD GREEN) -->
+          <div class="rules-section sec-apprentices">
+            <div class="rules-section-header">
+              <span class="rules-section-title">Section 4: Apprentices</span>
+              <span class="sec-badge">Ages 10–16</span>
             </div>
-            <div class="rule-body">
-              Youth managers aged <strong>10–16 years</strong> may participate in the league as Apprentices. Whenever any apprentice is active in the league, strict league chat conduct (<strong>Rule 1.4</strong>: no curse words, derogatory talk, or vulgar images/GIFs) applies to all members.
+
+            <div class="rule-item">
+              <div class="rule-heading">
+                <span>4.1 Youth Apprentice Managers (10–16 yrs)</span>
+                <span class="sec-badge">Youth Division</span>
+              </div>
+              <div class="rule-body">
+                Youth managers aged <strong>10–16 years</strong> may participate in the league as Apprentices. Whenever any apprentice is active in the league, strict league chat conduct (<strong>Rule 1.4</strong>: no curse words, derogatory talk, or vulgar images/GIFs) applies to all members.
+              </div>
             </div>
           </div>
         </div>
@@ -2003,7 +2058,7 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V2.1";
+    const APP_VERSION = "V2.2";
     const HARDCODED_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     const ARCHIVE_CACHE_KEY = "sleeper_vault_seasons_cache_v6";
