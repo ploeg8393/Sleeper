@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sleeper League Vault — Loading League...</title>
+  <script>
+    (function () {
+      var path = window.location.pathname || "/";
+      var match = path.match(/^(.*?)\/(\d{6,25})\/?$/);
+      if (match) {
+        var base = match[1] + "/";
+        var leagueId = match[2];
+        window.location.replace(base + "?" + leagueId + (window.location.hash || ""));
+      } else {
+        var fallbackBase = path.replace(/[^\/]*$/, "");
+        window.location.replace(fallbackBase || "/");
+      }
+    })();
+  </script>
+</head>
+<body style="background:#161a1f; color:#e6ebf0; font-family:sans-serif; padding:24px;">
+  Loading Sleeper League...
+</body>
+</html>
