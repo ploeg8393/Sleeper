@@ -531,6 +531,75 @@
       gap: 8px;
     }
 
+    .versus-game-row.clickable {
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .versus-game-row.clickable:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent);
+    }
+
+    .boxscore-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 12px;
+    }
+
+    .boxscore-table th {
+      background: var(--bg-subtle);
+      color: var(--text-secondary);
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 6px 7px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      cursor: default;
+    }
+
+    .boxscore-table td {
+      padding: 7px 7px;
+      border-bottom: 1px solid var(--border);
+      white-space: normal;
+      vertical-align: middle;
+    }
+
+    .boxscore-slot-pill {
+      display: inline-block;
+      min-width: 42px;
+      text-align: center;
+      padding: 2px 5px;
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 800;
+      background: var(--bg-subtle);
+      color: var(--accent);
+      border: 1px solid var(--border-strong);
+    }
+
+    .boxscore-bench-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (min-width: 600px) {
+      .boxscore-bench-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .boxscore-bench-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 11px;
+    }
+
     .matchup-card {
       background: var(--bg-subtle);
       border: 1px solid var(--border);
@@ -1185,7 +1254,7 @@
     <div class="brand">
       <div class="brand-title-row">
         <div class="brand-title" id="headerTitle">Sleeper League Vault</div>
-        <span class="version-pill" id="appVersionBadge">V2.5</span>
+        <span class="version-pill" id="appVersionBadge">V2.6</span>
       </div>
       <div>
         <button type="button" class="league-id-trigger" onclick="openLeagueIdModal()" title="Change Sleeper League ID">
@@ -2098,6 +2167,20 @@
     </div>
   </div>
 
+  <!-- MODAL WINDOW 6: FANTASY MATCHUP BOX SCORE & STATS -->
+  <div id="matchupDetailModalBackdrop" class="modal-backdrop hidden" onclick="closeMatchupDetailModalOnBackdrop(event)">
+    <div class="modal-window" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div>
+          <div class="card-title" id="matchupDetailTitle">Fantasy Matchup Stats</div>
+          <div style="font-size:11px; color:var(--text-secondary);" id="matchupDetailSub">Starter box score, lineup efficiency &amp; bench breakdown</div>
+        </div>
+        <button class="btn-icon" onclick="closeMatchupDetailModal()">✕ Close</button>
+      </div>
+      <div class="modal-body" id="matchupDetailBody"></div>
+    </div>
+  </div>
+
   <!-- BOTTOM NAVIGATION (9 SCROLLABLE TABS) -->
   <nav class="bottom-nav">
     <button class="nav-btn active" data-tab="standings" onclick="switchTab('standings')">
@@ -2146,7 +2229,7 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V2.5";
+    const APP_VERSION = "V2.6";
     const CUSTOM_RULES_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     let activeLeagueIdState = "";
@@ -5897,25 +5980,254 @@
         </div>
       `;
 
-      const gameLogHtml = [...games].reverse().map(g => {
-        const aWon = g.ptsA > g.ptsB;
-        const bWon = g.ptsB > g.ptsA;
+      const gameLogHtml = `<div style="font-size:11px; color:var(--text-secondary); margin-bottom:6px;">Tap any matchup below to view full starter &amp; bench box score stats:</div>` +
+        [...games].reverse().map(g => {
+          const aWon = g.ptsA > g.ptsB;
+          const bWon = g.ptsB > g.ptsA;
+          return `
+            <div class="versus-game-row clickable" onclick="openMatchupDetailModal('${g.season}', ${g.week}, '${uidA}', '${uidB}')" title="View fantasy matchup stats">
+              <span>
+                <strong>${g.season} Wk ${g.week}</strong>
+                ${g.isPlayoff ? `<span class="badge badge-gold" style="margin-left:4px;">Playoff</span>` : ""}
+              </span>
+              <span>
+                <span style="${aWon ? "font-weight:700; color:var(--win);" : ""}">${metaA.name} ${g.ptsA.toFixed(2)}</span>
+                <span style="color:var(--text-muted); margin:0 5px;">vs</span>
+                <span style="${bWon ? "font-weight:700; color:var(--win);" : ""}">${g.ptsB.toFixed(2)} ${metaB.name}</span>
+                <span style="color:var(--accent); margin-left:6px; font-weight:700;">›</span>
+              </span>
+            </div>
+          `;
+        }).join("");
+
+      area.innerHTML = summaryHtml + gameLogHtml;
+    }
+
+    function closeMatchupDetailModal() {
+      document.getElementById("matchupDetailModalBackdrop").classList.add("hidden");
+    }
+
+    function closeMatchupDetailModalOnBackdrop(e) {
+      if (e.target.id === "matchupDetailModalBackdrop") closeMatchupDetailModal();
+    }
+
+    function openMatchupDetailModal(seasonStr, weekNum, uidA, uidB) {
+      const s = appData.seasons.find(item => String(item.season) === String(seasonStr));
+      if (!s) return;
+
+      const entries = s.matchups_by_week[String(weekNum)] || [];
+      const entryA = entries.find(e => e.owner_id === uidA);
+      const entryB = entries.find(e => e.owner_id === uidB);
+      if (!entryA || !entryB) return;
+
+      const metaA = getManagerMeta(uidA);
+      const metaB = getManagerMeta(uidB);
+      const playoffStart = s.playoff_week_start || 15;
+      const isPlayoff = Number(weekNum) >= playoffStart;
+      const slotDefs = buildSeasonSlotDefs(s.roster_positions);
+      const startingSlots = s.roster_positions || [];
+
+      const buildTeamBoxScore = (entry) => {
+        const starters = entry.starters || [];
+        const sPts = entry.starters_points || [];
+        const pPtsMap = entry.players_points || {};
+        const starterSet = new Set(starters.filter(Boolean));
+
+        const starterRows = slotDefs.map((def, idx) => {
+          const pid = starters[idx];
+          const pts = sPts[idx] !== undefined
+            ? Number(sPts[idx] || 0)
+            : (pid ? Number(pPtsMap[pid] || 0) : 0);
+          return {
+            slotLabel: def.label,
+            pid,
+            name: pid ? getPlayerNameOnly(pid) : "Empty Slot",
+            pos: pid ? getPlayerPos(pid) : "-",
+            pts
+          };
+        });
+
+        const benchRows = (entry.players || [])
+          .filter(pid => pid && !starterSet.has(pid))
+          .map(pid => ({
+            pid,
+            name: getPlayerNameOnly(pid),
+            pos: getPlayerPos(pid),
+            pts: Number(pPtsMap[pid] || 0)
+          }))
+          .sort((a, b) => b.pts - a.pts);
+
+        const actualPts = Number(entry.points || 0);
+        const rawOpt = computeOptimalLineupPoints(entry.players || [], startingSlots, pPtsMap);
+        const maxPf = Math.max(actualPts, rawOpt);
+        const benchLeft = Math.max(0, maxPf - actualPts);
+        const efficiencyPct = maxPf > 0 ? (actualPts / maxPf) * 100 : 0;
+        const totalBenchPts = benchRows.reduce((sum, b) => sum + b.pts, 0);
+        const topStarter = [...starterRows].filter(r => r.pid).sort((a, b) => b.pts - a.pts)[0] || null;
+        const lowStarter = [...starterRows].filter(r => r.pid).sort((a, b) => a.pts - b.pts)[0] || null;
+
+        return {
+          actualPts,
+          maxPf,
+          benchLeft,
+          efficiencyPct,
+          totalBenchPts,
+          starterRows,
+          benchRows,
+          topStarter,
+          lowStarter,
+          allPlay: entry.all_play || { wins: 0, losses: 0, ties: 0 }
+        };
+      };
+
+      const boxA = buildTeamBoxScore(entryA);
+      const boxB = buildTeamBoxScore(entryB);
+      const aWon = boxA.actualPts > boxB.actualPts;
+      const bWon = boxB.actualPts > boxA.actualPts;
+      const margin = Math.abs(boxA.actualPts - boxB.actualPts);
+
+      const allStartersCombined = [
+        ...boxA.starterRows.filter(r => r.pid).map(r => ({ ...r, ownerName: metaA.name })),
+        ...boxB.starterRows.filter(r => r.pid).map(r => ({ ...r, ownerName: metaB.name }))
+      ].sort((a, b) => b.pts - a.pts);
+      const gameMvp = allStartersCombined[0] || null;
+
+      document.getElementById("matchupDetailTitle").textContent = `${metaA.name} vs ${metaB.name}`;
+      document.getElementById("matchupDetailSub").textContent =
+        `${s.season} Season • Week ${weekNum}${isPlayoff ? " (Playoffs)" : " (Regular Season)"}`;
+
+      const slotComparisonHtml = slotDefs.map((def, idx) => {
+        const stA = boxA.starterRows[idx] || { name: "-", pos: "-", pts: 0, pid: null };
+        const stB = boxB.starterRows[idx] || { name: "-", pos: "-", pts: 0, pid: null };
+        const aSlotEdge = stA.pts > stB.pts;
+        const bSlotEdge = stB.pts > stA.pts;
+
         return `
-          <div class="versus-game-row">
-            <span>
-              <strong>${g.season} Wk ${g.week}</strong>
-              ${g.isPlayoff ? `<span class="badge badge-gold" style="margin-left:4px;">Playoff</span>` : ""}
-            </span>
-            <span>
-              <span style="${aWon ? "font-weight:700; color:var(--win);" : ""}">${metaA.name} ${g.ptsA.toFixed(2)}</span>
-              <span style="color:var(--text-muted); margin:0 5px;">vs</span>
-              <span style="${bWon ? "font-weight:700; color:var(--win);" : ""}">${g.ptsB.toFixed(2)} ${metaB.name}</span>
-            </span>
-          </div>
+          <tr>
+            <td>
+              <div style="font-weight:600; ${aSlotEdge ? "color:var(--win);" : ""}">${stA.name}</div>
+              <div style="font-size:10.5px; color:var(--text-secondary);">${stA.pos} • <strong style="${aSlotEdge ? "color:var(--win);" : "color:var(--text-primary);"}">${stA.pts.toFixed(2)}</strong></div>
+            </td>
+            <td style="text-align:center;">
+              <span class="boxscore-slot-pill">${def.label}</span>
+            </td>
+            <td style="text-align:right;">
+              <div style="font-weight:600; ${bSlotEdge ? "color:var(--win);" : ""}">${stB.name}</div>
+              <div style="font-size:10.5px; color:var(--text-secondary);"><strong style="${bSlotEdge ? "color:var(--win);" : "color:var(--text-primary);"}">${stB.pts.toFixed(2)}</strong> • ${stB.pos}</div>
+            </td>
+          </tr>
         `;
       }).join("");
 
-      area.innerHTML = summaryHtml + gameLogHtml;
+      const renderBenchList = (benchRows, minStarterPts) => {
+        if (benchRows.length === 0) {
+          return `<div style="font-size:11.5px; color:var(--text-secondary);">No bench players logged.</div>`;
+        }
+        return benchRows.map(b => {
+          const outscoredStarter = b.pts > minStarterPts && b.pts > 0;
+          return `
+            <div class="trade-asset">
+              <span>${b.name} <span style="color:var(--text-secondary);">(${b.pos})</span></span>
+              <span class="asset-pts" style="${outscoredStarter ? "color:var(--gold); font-weight:700;" : ""}">${b.pts.toFixed(2)} pts</span>
+            </div>
+          `;
+        }).join("");
+      };
+
+      const minStartA = boxA.lowStarter ? boxA.lowStarter.pts : Infinity;
+      const minStartB = boxB.lowStarter ? boxB.lowStarter.pts : Infinity;
+
+      document.getElementById("matchupDetailBody").innerHTML = `
+        <div class="versus-summary">
+          <div class="versus-scoreboard">
+            <div>
+              <div style="display:flex; justify-content:center; margin-bottom:4px;">${renderAvatar(metaA)}</div>
+              <div style="font-weight:700; font-size:13px;">${metaA.name}</div>
+              <div style="font-size:18px; font-weight:800; margin-top:2px; ${aWon ? "color:var(--win);" : ""}">${boxA.actualPts.toFixed(2)}</div>
+              ${aWon ? `<span class="badge badge-win" style="margin-top:3px;">Winner</span>` : ""}
+            </div>
+            <div>
+              <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-secondary);">Margin</div>
+              <div style="font-size:16px; font-weight:800; margin:2px 0;">${margin.toFixed(2)}</div>
+              <div style="font-size:10.5px; color:var(--text-secondary);">Total ${(boxA.actualPts + boxB.actualPts).toFixed(2)}</div>
+            </div>
+            <div>
+              <div style="display:flex; justify-content:center; margin-bottom:4px;">${renderAvatar(metaB)}</div>
+              <div style="font-weight:700; font-size:13px;">${metaB.name}</div>
+              <div style="font-size:18px; font-weight:800; margin-top:2px; ${bWon ? "color:var(--win);" : ""}">${boxB.actualPts.toFixed(2)}</div>
+              ${bWon ? `<span class="badge badge-win" style="margin-top:3px;">Winner</span>` : ""}
+            </div>
+          </div>
+
+          <div class="versus-stats-row">
+            <div>
+              <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Optimal Max PF</div>
+              <strong>${boxA.maxPf.toFixed(1)} – ${boxB.maxPf.toFixed(1)}</strong>
+            </div>
+            <div>
+              <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Lineup Eff%</div>
+              <strong>${boxA.efficiencyPct.toFixed(0)}% – ${boxB.efficiencyPct.toFixed(0)}%</strong>
+            </div>
+            <div>
+              <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Bench Left</div>
+              <strong>${boxA.benchLeft.toFixed(1)} – ${boxB.benchLeft.toFixed(1)}</strong>
+            </div>
+          </div>
+          <div class="versus-stats-row">
+            <div>
+              <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">All-Play Wk</div>
+              <strong>${boxA.allPlay.wins}-${boxA.allPlay.losses} vs ${boxB.allPlay.wins}-${boxB.allPlay.losses}</strong>
+            </div>
+            <div>
+              <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Bench Total</div>
+              <strong>${boxA.totalBenchPts.toFixed(1)} – ${boxB.totalBenchPts.toFixed(1)}</strong>
+            </div>
+            <div>
+              <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Matchup MVP</div>
+              <strong>${gameMvp ? `${gameMvp.name} (${gameMvp.pts.toFixed(1)})` : "-"}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-title" style="font-size:12px; margin:10px 0 6px 0;">Starting Lineups Comparison</div>
+        <table class="boxscore-table">
+          <thead>
+            <tr>
+              <th>${metaA.name}</th>
+              <th style="text-align:center;">Slot</th>
+              <th style="text-align:right;">${metaB.name}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${slotComparisonHtml}
+            <tr class="summary-row">
+              <td>${boxA.actualPts.toFixed(2)} pts</td>
+              <td style="text-align:center;">TOTAL</td>
+              <td style="text-align:right;">${boxB.actualPts.toFixed(2)} pts</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="card-title" style="font-size:12px; margin:10px 0 6px 0;">Bench Breakdown</div>
+        <div class="boxscore-bench-grid">
+          <div class="boxscore-bench-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <strong style="font-size:12px;">${metaA.name} Bench</strong>
+              <span class="badge badge-neutral">${boxA.totalBenchPts.toFixed(1)} pts</span>
+            </div>
+            ${renderBenchList(boxA.benchRows, minStartA)}
+          </div>
+          <div class="boxscore-bench-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <strong style="font-size:12px;">${metaB.name} Bench</strong>
+              <span class="badge badge-neutral">${boxB.totalBenchPts.toFixed(1)} pts</span>
+            </div>
+            ${renderBenchList(boxB.benchRows, minStartB)}
+          </div>
+        </div>
+      `;
+
+      document.getElementById("matchupDetailModalBackdrop").classList.remove("hidden");
     }
 
     function renderH2H() {
@@ -6070,7 +6382,7 @@
       }
 
       function isOverlayOpen() {
-        const ids = ["tradeModalBackdrop", "injuryModalBackdrop", "luckModalBackdrop", "commishModalBackdrop", "leagueIdModalBackdrop", "aiDrawer"];
+        const ids = ["tradeModalBackdrop", "injuryModalBackdrop", "luckModalBackdrop", "commishModalBackdrop", "leagueIdModalBackdrop", "matchupDetailModalBackdrop", "aiDrawer"];
         return ids.some(id => {
           const el = document.getElementById(id);
           return el && !el.classList.contains("hidden");
