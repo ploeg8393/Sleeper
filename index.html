@@ -1185,11 +1185,11 @@
     <div class="brand">
       <div class="brand-title-row">
         <div class="brand-title" id="headerTitle">Sleeper League Vault</div>
-        <span class="version-pill" id="appVersionBadge">V2.4</span>
+        <span class="version-pill" id="appVersionBadge">V2.5</span>
       </div>
       <div>
         <button type="button" class="league-id-trigger" onclick="openLeagueIdModal()" title="Change Sleeper League ID">
-          <span id="headerSub">League 1389754082821947392</span>
+          <span id="headerSub">No League Selected</span>
           <span style="color:var(--accent);">✎</span>
         </button>
       </div>
@@ -1212,7 +1212,26 @@
     </div>
     <div id="errorBanner" class="error-banner hidden"></div>
 
-    <div id="dashboardRoot">
+    <div id="noLeagueEmptyState" class="pw-gate-box" style="max-width:460px; margin:28px auto;">
+      <div class="pw-gate-icon">🏈</div>
+      <div class="card-title" style="margin-bottom:6px;">Enter a Sleeper League ID</div>
+      <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:14px; line-height:1.45;">
+        No default league is configured. Enter a Sleeper League ID below or tack it onto the end of the URL:
+      </p>
+      <div style="display:flex; gap:8px; justify-content:center; margin-bottom:12px;">
+        <input type="text" id="emptyStateLeagueInput" inputmode="numeric" class="grow" placeholder="Sleeper League ID"
+          style="text-align:center;"
+          onkeydown="if(event.key==='Enter') applyEmptyStateLeagueId()" />
+        <button class="btn-primary" onclick="applyEmptyStateLeagueId()">Load League</button>
+      </div>
+      <div style="font-size:11px; color:var(--text-muted); line-height:1.5; background:var(--bg-subtle); border:1px solid var(--border); border-radius:8px; padding:8px 10px; text-align:left;">
+        <strong>URL Shortcuts:</strong><br/>
+        • <code>https://ploeg8393.github.io/Sleeper/<strong>&lt;league_id&gt;</strong></code><br/>
+        • <code>https://ploeg8393.github.io/Sleeper/?<strong>&lt;league_id&gt;</strong></code>
+      </div>
+    </div>
+
+    <div id="dashboardRoot" class="hidden">
       <!-- TAB 1: STANDINGS & LINEUP EFFICIENCY -->
       <section id="tab-standings" class="tab-panel">
         <div class="card">
@@ -2063,17 +2082,17 @@
       </div>
       <div class="modal-body">
         <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px; line-height:1.45;">
-          Enter a numeric Sleeper League ID below. Switching away from the default league automatically removes the custom League Rules tab and unlocks Waivers.
+          Enter a numeric Sleeper League ID below, or tack it onto the end of the URL (<code>/Sleeper/&lt;id&gt;</code> or <code>/Sleeper/?&lt;id&gt;</code>).
         </p>
         <div class="controls-row">
-          <input type="text" id="leagueIdInput" inputmode="numeric" class="grow" placeholder="e.g. 1389754082821947392"
+          <input type="text" id="leagueIdInput" inputmode="numeric" class="grow" placeholder="Enter Sleeper League ID"
             onkeydown="if(event.key==='Enter') applyLeagueIdChange()" />
           <button class="btn-primary" onclick="applyLeagueIdChange()">Load League</button>
         </div>
         <div id="leagueIdError" class="hidden" style="color:var(--loss); font-size:12px; font-weight:600; margin-bottom:10px;"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding-top:8px; border-top:1px solid var(--border);">
-          <span style="font-size:11px; color:var(--text-secondary);" id="activeLeagueIdLabel">Active ID: 1389754082821947392</span>
-          <button class="btn-icon" id="resetDefaultLeagueBtn" onclick="resetToDefaultLeague()">↺ Reset Default</button>
+          <span style="font-size:11px; color:var(--text-secondary);" id="activeLeagueIdLabel">Active ID: None</span>
+          <button class="btn-icon" id="clearLeagueBtn" onclick="clearActiveLeague()">✕ Clear League</button>
         </div>
       </div>
     </div>
@@ -2127,29 +2146,89 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V2.4";
-    const DEFAULT_LEAGUE_ID = "1389754082821947392";
-    const LEAGUE_ID_STORAGE_KEY = "sleeper_vault_active_league_id_v1";
+    const APP_VERSION = "V2.5";
+    const CUSTOM_RULES_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
+    let activeLeagueIdState = "";
 
-    function getActiveLeagueId() {
-      const saved = (localStorage.getItem(LEAGUE_ID_STORAGE_KEY) || "").trim();
-      return saved || DEFAULT_LEAGUE_ID;
+    function extractLeagueIdFromLocation() {
+      // 1. Trailing numeric path segment (e.g. /Sleeper/1389754082821947392)
+      const pathMatch = (window.location.pathname || "").match(/\/(\d{6,25})\/?$/);
+      if (pathMatch) return pathMatch[1];
+
+      // 2. Query string (e.g. ?1389754082821947392 or ?league=1389754082821947392 or ?id=...)
+      const rawSearch = (window.location.search || "").trim();
+      const bareQueryMatch = rawSearch.match(/^\?(\d{6,25})$/);
+      if (bareQueryMatch) return bareQueryMatch[1];
+
+      if (rawSearch.length > 1) {
+        const params = new URLSearchParams(rawSearch);
+        for (const key of ["league", "league_id", "leagueId", "id"]) {
+          const val = (params.get(key) || "").trim();
+          if (/^\d{6,25}$/.test(val)) return val;
+        }
+        for (const [k, v] of params.entries()) {
+          if (/^\d{6,25}$/.test(k)) return k;
+          if (/^\d{6,25}$/.test(v)) return v;
+        }
+      }
+
+      // 3. Hash fragment (e.g. #1389754082821947392 or #/1389754082821947392)
+      const rawHash = (window.location.hash || "").replace(/^#\/?/, "").trim();
+      if (/^\d{6,25}$/.test(rawHash)) return rawHash;
+      const hashParamMatch = rawHash.match(/(?:league|league_id|id)=(\d{6,25})/);
+      if (hashParamMatch) return hashParamMatch[1];
+
+      return "";
     }
 
-    function isDefaultLeague() {
-      return getActiveLeagueId() === DEFAULT_LEAGUE_ID;
+    function getBaseAppPath() {
+      const p = window.location.pathname || "/";
+      // Strip trailing /<league_id> if present so base path stays /Sleeper/
+      const stripped = p.replace(/\/\d{6,25}\/?$/, "/");
+      return stripped.endsWith("/") ? stripped : `${stripped}/`;
+    }
+
+    function syncUrlWithLeagueId(leagueId) {
+      if (!window.history || !window.location.protocol.startsWith("http")) return;
+      const basePath = getBaseAppPath();
+      const targetUrl = leagueId ? `${basePath}?${leagueId}` : basePath;
+      try {
+        window.history.replaceState(null, "", targetUrl);
+      } catch (e) {}
+    }
+
+    function getActiveLeagueId() {
+      return activeLeagueIdState;
+    }
+
+    function hasCustomLeagueRules() {
+      return Boolean(activeLeagueIdState) && activeLeagueIdState === CUSTOM_RULES_LEAGUE_ID;
     }
 
     function applyLeagueModeUI() {
-      const customMode = !isDefaultLeague();
+      const hasLeague = Boolean(activeLeagueIdState);
+      const showRules = hasCustomLeagueRules();
+      const emptyEl = document.getElementById("noLeagueEmptyState");
+      const dashEl = document.getElementById("dashboardRoot");
       const rulesBtn = document.getElementById("rulesNavBtn");
       const rulesPanel = document.getElementById("tab-rules");
-      if (rulesBtn) rulesBtn.classList.toggle("hidden", customMode);
-      if (customMode && rulesPanel && !rulesPanel.classList.contains("hidden")) {
+
+      if (emptyEl) emptyEl.classList.toggle("hidden", hasLeague);
+      if (dashEl) dashEl.classList.toggle("hidden", !hasLeague);
+      if (rulesBtn) rulesBtn.classList.toggle("hidden", !showRules);
+
+      if (!showRules && rulesPanel && !rulesPanel.classList.contains("hidden")) {
         rulesPanel.classList.add("hidden");
         switchTab("standings");
       }
+
+      const subEl = document.getElementById("headerSub");
+      if (subEl && !hasLeague) {
+        document.getElementById("headerTitle").textContent = "Sleeper League Vault";
+        subEl.textContent = "No League Selected";
+      }
+
       syncWaiverGateUI();
     }
 
@@ -2158,11 +2237,11 @@
       const inp = document.getElementById("leagueIdInput");
       const err = document.getElementById("leagueIdError");
       const lbl = document.getElementById("activeLeagueIdLabel");
-      const resetBtn = document.getElementById("resetDefaultLeagueBtn");
+      const clearBtn = document.getElementById("clearLeagueBtn");
       if (inp) inp.value = activeId;
       if (err) err.classList.add("hidden");
-      if (lbl) lbl.textContent = `Active ID: ${activeId}${isDefaultLeague() ? " (Default)" : " (Custom)"}`;
-      if (resetBtn) resetBtn.classList.toggle("hidden", isDefaultLeague());
+      if (lbl) lbl.textContent = activeId ? `Active ID: ${activeId}` : "Active ID: None";
+      if (clearBtn) clearBtn.classList.toggle("hidden", !activeId);
       document.getElementById("leagueIdModalBackdrop").classList.remove("hidden");
       if (inp) setTimeout(() => { inp.focus(); inp.select(); }, 50);
     }
@@ -2175,9 +2254,9 @@
       if (e.target.id === "leagueIdModalBackdrop") closeLeagueIdModal();
     }
 
-    async function setActiveLeagueId(newIdRaw) {
+    async function setActiveLeagueId(newIdRaw, errorTargetId = "leagueIdError") {
       const cleaned = String(newIdRaw || "").trim();
-      const err = document.getElementById("leagueIdError");
+      const err = document.getElementById(errorTargetId);
       if (!/^\d{6,25}$/.test(cleaned)) {
         if (err) {
           err.textContent = "Please enter a valid numeric Sleeper League ID.";
@@ -2187,12 +2266,12 @@
       }
       if (err) err.classList.add("hidden");
 
-      if (cleaned === DEFAULT_LEAGUE_ID) {
-        localStorage.removeItem(LEAGUE_ID_STORAGE_KEY);
-      } else {
-        localStorage.setItem(LEAGUE_ID_STORAGE_KEY, cleaned);
-      }
+      activeLeagueIdState = cleaned;
+      syncUrlWithLeagueId(cleaned);
 
+      appData.seasons = [];
+      appData.managers = {};
+      appData.currentTeamIds = new Set();
       appData.waiverIntel.liveRostersLoaded = false;
       appData.waiverIntel.ownerByPid = {};
       appData.waiverIntel.ownerByNormName = {};
@@ -2204,11 +2283,36 @@
 
     function applyLeagueIdChange() {
       const inp = document.getElementById("leagueIdInput");
-      if (inp) setActiveLeagueId(inp.value);
+      if (inp) setActiveLeagueId(inp.value, "leagueIdError");
     }
 
-    function resetToDefaultLeague() {
-      setActiveLeagueId(DEFAULT_LEAGUE_ID);
+    function applyEmptyStateLeagueId() {
+      const inp = document.getElementById("emptyStateLeagueInput");
+      if (!inp) return;
+      const cleaned = String(inp.value || "").trim();
+      if (!/^\d{6,25}$/.test(cleaned)) {
+        showError("Please enter a valid numeric Sleeper League ID.");
+        inp.focus();
+        return;
+      }
+      hideError();
+      setActiveLeagueId(cleaned);
+    }
+
+    function clearActiveLeague() {
+      activeLeagueIdState = "";
+      appData.seasons = [];
+      appData.managers = {};
+      appData.currentTeamIds = new Set();
+      appData.waiverIntel.liveRostersLoaded = false;
+      appData.waiverIntel.ownerByPid = {};
+      appData.waiverIntel.ownerByNormName = {};
+
+      syncUrlWithLeagueId("");
+      hideError();
+      document.getElementById("statusBanner").classList.add("hidden");
+      closeLeagueIdModal();
+      applyLeagueModeUI();
     }
     const ARCHIVE_CACHE_KEY = "sleeper_vault_seasons_cache_v6";
     const PLAYERS_CACHE_KEY = "sleeper_vault_players_compact_v4";
@@ -2664,8 +2768,14 @@
     }
 
     async function syncNow(forceFull = false) {
+      const activeId = getActiveLeagueId();
+      if (!activeId) {
+        document.getElementById("statusBanner").classList.add("hidden");
+        applyLeagueModeUI();
+        return;
+      }
       hideError();
-      showStatus("Syncing active season & cached history...");
+      showStatus(`Syncing league ${activeId}...`);
 
       try {
         const [nflState] = await Promise.all([
@@ -6160,7 +6270,7 @@
     }
 
     function isWaiverUnlocked() {
-      return !isDefaultLeague() || sessionStorage.getItem(WAIVER_SESSION_KEY) === "1";
+      return !hasCustomLeagueRules() || sessionStorage.getItem(WAIVER_SESSION_KEY) === "1";
     }
 
     function syncWaiverGateUI() {
@@ -6172,7 +6282,7 @@
       if (!gate || !content) return;
 
       if (lockBtn) {
-        lockBtn.classList.toggle("hidden", !isDefaultLeague());
+        lockBtn.classList.toggle("hidden", !hasCustomLeagueRules());
       }
 
       if (unlocked) {
@@ -6253,10 +6363,11 @@
       renderWaiverWireIntel();
 
       const tasks = [];
+      const activeId = getActiveLeagueId();
 
-      if (force || !appData.waiverIntel.liveRostersLoaded) {
+      if (activeId && (force || !appData.waiverIntel.liveRostersLoaded)) {
         tasks.push(
-          fetchJson(`/league/${getActiveLeagueId()}/rosters`)
+          fetchJson(`/league/${activeId}/rosters`)
             .then(liveRosters => {
               rebuildLeagueRosterLookup(liveRosters, latestSeason?.roster_owner_map);
               appData.waiverIntel.liveRostersLoaded = true;
@@ -6448,9 +6559,29 @@
     window.addEventListener("DOMContentLoaded", () => {
       const vBadge = document.getElementById("appVersionBadge");
       if (vBadge) vBadge.textContent = APP_VERSION;
-      document.getElementById("headerSub").textContent = `League ${getActiveLeagueId()}`;
+
+      activeLeagueIdState = extractLeagueIdFromLocation();
+      if (activeLeagueIdState) {
+        document.getElementById("headerSub").textContent = `League ${activeLeagueIdState}`;
+        syncUrlWithLeagueId(activeLeagueIdState);
+      } else {
+        document.getElementById("headerSub").textContent = "No League Selected";
+      }
+
       applyLeagueModeUI();
-      syncNow(false);
+      if (activeLeagueIdState) {
+        syncNow(false);
+      } else {
+        const emptyInp = document.getElementById("emptyStateLeagueInput");
+        if (emptyInp) setTimeout(() => emptyInp.focus(), 80);
+      }
+    });
+
+    window.addEventListener("hashchange", () => {
+      const urlId = extractLeagueIdFromLocation();
+      if (urlId && urlId !== activeLeagueIdState) {
+        setActiveLeagueId(urlId);
+      }
     });
   </script>
 </body>
