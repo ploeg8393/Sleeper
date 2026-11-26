@@ -125,6 +125,32 @@
       text-overflow: ellipsis;
     }
 
+    .league-id-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 2px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 10.5px;
+      font-weight: 600;
+      cursor: pointer;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+    }
+
+    .league-id-trigger:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+      background: var(--bg-hover);
+    }
+
     .btn-icon {
       background: var(--bg-subtle);
       border: 1px solid var(--border);
@@ -1159,9 +1185,14 @@
     <div class="brand">
       <div class="brand-title-row">
         <div class="brand-title" id="headerTitle">Sleeper League Vault</div>
-        <span class="version-pill" id="appVersionBadge">V2.3</span>
+        <span class="version-pill" id="appVersionBadge">V2.4</span>
       </div>
-      <div class="brand-sub" id="headerSub">League 1389754082821947392</div>
+      <div>
+        <button type="button" class="league-id-trigger" onclick="openLeagueIdModal()" title="Change Sleeper League ID">
+          <span id="headerSub">League 1389754082821947392</span>
+          <span style="color:var(--accent);">✎</span>
+        </button>
+      </div>
     </div>
     <div class="topbar-controls">
       <select id="teamScopeFilter" onchange="onTeamScopeChange()" aria-label="Team Scope Filter">
@@ -1828,7 +1859,7 @@
               </div>
               <div style="display:flex; gap:6px;">
                 <button class="btn-icon" onclick="refreshWaiverWireIntel(true)" title="Refresh live Sleeper rosters & trending adds">↻ Sync</button>
-                <button class="btn-icon" onclick="lockWaiverTab()" title="Lock page">🔒 Lock</button>
+                <button class="btn-icon" id="lockWaiverBtn" onclick="lockWaiverTab()" title="Lock page">🔒 Lock</button>
               </div>
             </div>
 
@@ -2020,6 +2051,34 @@
     </div>
   </div>
 
+  <!-- MODAL WINDOW 5: CHANGE SLEEPER LEAGUE ID -->
+  <div id="leagueIdModalBackdrop" class="modal-backdrop hidden" onclick="closeLeagueIdModalOnBackdrop(event)">
+    <div class="modal-window" onclick="event.stopPropagation()" style="max-width:460px;">
+      <div class="modal-head">
+        <div>
+          <div class="card-title">Switch Sleeper League ID</div>
+          <div style="font-size:11px; color:var(--text-secondary);">Load any Sleeper league &amp; its full season history</div>
+        </div>
+        <button class="btn-icon" onclick="closeLeagueIdModal()">✕ Close</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px; line-height:1.45;">
+          Enter a numeric Sleeper League ID below. Switching away from the default league automatically removes the custom League Rules tab and unlocks Waivers.
+        </p>
+        <div class="controls-row">
+          <input type="text" id="leagueIdInput" inputmode="numeric" class="grow" placeholder="e.g. 1389754082821947392"
+            onkeydown="if(event.key==='Enter') applyLeagueIdChange()" />
+          <button class="btn-primary" onclick="applyLeagueIdChange()">Load League</button>
+        </div>
+        <div id="leagueIdError" class="hidden" style="color:var(--loss); font-size:12px; font-weight:600; margin-bottom:10px;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding-top:8px; border-top:1px solid var(--border);">
+          <span style="font-size:11px; color:var(--text-secondary);" id="activeLeagueIdLabel">Active ID: 1389754082821947392</span>
+          <button class="btn-icon" id="resetDefaultLeagueBtn" onclick="resetToDefaultLeague()">↺ Reset Default</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- BOTTOM NAVIGATION (9 SCROLLABLE TABS) -->
   <nav class="bottom-nav">
     <button class="nav-btn active" data-tab="standings" onclick="switchTab('standings')">
@@ -2054,7 +2113,7 @@
       <span class="nav-icon">⚔️</span>
       <span>H2H</span>
     </button>
-    <button class="nav-btn" data-tab="rules" onclick="switchTab('rules')">
+    <button class="nav-btn" id="rulesNavBtn" data-tab="rules" onclick="switchTab('rules')">
       <span class="nav-icon">📜</span>
       <span>Rules</span>
     </button>
@@ -2068,9 +2127,89 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V2.3";
-    const HARDCODED_LEAGUE_ID = "1389754082821947392";
+    const APP_VERSION = "V2.4";
+    const DEFAULT_LEAGUE_ID = "1389754082821947392";
+    const LEAGUE_ID_STORAGE_KEY = "sleeper_vault_active_league_id_v1";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
+
+    function getActiveLeagueId() {
+      const saved = (localStorage.getItem(LEAGUE_ID_STORAGE_KEY) || "").trim();
+      return saved || DEFAULT_LEAGUE_ID;
+    }
+
+    function isDefaultLeague() {
+      return getActiveLeagueId() === DEFAULT_LEAGUE_ID;
+    }
+
+    function applyLeagueModeUI() {
+      const customMode = !isDefaultLeague();
+      const rulesBtn = document.getElementById("rulesNavBtn");
+      const rulesPanel = document.getElementById("tab-rules");
+      if (rulesBtn) rulesBtn.classList.toggle("hidden", customMode);
+      if (customMode && rulesPanel && !rulesPanel.classList.contains("hidden")) {
+        rulesPanel.classList.add("hidden");
+        switchTab("standings");
+      }
+      syncWaiverGateUI();
+    }
+
+    function openLeagueIdModal() {
+      const activeId = getActiveLeagueId();
+      const inp = document.getElementById("leagueIdInput");
+      const err = document.getElementById("leagueIdError");
+      const lbl = document.getElementById("activeLeagueIdLabel");
+      const resetBtn = document.getElementById("resetDefaultLeagueBtn");
+      if (inp) inp.value = activeId;
+      if (err) err.classList.add("hidden");
+      if (lbl) lbl.textContent = `Active ID: ${activeId}${isDefaultLeague() ? " (Default)" : " (Custom)"}`;
+      if (resetBtn) resetBtn.classList.toggle("hidden", isDefaultLeague());
+      document.getElementById("leagueIdModalBackdrop").classList.remove("hidden");
+      if (inp) setTimeout(() => { inp.focus(); inp.select(); }, 50);
+    }
+
+    function closeLeagueIdModal() {
+      document.getElementById("leagueIdModalBackdrop").classList.add("hidden");
+    }
+
+    function closeLeagueIdModalOnBackdrop(e) {
+      if (e.target.id === "leagueIdModalBackdrop") closeLeagueIdModal();
+    }
+
+    async function setActiveLeagueId(newIdRaw) {
+      const cleaned = String(newIdRaw || "").trim();
+      const err = document.getElementById("leagueIdError");
+      if (!/^\d{6,25}$/.test(cleaned)) {
+        if (err) {
+          err.textContent = "Please enter a valid numeric Sleeper League ID.";
+          err.classList.remove("hidden");
+        }
+        return;
+      }
+      if (err) err.classList.add("hidden");
+
+      if (cleaned === DEFAULT_LEAGUE_ID) {
+        localStorage.removeItem(LEAGUE_ID_STORAGE_KEY);
+      } else {
+        localStorage.setItem(LEAGUE_ID_STORAGE_KEY, cleaned);
+      }
+
+      appData.waiverIntel.liveRostersLoaded = false;
+      appData.waiverIntel.ownerByPid = {};
+      appData.waiverIntel.ownerByNormName = {};
+
+      closeLeagueIdModal();
+      applyLeagueModeUI();
+      await syncNow(false);
+    }
+
+    function applyLeagueIdChange() {
+      const inp = document.getElementById("leagueIdInput");
+      if (inp) setActiveLeagueId(inp.value);
+    }
+
+    function resetToDefaultLeague() {
+      setActiveLeagueId(DEFAULT_LEAGUE_ID);
+    }
     const ARCHIVE_CACHE_KEY = "sleeper_vault_seasons_cache_v6";
     const PLAYERS_CACHE_KEY = "sleeper_vault_players_compact_v4";
     const PLAYERS_TS_KEY = "sleeper_vault_players_ts_v4";
@@ -2537,7 +2676,7 @@
         const cached = forceFull ? {} : JSON.parse(localStorage.getItem(ARCHIVE_CACHE_KEY) || "{}");
         const seasons = [];
         const visited = new Set();
-        let nextId = HARDCODED_LEAGUE_ID;
+        let nextId = getActiveLeagueId();
         let cachedCount = 0;
 
         while (nextId && nextId !== "0" && !visited.has(nextId)) {
@@ -5821,7 +5960,7 @@
       }
 
       function isOverlayOpen() {
-        const ids = ["tradeModalBackdrop", "injuryModalBackdrop", "luckModalBackdrop", "commishModalBackdrop", "aiDrawer"];
+        const ids = ["tradeModalBackdrop", "injuryModalBackdrop", "luckModalBackdrop", "commishModalBackdrop", "leagueIdModalBackdrop", "aiDrawer"];
         return ids.some(id => {
           const el = document.getElementById(id);
           return el && !el.classList.contains("hidden");
@@ -6021,7 +6160,7 @@
     }
 
     function isWaiverUnlocked() {
-      return sessionStorage.getItem(WAIVER_SESSION_KEY) === "1";
+      return !isDefaultLeague() || sessionStorage.getItem(WAIVER_SESSION_KEY) === "1";
     }
 
     function syncWaiverGateUI() {
@@ -6029,7 +6168,12 @@
       const gate = document.getElementById("waiverLockGate");
       const content = document.getElementById("waiverUnlockedContent");
       const navIcon = document.getElementById("waiverNavIcon");
+      const lockBtn = document.getElementById("lockWaiverBtn");
       if (!gate || !content) return;
+
+      if (lockBtn) {
+        lockBtn.classList.toggle("hidden", !isDefaultLeague());
+      }
 
       if (unlocked) {
         gate.classList.add("hidden");
@@ -6040,10 +6184,13 @@
         gate.classList.remove("hidden");
         content.classList.add("hidden");
         if (navIcon) navIcon.textContent = "🔒";
-        setTimeout(() => {
-          const inp = document.getElementById("waiverPwInput");
-          if (inp) inp.focus();
-        }, 60);
+        const activePanel = getActiveTabPanel();
+        if (activePanel && activePanel.id === "tab-waivers") {
+          setTimeout(() => {
+            const inp = document.getElementById("waiverPwInput");
+            if (inp) inp.focus();
+          }, 60);
+        }
       }
     }
 
@@ -6109,7 +6256,7 @@
 
       if (force || !appData.waiverIntel.liveRostersLoaded) {
         tasks.push(
-          fetchJson(`/league/${HARDCODED_LEAGUE_ID}/rosters`)
+          fetchJson(`/league/${getActiveLeagueId()}/rosters`)
             .then(liveRosters => {
               rebuildLeagueRosterLookup(liveRosters, latestSeason?.roster_owner_map);
               appData.waiverIntel.liveRostersLoaded = true;
@@ -6301,7 +6448,8 @@
     window.addEventListener("DOMContentLoaded", () => {
       const vBadge = document.getElementById("appVersionBadge");
       if (vBadge) vBadge.textContent = APP_VERSION;
-      syncWaiverGateUI();
+      document.getElementById("headerSub").textContent = `League ${getActiveLeagueId()}`;
+      applyLeagueModeUI();
       syncNow(false);
     });
   </script>
