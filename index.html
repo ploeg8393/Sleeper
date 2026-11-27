@@ -151,6 +151,71 @@
       background: var(--bg-hover);
     }
 
+    .host-pill {
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .host-pill.sleeper {
+      background: rgba(76, 195, 138, 0.16);
+      color: var(--win);
+      border: 1px solid rgba(76, 195, 138, 0.35);
+    }
+
+    .host-pill.espn {
+      background: rgba(229, 115, 115, 0.16);
+      color: var(--loss);
+      border: 1px solid rgba(229, 115, 115, 0.35);
+    }
+
+    .settings-group {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .settings-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .font-preset-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .font-preset-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      color: var(--text-secondary);
+      border-radius: 8px;
+      padding: 7px 4px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+    }
+
+    .font-preset-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .font-preset-btn.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
     .btn-icon {
       background: var(--bg-subtle);
       border: 1px solid var(--border);
@@ -1254,12 +1319,13 @@
     <div class="brand">
       <div class="brand-title-row">
         <div class="brand-title" id="headerTitle">Sleeper League Vault</div>
-        <span class="version-pill" id="appVersionBadge">V2.6</span>
+        <span class="version-pill" id="appVersionBadge">V2.7</span>
       </div>
       <div>
-        <button type="button" class="league-id-trigger" onclick="openLeagueIdModal()" title="Change Sleeper League ID">
+        <button type="button" class="league-id-trigger" onclick="openSettingsModal()" title="League &amp; Display Settings">
+          <span id="headerHostBadge" class="host-pill sleeper hidden">Sleeper</span>
           <span id="headerSub">No League Selected</span>
-          <span style="color:var(--accent);">✎</span>
+          <span style="color:var(--accent);">⚙</span>
         </button>
       </div>
     </div>
@@ -1283,18 +1349,18 @@
 
     <div id="noLeagueEmptyState" class="pw-gate-box" style="max-width:460px; margin:28px auto;">
       <div class="pw-gate-icon">🏈</div>
-      <div class="card-title" style="margin-bottom:6px;">Enter a Sleeper League ID</div>
+      <div class="card-title" style="margin-bottom:6px;">Enter a Sleeper or ESPN League ID</div>
       <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:14px; line-height:1.45;">
-        No default league is configured. Enter a Sleeper League ID below or tack it onto the end of the URL:
+        Automatically detects <strong>Sleeper</strong> or public <strong>ESPN</strong> leagues. Enter a League ID below or tack it onto the end of the URL:
       </p>
       <div style="display:flex; gap:8px; justify-content:center; margin-bottom:12px;">
-        <input type="text" id="emptyStateLeagueInput" inputmode="numeric" class="grow" placeholder="Sleeper League ID"
+        <input type="text" id="emptyStateLeagueInput" class="grow" placeholder="Sleeper or Public ESPN League ID"
           style="text-align:center;"
           onkeydown="if(event.key==='Enter') applyEmptyStateLeagueId()" />
         <button class="btn-primary" onclick="applyEmptyStateLeagueId()">Load League</button>
       </div>
       <div style="font-size:11px; color:var(--text-muted); line-height:1.5; background:var(--bg-subtle); border:1px solid var(--border); border-radius:8px; padding:8px 10px; text-align:left;">
-        <strong>URL Shortcuts:</strong><br/>
+        <strong>URL Shortcuts (Auto-Detects Host):</strong><br/>
         • <code>https://ploeg8393.github.io/Sleeper/<strong>&lt;league_id&gt;</strong></code><br/>
         • <code>https://ploeg8393.github.io/Sleeper/?<strong>&lt;league_id&gt;</strong></code>
       </div>
@@ -1664,9 +1730,9 @@
 
         <div class="card">
           <div class="card-header">
-            <div class="card-title">Weekly Rank Cutoff &amp; Tough-Break Luck</div>
+            <div class="card-title" id="cutoffLuckCardTitle">Weekly Rank Cutoff &amp; Tough-Break Luck</div>
           </div>
-          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;" id="cutoffLuckCardDesc">
             Tracks <strong>5th</strong> (lowest rank eligible for a 2nd W), <strong>6th</strong> (highest rank stuck with an extra L), <strong>2nd in Pts &amp; Lost</strong>, and <strong>6th + H2H Loss (Extra Unlucky)</strong>.
           </p>
           <div id="cutoffLuckHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
@@ -1675,10 +1741,10 @@
               <thead>
                 <tr>
                   <th data-col="name" onclick="sortTable('cutoffLuck', 'name')">Manager</th>
-                  <th class="num" data-col="fifthCount" onclick="sortTable('cutoffLuck', 'fifthCount')">5th (2nd W)</th>
-                  <th class="num" data-col="sixthCount" onclick="sortTable('cutoffLuck', 'sixthCount')">6th (Extra L)</th>
-                  <th class="num" data-col="sixthAndLossCount" onclick="sortTable('cutoffLuck', 'sixthAndLossCount')">6th + Loss</th>
-                  <th class="num" data-col="secondAndLossCount" onclick="sortTable('cutoffLuck', 'secondAndLossCount')">2nd &amp; Lost</th>
+                  <th class="num" id="cutoffCol1Header" data-col="fifthCount" onclick="sortTable('cutoffLuck', 'fifthCount')">5th (2nd W)</th>
+                  <th class="num" id="cutoffCol2Header" data-col="sixthCount" onclick="sortTable('cutoffLuck', 'sixthCount')">6th (Extra L)</th>
+                  <th class="num" id="cutoffCol3Header" data-col="sixthAndLossCount" onclick="sortTable('cutoffLuck', 'sixthAndLossCount')">6th + Loss</th>
+                  <th class="num" id="cutoffCol4Header" data-col="secondAndLossCount" onclick="sortTable('cutoffLuck', 'secondAndLossCount')">2nd &amp; Lost</th>
                 </tr>
               </thead>
               <tbody id="cutoffLuckBody"></tbody>
@@ -2139,29 +2205,57 @@
     </div>
   </div>
 
-  <!-- MODAL WINDOW 5: CHANGE SLEEPER LEAGUE ID -->
-  <div id="leagueIdModalBackdrop" class="modal-backdrop hidden" onclick="closeLeagueIdModalOnBackdrop(event)">
-    <div class="modal-window" onclick="event.stopPropagation()" style="max-width:460px;">
+  <!-- MODAL WINDOW 5: SETTINGS (LEAGUE ID & FONT SIZE) -->
+  <div id="leagueIdModalBackdrop" class="modal-backdrop hidden" onclick="closeSettingsModalOnBackdrop(event)">
+    <div class="modal-window" onclick="event.stopPropagation()" style="max-width:480px;">
       <div class="modal-head">
         <div>
-          <div class="card-title">Switch Sleeper League ID</div>
-          <div style="font-size:11px; color:var(--text-secondary);">Load any Sleeper league &amp; its full season history</div>
+          <div class="card-title">⚙️ League &amp; Display Settings</div>
+          <div style="font-size:11px; color:var(--text-secondary);">Switch Sleeper/ESPN League ID or adjust text size</div>
         </div>
-        <button class="btn-icon" onclick="closeLeagueIdModal()">✕ Close</button>
+        <button class="btn-icon" onclick="closeSettingsModal()">✕ Close</button>
       </div>
       <div class="modal-body">
-        <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px; line-height:1.45;">
-          Enter a numeric Sleeper League ID below, or tack it onto the end of the URL (<code>/Sleeper/&lt;id&gt;</code> or <code>/Sleeper/?&lt;id&gt;</code>).
-        </p>
-        <div class="controls-row">
-          <input type="text" id="leagueIdInput" inputmode="numeric" class="grow" placeholder="Enter Sleeper League ID"
-            onkeydown="if(event.key==='Enter') applyLeagueIdChange()" />
-          <button class="btn-primary" onclick="applyLeagueIdChange()">Load League</button>
+        <!-- Group 1: League Source & ID -->
+        <div class="settings-group">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+            <strong style="font-size:12.5px; text-transform:uppercase; letter-spacing:0.03em;">League ID &amp; Host</strong>
+            <span id="settingsHostBadge" class="badge badge-neutral">Auto-Detect</span>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px; line-height:1.45;">
+            Enter a numeric <strong>Sleeper</strong> or public <strong>ESPN</strong> League ID, or tack it onto the URL (<code>/Sleeper/&lt;id&gt;</code> or <code>/Sleeper/?&lt;id&gt;</code>).
+          </p>
+          <div class="controls-row" style="margin-bottom:8px;">
+            <input type="text" id="leagueIdInput" class="grow" placeholder="Sleeper or ESPN League ID"
+              onkeydown="if(event.key==='Enter') applyLeagueIdChange()" />
+            <button class="btn-primary" onclick="applyLeagueIdChange()">Load League</button>
+          </div>
+          <div id="leagueIdError" class="hidden" style="color:var(--loss); font-size:12px; font-weight:600; margin-bottom:8px;"></div>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding-top:8px; border-top:1px solid var(--border);">
+            <span style="font-size:11px; color:var(--text-secondary);" id="activeLeagueIdLabel">Active ID: None</span>
+            <button class="btn-icon" id="clearLeagueBtn" onclick="clearActiveLeague()">✕ Clear League</button>
+          </div>
         </div>
-        <div id="leagueIdError" class="hidden" style="color:var(--loss); font-size:12px; font-weight:600; margin-bottom:10px;"></div>
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding-top:8px; border-top:1px solid var(--border);">
-          <span style="font-size:11px; color:var(--text-secondary);" id="activeLeagueIdLabel">Active ID: None</span>
-          <button class="btn-icon" id="clearLeagueBtn" onclick="clearActiveLeague()">✕ Clear League</button>
+
+        <!-- Group 2: Font Size -->
+        <div class="settings-group">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+            <strong style="font-size:12.5px; text-transform:uppercase; letter-spacing:0.03em;">Font Size</strong>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button type="button" class="btn-icon" onclick="stepFontScale(-5)" title="Decrease font size">A−</button>
+              <span class="badge badge-neutral" id="fontScaleLabel">100%</span>
+              <button type="button" class="btn-icon" onclick="stepFontScale(5)" title="Increase font size">A+</button>
+            </div>
+          </div>
+          <p style="font-size:11.5px; color:var(--text-secondary); margin-bottom:6px;">
+            Scale text size across tables, cards, and modals:
+          </p>
+          <div class="font-preset-grid">
+            <button type="button" class="font-preset-btn" data-scale="90" onclick="setFontScale(90)">Small (90%)</button>
+            <button type="button" class="font-preset-btn active" data-scale="100" onclick="setFontScale(100)">Default (100%)</button>
+            <button type="button" class="font-preset-btn" data-scale="112" onclick="setFontScale(112)">Large (112%)</button>
+            <button type="button" class="font-preset-btn" data-scale="125" onclick="setFontScale(125)">XL (125%)</button>
+          </div>
         </div>
       </div>
     </div>
@@ -2181,7 +2275,7 @@
     </div>
   </div>
 
-  <!-- BOTTOM NAVIGATION (9 SCROLLABLE TABS) -->
+  <!-- BOTTOM NAVIGATION (SCROLLABLE TABS + SETTINGS GEAR) -->
   <nav class="bottom-nav">
     <button class="nav-btn active" data-tab="standings" onclick="switchTab('standings')">
       <span class="nav-icon">📊</span>
@@ -2223,52 +2317,111 @@
       <span class="nav-icon" id="waiverNavIcon">🔒</span>
       <span>Waivers</span>
     </button>
+    <button class="nav-btn" id="settingsNavBtn" onclick="openSettingsModal()" title="Settings: League ID &amp; Font Size">
+      <span class="nav-icon">⚙️</span>
+      <span>Settings</span>
+    </button>
   </nav>
 
   <script>
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V2.6";
+    const APP_VERSION = "V2.7";
     const CUSTOM_RULES_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
+    const ESPN_BASE = "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl";
+    const FONT_SCALE_STORAGE_KEY = "sleeper_vault_font_scale_v1";
+
     let activeLeagueIdState = "";
+    let activeLeagueSourceState = ""; // "SLEEPER" | "ESPN" | ""
+    let preferredLeagueSourceHint = ""; // optional explicit prefix e.g. "ESPN" or "SLEEPER"
+    let currentFontScale = 100;
 
-    function extractLeagueIdFromLocation() {
-      // 1. Trailing numeric path segment (e.g. /Sleeper/1389754082821947392)
-      const pathMatch = (window.location.pathname || "").match(/\/(\d{6,25})\/?$/);
-      if (pathMatch) return pathMatch[1];
+    function parseLeagueInputToken(raw) {
+      const s = String(raw || "").trim();
+      if (!s) return { id: "", sourceHint: "" };
 
-      // 2. Query string (e.g. ?1389754082821947392 or ?league=1389754082821947392 or ?id=...)
+      // Support optional prefix like "espn:899513" or "sleeper:1389754082821947392"
+      const prefixMatch = s.match(/^(espn|sleeper)[:\/_-](\d{3,25})$/i);
+      if (prefixMatch) {
+        return { id: prefixMatch[2], sourceHint: prefixMatch[1].toUpperCase() };
+      }
+
+      // Support full ESPN or Sleeper URL pasted directly into the input box
+      const espnUrlMatch = s.match(/leagueId=(\d{3,25})/i);
+      if (espnUrlMatch && /espn\.com/i.test(s)) {
+        return { id: espnUrlMatch[1], sourceHint: "ESPN" };
+      }
+      const sleeperUrlMatch = s.match(/sleeper\.com\/leagues\/(\d{6,25})/i);
+      if (sleeperUrlMatch) {
+        return { id: sleeperUrlMatch[1], sourceHint: "SLEEPER" };
+      }
+
+      const plainMatch = s.match(/^(\d{3,25})$/);
+      if (plainMatch) {
+        return { id: plainMatch[1], sourceHint: "" };
+      }
+      return { id: "", sourceHint: "" };
+    }
+
+    function extractLeagueSpecFromLocation() {
+      // 1. Trailing path segment (e.g. /Sleeper/1389754082821947392 or /Sleeper/espn:899513)
+      const pathMatch = (window.location.pathname || "").match(/\/(?:(espn|sleeper)[:_-])?(\d{3,25})\/?$/i);
+      if (pathMatch) {
+        return {
+          id: pathMatch[2],
+          sourceHint: pathMatch[1] ? pathMatch[1].toUpperCase() : ""
+        };
+      }
+
+      // 2. Query string (e.g. ?1389754082821947392, ?espn:899513, ?league=899513&platform=espn)
       const rawSearch = (window.location.search || "").trim();
-      const bareQueryMatch = rawSearch.match(/^\?(\d{6,25})$/);
-      if (bareQueryMatch) return bareQueryMatch[1];
+      const bareQueryMatch = rawSearch.match(/^\?(?:(espn|sleeper)[:_-])?(\d{3,25})$/i);
+      if (bareQueryMatch) {
+        return {
+          id: bareQueryMatch[2],
+          sourceHint: bareQueryMatch[1] ? bareQueryMatch[1].toUpperCase() : ""
+        };
+      }
 
       if (rawSearch.length > 1) {
         const params = new URLSearchParams(rawSearch);
+        const explicitPlatform = (params.get("platform") || params.get("host") || params.get("source") || "").trim().toUpperCase();
+        const hint = (explicitPlatform === "ESPN" || explicitPlatform === "SLEEPER") ? explicitPlatform : "";
+
         for (const key of ["league", "league_id", "leagueId", "id"]) {
-          const val = (params.get(key) || "").trim();
-          if (/^\d{6,25}$/.test(val)) return val;
+          const parsed = parseLeagueInputToken(params.get(key) || "");
+          if (parsed.id) {
+            return { id: parsed.id, sourceHint: parsed.sourceHint || hint };
+          }
         }
         for (const [k, v] of params.entries()) {
-          if (/^\d{6,25}$/.test(k)) return k;
-          if (/^\d{6,25}$/.test(v)) return v;
+          const pk = parseLeagueInputToken(k);
+          if (pk.id) return { id: pk.id, sourceHint: pk.sourceHint || hint };
+          const pv = parseLeagueInputToken(v);
+          if (pv.id) return { id: pv.id, sourceHint: pv.sourceHint || hint };
         }
       }
 
-      // 3. Hash fragment (e.g. #1389754082821947392 or #/1389754082821947392)
+      // 3. Hash fragment (e.g. #1389754082821947392 or #espn:899513)
       const rawHash = (window.location.hash || "").replace(/^#\/?/, "").trim();
-      if (/^\d{6,25}$/.test(rawHash)) return rawHash;
-      const hashParamMatch = rawHash.match(/(?:league|league_id|id)=(\d{6,25})/);
-      if (hashParamMatch) return hashParamMatch[1];
+      const parsedHash = parseLeagueInputToken(rawHash);
+      if (parsedHash.id) return parsedHash;
+      const hashParamMatch = rawHash.match(/(?:league|league_id|id)=(?:(espn|sleeper)[:_-])?(\d{3,25})/i);
+      if (hashParamMatch) {
+        return {
+          id: hashParamMatch[2],
+          sourceHint: hashParamMatch[1] ? hashParamMatch[1].toUpperCase() : ""
+        };
+      }
 
-      return "";
+      return { id: "", sourceHint: "" };
     }
 
     function getBaseAppPath() {
       const p = window.location.pathname || "/";
-      // Strip trailing /<league_id> if present so base path stays /Sleeper/
-      const stripped = p.replace(/\/\d{6,25}\/?$/, "/");
+      const stripped = p.replace(/\/(?:(?:espn|sleeper)[:_-])?\d{3,25}\/?$/i, "/");
       return stripped.endsWith("/") ? stripped : `${stripped}/`;
     }
 
@@ -2285,8 +2438,40 @@
       return activeLeagueIdState;
     }
 
+    function getActiveLeagueSource() {
+      return activeLeagueSourceState;
+    }
+
     function hasCustomLeagueRules() {
-      return Boolean(activeLeagueIdState) && activeLeagueIdState === CUSTOM_RULES_LEAGUE_ID;
+      return activeLeagueSourceState === "SLEEPER" && activeLeagueIdState === CUSTOM_RULES_LEAGUE_ID;
+    }
+
+    function updateHostBadgesUI() {
+      const hdrPill = document.getElementById("headerHostBadge");
+      const setPill = document.getElementById("settingsHostBadge");
+      const src = activeLeagueSourceState;
+
+      if (hdrPill) {
+        if (src === "SLEEPER" || src === "ESPN") {
+          hdrPill.textContent = src;
+          hdrPill.className = `host-pill ${src.toLowerCase()}`;
+        } else {
+          hdrPill.className = "host-pill hidden";
+        }
+      }
+
+      if (setPill) {
+        if (src === "SLEEPER") {
+          setPill.textContent = "Detected: Sleeper";
+          setPill.className = "badge badge-win";
+        } else if (src === "ESPN") {
+          setPill.textContent = "Detected: ESPN";
+          setPill.className = "badge badge-loss";
+        } else {
+          setPill.textContent = "Auto-Detect";
+          setPill.className = "badge badge-neutral";
+        }
+      }
     }
 
     function applyLeagueModeUI() {
@@ -2312,10 +2497,48 @@
         subEl.textContent = "No League Selected";
       }
 
+      updateHostBadgesUI();
       syncWaiverGateUI();
     }
 
-    function openLeagueIdModal() {
+    /* Font Size Controls */
+    function applyFontScale(pct) {
+      const clamped = Math.max(85, Math.min(135, Math.round(Number(pct) || 100)));
+      currentFontScale = clamped;
+      const factor = clamped / 100;
+
+      if ("zoom" in document.documentElement.style) {
+        document.documentElement.style.zoom = String(factor);
+      } else {
+        document.documentElement.style.fontSize = `${clamped}%`;
+      }
+
+      const lbl = document.getElementById("fontScaleLabel");
+      if (lbl) lbl.textContent = `${clamped}%`;
+
+      document.querySelectorAll(".font-preset-btn[data-scale]").forEach(btn => {
+        btn.classList.toggle("active", Number(btn.dataset.scale) === clamped);
+      });
+    }
+
+    function setFontScale(pct) {
+      applyFontScale(pct);
+      try {
+        localStorage.setItem(FONT_SCALE_STORAGE_KEY, String(currentFontScale));
+      } catch (e) {}
+    }
+
+    function stepFontScale(delta) {
+      setFontScale(currentFontScale + delta);
+    }
+
+    function initFontScale() {
+      const saved = Number(localStorage.getItem(FONT_SCALE_STORAGE_KEY) || 100);
+      applyFontScale(saved >= 85 && saved <= 135 ? saved : 100);
+    }
+
+    /* Settings Modal (Change League ID & Font Size) */
+    function openSettingsModal() {
       const activeId = getActiveLeagueId();
       const inp = document.getElementById("leagueIdInput");
       const err = document.getElementById("leagueIdError");
@@ -2323,26 +2546,36 @@
       const clearBtn = document.getElementById("clearLeagueBtn");
       if (inp) inp.value = activeId;
       if (err) err.classList.add("hidden");
-      if (lbl) lbl.textContent = activeId ? `Active ID: ${activeId}` : "Active ID: None";
+      if (lbl) {
+        lbl.textContent = activeId
+          ? `Active ID: ${activeId}${activeLeagueSourceState ? ` (${activeLeagueSourceState})` : ""}`
+          : "Active ID: None";
+      }
       if (clearBtn) clearBtn.classList.toggle("hidden", !activeId);
+      updateHostBadgesUI();
+      applyFontScale(currentFontScale);
       document.getElementById("leagueIdModalBackdrop").classList.remove("hidden");
-      if (inp) setTimeout(() => { inp.focus(); inp.select(); }, 50);
     }
 
-    function closeLeagueIdModal() {
+    function openLeagueIdModal() {
+      openSettingsModal();
+    }
+
+    function closeSettingsModal() {
       document.getElementById("leagueIdModalBackdrop").classList.add("hidden");
     }
 
-    function closeLeagueIdModalOnBackdrop(e) {
-      if (e.target.id === "leagueIdModalBackdrop") closeLeagueIdModal();
+    function closeSettingsModalOnBackdrop(e) {
+      if (e.target.id === "leagueIdModalBackdrop") closeSettingsModal();
     }
 
-    async function setActiveLeagueId(newIdRaw, errorTargetId = "leagueIdError") {
-      const cleaned = String(newIdRaw || "").trim();
+    async function setActiveLeagueId(newIdRaw, errorTargetId = "leagueIdError", explicitHint = "") {
+      const parsed = parseLeagueInputToken(newIdRaw);
+      const cleaned = parsed.id;
       const err = document.getElementById(errorTargetId);
-      if (!/^\d{6,25}$/.test(cleaned)) {
+      if (!cleaned) {
         if (err) {
-          err.textContent = "Please enter a valid numeric Sleeper League ID.";
+          err.textContent = "Please enter a valid numeric Sleeper or ESPN League ID.";
           err.classList.remove("hidden");
         }
         return;
@@ -2350,6 +2583,8 @@
       if (err) err.classList.add("hidden");
 
       activeLeagueIdState = cleaned;
+      preferredLeagueSourceHint = parsed.sourceHint || explicitHint || "";
+      activeLeagueSourceState = preferredLeagueSourceHint;
       syncUrlWithLeagueId(cleaned);
 
       appData.seasons = [];
@@ -2359,7 +2594,7 @@
       appData.waiverIntel.ownerByPid = {};
       appData.waiverIntel.ownerByNormName = {};
 
-      closeLeagueIdModal();
+      closeSettingsModal();
       applyLeagueModeUI();
       await syncNow(false);
     }
@@ -2372,18 +2607,20 @@
     function applyEmptyStateLeagueId() {
       const inp = document.getElementById("emptyStateLeagueInput");
       if (!inp) return;
-      const cleaned = String(inp.value || "").trim();
-      if (!/^\d{6,25}$/.test(cleaned)) {
-        showError("Please enter a valid numeric Sleeper League ID.");
+      const parsed = parseLeagueInputToken(inp.value);
+      if (!parsed.id) {
+        showError("Please enter a valid numeric Sleeper or public ESPN League ID.");
         inp.focus();
         return;
       }
       hideError();
-      setActiveLeagueId(cleaned);
+      setActiveLeagueId(parsed.id, "leagueIdError", parsed.sourceHint);
     }
 
     function clearActiveLeague() {
       activeLeagueIdState = "";
+      activeLeagueSourceState = "";
+      preferredLeagueSourceHint = "";
       appData.seasons = [];
       appData.managers = {};
       appData.currentTeamIds = new Set();
@@ -2394,10 +2631,10 @@
       syncUrlWithLeagueId("");
       hideError();
       document.getElementById("statusBanner").classList.add("hidden");
-      closeLeagueIdModal();
+      closeSettingsModal();
       applyLeagueModeUI();
     }
-    const ARCHIVE_CACHE_KEY = "sleeper_vault_seasons_cache_v6";
+    const ARCHIVE_CACHE_KEY = "sleeper_vault_seasons_cache_v7";
     const PLAYERS_CACHE_KEY = "sleeper_vault_players_compact_v4";
     const PLAYERS_TS_KEY = "sleeper_vault_players_ts_v4";
     const GEMINI_KEY_STORAGE = "sleeper_vault_gemini_api_key";
@@ -2795,13 +3032,16 @@
       });
 
       const podium = extractPodiumFromBracket(bracket, rosterOwnerMap);
+      const hasMedianGame = Number(league.settings?.league_average_match) === 1;
 
       return {
+        source: "SLEEPER",
         season: String(league.season),
         league_id: leagueId,
         previous_league_id: league.previous_league_id,
         name: league.name,
         status: league.status,
+        has_median_game: hasMedianGame,
         roster_positions: startingSlots,
         playoff_week_start: Number(league.settings?.playoff_week_start || 15),
         champion_user_id: podium.champUid,
@@ -2827,6 +3067,421 @@
         wire_transactions: Array.from(wireTxMap.values()),
         commissioner_transactions: Array.from(commishTxMap.values()).sort((a, b) => b.created - a.created)
       };
+    }
+
+    /* ==========================================================================
+       3B. PUBLIC ESPN FANTASY FOOTBALL ADAPTER
+       ========================================================================== */
+    const ESPN_LINEUP_SLOT_MAP = {
+      0: "QB",
+      2: "RB",
+      4: "WR",
+      6: "TE",
+      7: "SUPER_FLEX",
+      16: "DEF",
+      17: "K",
+      20: "BN",
+      21: "IR",
+      23: "FLEX"
+    };
+
+    const ESPN_DEFAULT_POS_MAP = {
+      1: "QB",
+      2: "RB",
+      3: "WR",
+      4: "TE",
+      5: "K",
+      16: "DEF"
+    };
+
+    async function fetchEspnJson(url) {
+      const res = await fetch(url, { credentials: "omit" });
+      if (res.status === 401 || res.status === 403) {
+        throw new Error("ESPN league is private. Set League Visibility to Public in ESPN League Manager Settings.");
+      }
+      if (!res.ok) {
+        throw new Error(`ESPN API error (${res.status})`);
+      }
+      const text = await res.text();
+      if (text.trim().startsWith("<")) {
+        throw new Error("ESPN returned an HTML page instead of JSON (league may be private or invalid).");
+      }
+      return JSON.parse(text);
+    }
+
+    function registerEspnPlayerMeta(playerObj) {
+      if (!playerObj || !playerObj.id) return null;
+      const rawId = String(playerObj.id);
+      const pid = `espn_${rawId}`;
+      const pos = ESPN_DEFAULT_POS_MAP[playerObj.defaultPositionId] || "OTHER";
+      const fullName = playerObj.fullName ||
+        `${playerObj.firstName || ""} ${playerObj.lastName || ""}`.trim() ||
+        `Player #${rawId}`;
+      const inj = playerObj.injured ? (playerObj.injuryStatus || "Out") : null;
+
+      appData.players[pid] = {
+        n: fullName,
+        p: pos,
+        inj,
+        eid: rawId
+      };
+      return pid;
+    }
+
+    function buildEspnStartingSlots(lineupSlotCounts) {
+      if (!lineupSlotCounts || typeof lineupSlotCounts !== "object") {
+        return ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DEF"];
+      }
+      const orderedSlotIds = [0, 2, 4, 6, 23, 7, 17, 16];
+      const slots = [];
+      for (const slotId of orderedSlotIds) {
+        const count = Number(lineupSlotCounts[String(slotId)] || 0);
+        const label = ESPN_LINEUP_SLOT_MAP[slotId];
+        if (!label || ["BN", "IR"].includes(label)) continue;
+        for (let i = 0; i < count; i++) {
+          slots.push(label);
+        }
+      }
+      return slots.length > 0 ? slots : ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DEF"];
+    }
+
+    async function fetchSingleEspnSeason(leagueId, seasonYear, nflState) {
+      const url = `${ESPN_BASE}/seasons/${seasonYear}/segments/0/leagues/${leagueId}?view=mSettings&view=mTeam&view=mRoster&view=mMatchup&view=mMatchupScore&view=mDraftDetail`;
+      const data = await fetchEspnJson(url);
+      if (!data || !Array.isArray(data.teams) || data.teams.length === 0) {
+        throw new Error(`No ESPN league data found for ID ${leagueId} in ${seasonYear}.`);
+      }
+
+      const membersById = Object.fromEntries(
+        (data.members || []).map(m => [m.id, m])
+      );
+
+      const rosterOwnerMap = {};
+      const users = [];
+      const rostersFinal = [];
+
+      for (const t of data.teams) {
+        const primaryOwner = Array.isArray(t.owners) && t.owners.length > 0 ? t.owners[0] : null;
+        const ownerId = primaryOwner ? `espn_owner_${primaryOwner}` : `espn_team_${leagueId}_${t.id}`;
+        rosterOwnerMap[t.id] = ownerId;
+
+        const member = primaryOwner ? membersById[primaryOwner] : null;
+        const teamName = (t.name || `${t.location || ""} ${t.nickname || ""}`.trim() || `Team ${t.id}`).trim();
+        const displayName = member
+          ? (`${member.firstName || ""} ${member.lastName || ""}`.trim() || member.displayName || teamName)
+          : teamName;
+
+        users.push({
+          user_id: ownerId,
+          display_name: displayName,
+          avatar: t.logo || null,
+          team_name: teamName
+        });
+
+        const currentEntries = t.roster?.entries || [];
+        const finalPlayers = [];
+        const reservePlayers = [];
+        for (const ent of currentEntries) {
+          const pInfo = ent.playerPoolEntry?.player;
+          const pid = registerEspnPlayerMeta(pInfo);
+          if (!pid) continue;
+          finalPlayers.push(pid);
+          if (Number(ent.lineupSlotId) === 21) {
+            reservePlayers.push(pid);
+          }
+        }
+
+        rostersFinal.push({
+          roster_id: t.id,
+          owner_id: ownerId,
+          players: finalPlayers,
+          reserve: reservePlayers
+        });
+      }
+
+      const startingSlots = buildEspnStartingSlots(data.settings?.rosterSettings?.lineupSlotCounts);
+      const regSeasonCount = Number(data.settings?.scheduleSettings?.matchupPeriodCount || 14);
+      const playoffWeekStart = regSeasonCount + 1;
+
+      // Group schedule items into weekly matchups
+      const scheduleByWeek = {};
+      for (const m of (data.schedule || [])) {
+        const wk = Number(m.matchupPeriodId || 0);
+        if (!wk || !m.home || !m.away) continue;
+        if (!scheduleByWeek[wk]) scheduleByWeek[wk] = [];
+        scheduleByWeek[wk].push(m);
+      }
+
+      const matchupsByWeek = {};
+      for (const [wkStr, games] of Object.entries(scheduleByWeek)) {
+        const rawEntries = [];
+        games.forEach((g, idx) => {
+          const matchupId = Number(g.id || (idx + 1));
+          for (const side of [g.home, g.away]) {
+            if (!side || side.teamId === undefined) continue;
+            const rosterId = Number(side.teamId);
+            const pts = Number(side.totalPoints || 0);
+            const rosterEntries = side.rosterForCurrentScoringPeriod?.entries ||
+              side.rosterForMatchupPeriod?.entries || [];
+
+            const starters = [];
+            const startersPoints = [];
+            const players = [];
+            const playersPoints = {};
+
+            for (const ent of rosterEntries) {
+              const pInfo = ent.playerPoolEntry?.player;
+              const pid = registerEspnPlayerMeta(pInfo);
+              if (!pid) continue;
+              const pPts = Number(ent.playerPoolEntry?.appliedStatTotal ?? ent.appliedStatTotal ?? 0);
+              players.push(pid);
+              playersPoints[pid] = pPts;
+
+              const slotId = Number(ent.lineupSlotId);
+              if (slotId !== 20 && slotId !== 21) {
+                starters.push(pid);
+                startersPoints.push(pPts);
+              }
+            }
+
+            rawEntries.push({
+              matchup_id: matchupId,
+              roster_id: rosterId,
+              owner_id: rosterOwnerMap[rosterId],
+              points: pts,
+              starters,
+              starters_points: startersPoints,
+              players,
+              players_points: playersPoints
+            });
+          }
+        });
+
+        if (rawEntries.length === 0) continue;
+        const allPlayMap = computeAllPlay(rawEntries);
+        matchupsByWeek[wkStr] = rawEntries.map(e => ({
+          ...e,
+          all_play: allPlayMap[e.roster_id] || { wins: 0, losses: 0, ties: 0 }
+        }));
+      }
+
+      // Extract podium & playoff bracket from ESPN final standings / playoff schedule
+      const sortedFinalTeams = [...data.teams].sort(
+        (a, b) => Number(a.rankCalculatedFinal || 99) - Number(b.rankCalculatedFinal || 99)
+      );
+      const isComplete = Boolean(data.status?.isActive === false || Number(data.scoringPeriodId || 0) >= 17);
+      const champTeam = isComplete ? sortedFinalTeams.find(t => Number(t.rankCalculatedFinal) === 1) : null;
+      const runnerTeam = isComplete ? sortedFinalTeams.find(t => Number(t.rankCalculatedFinal) === 2) : null;
+      const thirdTeam = isComplete ? sortedFinalTeams.find(t => Number(t.rankCalculatedFinal) === 3) : null;
+
+      const winnersBracket = [];
+      let bracketMatchCounter = 1;
+      for (const g of (data.schedule || [])) {
+        if (g.playoffTierType !== "WINNERS_BRACKET" || !g.home || !g.away) continue;
+        const wk = Number(g.matchupPeriodId || playoffWeekStart);
+        const rNum = Math.max(1, wk - playoffWeekStart + 1);
+        const hPts = Number(g.home.totalPoints || 0);
+        const aPts = Number(g.away.totalPoints || 0);
+        const wId = hPts > aPts ? g.home.teamId : aPts > hPts ? g.away.teamId : null;
+        const lId = hPts > aPts ? g.away.teamId : aPts > hPts ? g.home.teamId : null;
+        winnersBracket.push({
+          r: rNum,
+          m: bracketMatchCounter++,
+          t1: g.home.teamId,
+          t2: g.away.teamId,
+          w: wId,
+          l: lId
+        });
+      }
+
+      // Draft picks
+      const draftPicks = (data.draftDetail?.picks || []).map(pk => {
+        const rawPid = String(pk.playerId || "");
+        const pid = rawPid ? `espn_${rawPid}` : null;
+        const metaEntry = pid ? appData.players[pid] : null;
+        return {
+          pick_no: Number(pk.overallPickNumber || 0),
+          round: Number(pk.roundId || 1),
+          roster_id: Number(pk.teamId),
+          owner_id: rosterOwnerMap[pk.teamId],
+          player_id: pid,
+          pos: metaEntry?.p || "OTHER",
+          player_name: metaEntry ? `${metaEntry.n} (${metaEntry.p})` : `Player #${rawPid}`
+        };
+      }).filter(pk => pk.player_id);
+
+      // Optional ESPN transactions (trades / waivers / FA)
+      const trades = [];
+      const wireTransactions = [];
+      try {
+        const txData = await fetchEspnJson(`${ESPN_BASE}/seasons/${seasonYear}/segments/0/leagues/${leagueId}?view=mTransactions2`);
+        for (const tx of (txData.transactions || [])) {
+          if (tx.status !== "EXECUTED") continue;
+          const wk = Number(tx.scoringPeriodId || 1);
+          const adds = {};
+          const drops = {};
+          const rosterIdsSet = new Set();
+          if (tx.teamId) rosterIdsSet.add(Number(tx.teamId));
+
+          for (const item of (tx.items || [])) {
+            const rawPid = String(item.playerId || "");
+            if (!rawPid) continue;
+            const pid = `espn_${rawPid}`;
+            if (item.type === "ADD" && item.toTeamId) {
+              adds[pid] = Number(item.toTeamId);
+              rosterIdsSet.add(Number(item.toTeamId));
+            } else if (item.type === "DROP" && item.fromTeamId) {
+              drops[pid] = Number(item.fromTeamId);
+              rosterIdsSet.add(Number(item.fromTeamId));
+            } else if (item.type === "TRADE") {
+              if (item.toTeamId) {
+                adds[pid] = Number(item.toTeamId);
+                rosterIdsSet.add(Number(item.toTeamId));
+              }
+              if (item.fromTeamId) {
+                drops[pid] = Number(item.fromTeamId);
+                rosterIdsSet.add(Number(item.fromTeamId));
+              }
+            }
+          }
+
+          const rosterIds = Array.from(rosterIdsSet);
+          if (tx.type === "TRADE") {
+            trades.push({
+              transaction_id: String(tx.id || `${seasonYear}_${wk}_${trades.length}`),
+              week: wk,
+              created: Number(tx.processDate || tx.proposedDate || 0),
+              roster_ids: rosterIds,
+              adds,
+              drops,
+              draft_picks: []
+            });
+          } else if (tx.type === "WAIVER" || tx.type === "FREEAGENT") {
+            wireTransactions.push({
+              transaction_id: String(tx.id || `${seasonYear}_${wk}_${wireTransactions.length}`),
+              type: tx.type === "WAIVER" ? "waiver" : "free_agent",
+              week: wk,
+              roster_ids: rosterIds,
+              adds,
+              drops
+            });
+          }
+        }
+      } catch (e) {
+        // Older ESPN seasons may restrict mTransactions2; skip gracefully
+      }
+
+      const prevSeasons = Array.isArray(data.status?.previousSeasons)
+        ? data.status.previousSeasons.map(Number).filter(y => y < Number(seasonYear)).sort((a, b) => b - a)
+        : [];
+
+      return {
+        source: "ESPN",
+        season: String(seasonYear),
+        league_id: String(leagueId),
+        previous_espn_seasons: prevSeasons,
+        name: data.settings?.name || `ESPN League ${leagueId}`,
+        status: isComplete ? "complete" : "in_progress",
+        has_median_game: false,
+        roster_positions: startingSlots,
+        playoff_week_start: playoffWeekStart,
+        champion_user_id: champTeam ? rosterOwnerMap[champTeam.id] : null,
+        runner_up_user_id: runnerTeam ? rosterOwnerMap[runnerTeam.id] : null,
+        third_place_user_id: thirdTeam ? rosterOwnerMap[thirdTeam.id] : null,
+        winners_bracket: winnersBracket,
+        roster_owner_map: rosterOwnerMap,
+        rosters_final: rostersFinal,
+        draft_picks: draftPicks,
+        users,
+        matchups_by_week: matchupsByWeek,
+        trades: trades.sort((a, b) => b.created - a.created),
+        wire_transactions: wireTransactions,
+        commissioner_transactions: []
+      };
+    }
+
+    async function fetchAllSleeperSeasons(leagueId, nflState, cached, forceFull) {
+      const seasons = [];
+      const visited = new Set();
+      let nextId = leagueId;
+      let cachedCount = 0;
+
+      while (nextId && nextId !== "0" && !visited.has(nextId)) {
+        visited.add(nextId);
+        const cacheKey = `SLEEPER_${nextId}`;
+        const cItem = cached[cacheKey];
+        if (
+          !forceFull &&
+          cItem &&
+          cItem.status === "complete" &&
+          typeof cItem.has_median_game === "boolean" &&
+          Array.isArray(cItem.winners_bracket) &&
+          Array.isArray(cItem.draft_picks) &&
+          Array.isArray(cItem.rosters_final) &&
+          Array.isArray(cItem.wire_transactions) &&
+          Array.isArray(cItem.commissioner_transactions)
+        ) {
+          seasons.push(cItem);
+          cachedCount++;
+          nextId = String(cItem.previous_league_id || "").trim();
+        } else {
+          const fresh = await fetchSingleSeason(nextId, nflState);
+          seasons.push(fresh);
+          cached[cacheKey] = fresh;
+          nextId = String(fresh.previous_league_id || "").trim();
+        }
+      }
+
+      return { seasons, cachedCount };
+    }
+
+    async function fetchAllEspnSeasons(leagueId, nflState, cached, forceFull) {
+      const currentYr = Number(nflState?.season || new Date().getFullYear());
+      const candidateYears = [currentYr, currentYr - 1];
+      let latestSeasonObj = null;
+      let lastErr = null;
+
+      for (const yr of candidateYears) {
+        const cacheKey = `ESPN_${leagueId}_${yr}`;
+        if (!forceFull && cached[cacheKey] && cached[cacheKey].status === "complete") {
+          latestSeasonObj = cached[cacheKey];
+          break;
+        }
+        try {
+          latestSeasonObj = await fetchSingleEspnSeason(leagueId, yr, nflState);
+          cached[cacheKey] = latestSeasonObj;
+          break;
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+
+      if (!latestSeasonObj) {
+        throw lastErr || new Error(`Could not load ESPN League ${leagueId}.`);
+      }
+
+      const seasons = [latestSeasonObj];
+      let cachedCount = 0;
+      const olderYears = latestSeasonObj.previous_espn_seasons || [];
+
+      for (const yr of olderYears) {
+        const cacheKey = `ESPN_${leagueId}_${yr}`;
+        if (!forceFull && cached[cacheKey] && cached[cacheKey].status === "complete") {
+          seasons.push(cached[cacheKey]);
+          cachedCount++;
+          continue;
+        }
+        try {
+          const histSeason = await fetchSingleEspnSeason(leagueId, yr, nflState);
+          seasons.push(histSeason);
+          cached[cacheKey] = histSeason;
+        } catch (e) {
+          // ESPN restricted historical seasons post-2025 without auth cookies; keep available seasons
+          break;
+        }
+      }
+
+      return { seasons, cachedCount };
     }
 
     function buildManagerDirectory(seasons) {
@@ -2858,42 +3513,50 @@
         return;
       }
       hideError();
-      showStatus(`Syncing league ${activeId}...`);
+      showStatus(`Detecting host & syncing league ${activeId}...`);
 
       try {
-        const [nflState] = await Promise.all([
-          fetchJson("/state/nfl"),
-          ensurePlayerDirectory(forceFull)
-        ]);
-
+        const nflState = await fetchJson("/state/nfl");
         const cached = forceFull ? {} : JSON.parse(localStorage.getItem(ARCHIVE_CACHE_KEY) || "{}");
-        const seasons = [];
-        const visited = new Set();
-        let nextId = getActiveLeagueId();
-        let cachedCount = 0;
 
-        while (nextId && nextId !== "0" && !visited.has(nextId)) {
-          visited.add(nextId);
-          const cItem = cached[nextId];
-          if (
-            cItem &&
-            cItem.status === "complete" &&
-            Array.isArray(cItem.winners_bracket) &&
-            Array.isArray(cItem.draft_picks) &&
-            Array.isArray(cItem.rosters_final) &&
-            Array.isArray(cItem.wire_transactions) &&
-            Array.isArray(cItem.commissioner_transactions)
-          ) {
-            seasons.push(cItem);
-            cachedCount++;
-            nextId = String(cItem.previous_league_id || "").trim();
-          } else {
-            const fresh = await fetchSingleSeason(nextId, nflState);
-            seasons.push(fresh);
-            cached[nextId] = fresh;
-            nextId = String(fresh.previous_league_id || "").trim();
+        // Auto-detect source: Sleeper IDs are 15-20 digits; ESPN IDs are typically 4-12 digits.
+        // Try primary candidate first, then automatically fall back to the other host if needed.
+        const order = preferredLeagueSourceHint === "ESPN"
+          ? ["ESPN", "SLEEPER"]
+          : preferredLeagueSourceHint === "SLEEPER"
+            ? ["SLEEPER", "ESPN"]
+            : (activeId.length >= 14 ? ["SLEEPER", "ESPN"] : ["ESPN", "SLEEPER"]);
+
+        let detectedSource = "";
+        let seasons = [];
+        let cachedCount = 0;
+        let firstError = null;
+
+        for (const candidate of order) {
+          try {
+            if (candidate === "SLEEPER") {
+              await ensurePlayerDirectory(forceFull);
+              const res = await fetchAllSleeperSeasons(activeId, nflState, cached, forceFull);
+              seasons = res.seasons;
+              cachedCount = res.cachedCount;
+            } else {
+              const res = await fetchAllEspnSeasons(activeId, nflState, cached, forceFull);
+              seasons = res.seasons;
+              cachedCount = res.cachedCount;
+            }
+            detectedSource = candidate;
+            break;
+          } catch (err) {
+            if (!firstError) firstError = err;
           }
         }
+
+        if (!detectedSource || seasons.length === 0) {
+          throw firstError || new Error(`Could not find League ${activeId} on Sleeper or public ESPN.`);
+        }
+
+        activeLeagueSourceState = detectedSource;
+        applyLeagueModeUI();
 
         try {
           localStorage.setItem(ARCHIVE_CACHE_KEY, JSON.stringify(cached));
@@ -2925,13 +3588,13 @@
         }
 
         showStatus(
-          `Synced ${seasons.length} season(s) at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+          `Synced ${detectedSource} (${seasons.length} season${seasons.length === 1 ? "" : "s"}) at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
           `${cachedCount} cached / ${seasons.length - cachedCount} live`
         );
         setTimeout(() => document.getElementById("statusBanner").classList.add("hidden"), 3800);
       } catch (err) {
         document.getElementById("statusBanner").classList.add("hidden");
-        showError(err.message || "Failed to fetch Sleeper data.");
+        showError(err.message || "Failed to fetch league data.");
       }
     }
 
@@ -4361,7 +5024,10 @@
        ========================================================================== */
     function renderAvatar(meta) {
       if (meta.avatar) {
-        return `<span class="avatar"><img src="https://sleepercdn.com/avatars/thumbs/${meta.avatar}" alt="" loading="lazy"></span>`;
+        const srcUrl = /^https?:\/\//i.test(meta.avatar)
+          ? meta.avatar
+          : `https://sleepercdn.com/avatars/thumbs/${meta.avatar}`;
+        return `<span class="avatar"><img src="${srcUrl}" alt="" loading="lazy" onerror="this.parentElement.textContent='${(meta.name || "?").slice(0, 2).toUpperCase().replace(/'/g, "")}'"></span>`;
       }
       return `<span class="avatar">${(meta.name || "?").slice(0, 2).toUpperCase()}</span>`;
     }
@@ -5695,6 +6361,122 @@
     /* ==========================================================================
        9. LUCK, H2H & WEEKLY MATCHUPS RENDERING
        ========================================================================== */
+    function doesActiveFilterUseMedianGame(seasonFilter) {
+      const targetSeasons = seasonFilter === "ALL"
+        ? appData.seasons
+        : appData.seasons.filter(s => s.season === seasonFilter);
+      if (targetSeasons.length === 0) return false;
+      return targetSeasons.some(s => s.has_median_game === true);
+    }
+
+    function computeStandardH2HMedianLuck(seasonFilter) {
+      const targetSeasons = seasonFilter === "ALL"
+        ? appData.seasons
+        : appData.seasons.filter(s => s.season === seasonFilter);
+
+      const managerMap = {};
+      const events = [];
+
+      const ensure = (uid) => {
+        if (!managerMap[uid]) {
+          const meta = getManagerMeta(uid);
+          managerMap[uid] = {
+            user_id: uid,
+            name: meta.name,
+            avatar: meta.avatar,
+            fifthCount: 0,          // Above Median (Top Half in Pts)
+            sixthCount: 0,          // Below Median (Bottom Half in Pts)
+            sixthAndLossCount: 0,   // Above Median & Lost H2H (Tough-Break Loss)
+            secondAndLossCount: 0   // 2nd in Pts & Lost H2H
+          };
+        }
+        return managerMap[uid];
+      };
+
+      for (const s of targetSeasons) {
+        const weekKeys = Object.keys(s.matchups_by_week).sort((a, b) => Number(a) - Number(b));
+        for (const wkStr of weekKeys) {
+          const entries = (s.matchups_by_week[wkStr] || []).filter(
+            e => e.matchup_id !== null && e.matchup_id !== undefined
+          );
+          if (entries.length === 0 || entries.every(e => e.points === 0)) continue;
+
+          const sortedScores = entries.map(e => Number(e.points || 0)).sort((a, b) => b - a);
+          const n = sortedScores.length;
+          const mid = Math.floor(n / 2);
+          const leagueMedian = n % 2 === 0
+            ? (sortedScores[mid - 1] + sortedScores[mid]) / 2
+            : sortedScores[mid];
+          const leagueAvg = sortedScores.reduce((sum, v) => sum + v, 0) / n;
+          const fifthPts = sortedScores[mid - 1] ?? leagueMedian;
+          const sixthPts = sortedScores[mid] ?? leagueMedian;
+
+          const byMatchup = {};
+          for (const e of entries) {
+            if (!byMatchup[e.matchup_id]) byMatchup[e.matchup_id] = [];
+            byMatchup[e.matchup_id].push(e);
+          }
+
+          for (const e of entries) {
+            const rec = ensure(e.owner_id);
+            const ptsRank = 1 + entries.filter(other => other.points > e.points).length;
+            const pair = byMatchup[e.matchup_id] || [];
+            const opp = pair.find(p => p.roster_id !== e.roster_id);
+            const lostH2H = opp ? (e.points < opp.points) : false;
+            const wonH2H = opp ? (e.points > opp.points) : false;
+            const oppName = opp ? getManagerMeta(opp.owner_id).name : "Bye";
+            const oppPts = opp ? opp.points : 0;
+            const diffFromMedian = e.points - leagueMedian;
+            const diffFromAvg = e.points - leagueAvg;
+
+            const baseEvent = {
+              season: s.season,
+              week: Number(wkStr),
+              ownerId: e.owner_id,
+              ownerName: rec.name,
+              pts: e.points,
+              ptsRank,
+              leagueMedian,
+              leagueAvg,
+              fifthPts,
+              sixthPts,
+              diffFromMedian,
+              diffFromAvg,
+              lostH2H,
+              wonH2H,
+              oppName,
+              oppPts
+            };
+
+            if (e.points > leagueMedian) {
+              rec.fifthCount += 1;
+              events.push({ ...baseEvent, type: "FIFTH" });
+              if (lostH2H) {
+                rec.sixthAndLossCount += 1;
+                events.push({ ...baseEvent, type: "EXTRA_UNLUCKY" });
+              }
+            } else if (e.points < leagueMedian) {
+              rec.sixthCount += 1;
+              events.push({ ...baseEvent, type: "SIXTH" });
+            }
+
+            if (ptsRank === 2 && lostH2H) {
+              rec.secondAndLossCount += 1;
+              events.push({ ...baseEvent, type: "SECOND_LOST" });
+            }
+          }
+        }
+      }
+
+      const rows = Object.values(managerMap).sort(
+        (a, b) =>
+          (b.sixthAndLossCount + b.secondAndLossCount) - (a.sixthAndLossCount + a.secondAndLossCount) ||
+          b.fifthCount - a.fifthCount
+      );
+
+      return { rows, events: events.reverse() };
+    }
+
     function renderLuck() {
       const filter = getSelectedSeason();
       const { rows: rawRows } = computeStatsForSeasons(filter);
@@ -5734,8 +6516,37 @@
         `;
       }).join("");
 
-      // Render 5th/6th Cutoff & Tough-Break Luck (computed across all teams, filtered for display)
-      const { rows: rawCutoffRows } = computeWeeklyRankLuck(filter);
+      const usesMedianGame = doesActiveFilterUseMedianGame(filter);
+      const titleEl = document.getElementById("cutoffLuckCardTitle");
+      const descEl = document.getElementById("cutoffLuckCardDesc");
+      const col1El = document.getElementById("cutoffCol1Header");
+      const col2El = document.getElementById("cutoffCol2Header");
+      const col3El = document.getElementById("cutoffCol3Header");
+      const col4El = document.getElementById("cutoffCol4Header");
+
+      if (usesMedianGame) {
+        if (titleEl) titleEl.textContent = "Weekly Rank Cutoff & Tough-Break Luck";
+        if (descEl) {
+          descEl.innerHTML = `Tracks <strong>5th</strong> (lowest rank eligible for a 2nd W), <strong>6th</strong> (highest rank stuck with an extra L), <strong>2nd in Pts &amp; Lost</strong>, and <strong>6th + H2H Loss (Extra Unlucky)</strong>.`;
+        }
+        if (col1El) col1El.textContent = "5th (2nd W)";
+        if (col2El) col2El.textContent = "6th (Extra L)";
+        if (col3El) col3El.textContent = "6th + Loss";
+        if (col4El) col4El.textContent = "2nd & Lost";
+      } else {
+        if (titleEl) titleEl.textContent = "Weekly Median & Tough-Break Luck (Standard H2H)";
+        if (descEl) {
+          descEl.innerHTML = `Standard 1-game/week H2H league (no 2nd weekly win vs. median). Tracks <strong>Above Median</strong> (top half in points), <strong>Below Median</strong>, <strong>Above Med &amp; Lost</strong> (tough-break H2H losses), and <strong>2nd &amp; Lost</strong>.`;
+        }
+        if (col1El) col1El.textContent = "Above Med";
+        if (col2El) col2El.textContent = "Below Med";
+        if (col3El) col3El.textContent = "Above Med & Lost";
+        if (col4El) col4El.textContent = "2nd & Lost";
+      }
+
+      const { rows: rawCutoffRows } = usesMedianGame
+        ? computeWeeklyRankLuck(filter)
+        : computeStandardH2HMedianLuck(filter);
       const cutoffRows = rawCutoffRows.filter(r => isIncludedTeam(r.user_id));
 
       if (cutoffRows.length > 0) {
@@ -5744,12 +6555,20 @@
         const mostExtraUnlucky = [...cutoffRows].sort((a, b) => b.sixthAndLossCount - a.sixthAndLossCount)[0];
         const most2ndLost = [...cutoffRows].sort((a, b) => b.secondAndLossCount - a.secondAndLossCount)[0];
 
-        document.getElementById("cutoffLuckHighlightStrip").innerHTML = `
-          ${most5th.fifthCount > 0 ? `<span class="badge badge-win">Most 5th (Clutch 2nd W): ${most5th.name} (${most5th.fifthCount}x)</span>` : ""}
-          ${most6th.sixthCount > 0 ? `<span class="badge badge-neutral">Most 6th (Extra L): ${most6th.name} (${most6th.sixthCount}x)</span>` : ""}
-          ${mostExtraUnlucky.sixthAndLossCount > 0 ? `<span class="badge badge-loss">Extra Unlucky (6th + Loss): ${mostExtraUnlucky.name} (${mostExtraUnlucky.sixthAndLossCount}x)</span>` : ""}
-          ${most2ndLost.secondAndLossCount > 0 ? `<span class="badge badge-loss">2nd in Pts &amp; Lost: ${most2ndLost.name} (${most2ndLost.secondAndLossCount}x)</span>` : ""}
-        `;
+        if (usesMedianGame) {
+          document.getElementById("cutoffLuckHighlightStrip").innerHTML = `
+            ${most5th.fifthCount > 0 ? `<span class="badge badge-win">Most 5th (Clutch 2nd W): ${most5th.name} (${most5th.fifthCount}x)</span>` : ""}
+            ${most6th.sixthCount > 0 ? `<span class="badge badge-neutral">Most 6th (Extra L): ${most6th.name} (${most6th.sixthCount}x)</span>` : ""}
+            ${mostExtraUnlucky.sixthAndLossCount > 0 ? `<span class="badge badge-loss">Extra Unlucky (6th + Loss): ${mostExtraUnlucky.name} (${mostExtraUnlucky.sixthAndLossCount}x)</span>` : ""}
+            ${most2ndLost.secondAndLossCount > 0 ? `<span class="badge badge-loss">2nd in Pts &amp; Lost: ${most2ndLost.name} (${most2ndLost.secondAndLossCount}x)</span>` : ""}
+          `;
+        } else {
+          document.getElementById("cutoffLuckHighlightStrip").innerHTML = `
+            ${most5th.fifthCount > 0 ? `<span class="badge badge-win">Most Above Median: ${most5th.name} (${most5th.fifthCount}x)</span>` : ""}
+            ${mostExtraUnlucky.sixthAndLossCount > 0 ? `<span class="badge badge-loss">Most Above Med &amp; Lost: ${mostExtraUnlucky.name} (${mostExtraUnlucky.sixthAndLossCount}x)</span>` : ""}
+            ${most2ndLost.secondAndLossCount > 0 ? `<span class="badge badge-loss">2nd in Pts &amp; Lost: ${most2ndLost.name} (${most2ndLost.secondAndLossCount}x)</span>` : ""}
+          `;
+        }
       } else {
         document.getElementById("cutoffLuckHighlightStrip").innerHTML = "";
       }
@@ -5775,7 +6594,7 @@
           <td class="num">
             <button type="button" class="luck-pill-btn ${r.sixthAndLossCount > 0 ? "loss" : "zero"}"
               onclick="openLuckModal('${r.user_id}', 'EXTRA_UNLUCKY')">
-              ${r.sixthAndLossCount > 0 ? `${r.sixthAndLossCount} (Extra Unlucky)` : "0"}
+              ${r.sixthAndLossCount > 0 ? (usesMedianGame ? `${r.sixthAndLossCount} (Extra Unlucky)` : `${r.sixthAndLossCount}`) : "0"}
             </button>
           </td>
           <td class="num">
@@ -5808,19 +6627,37 @@
       const eventType = document.getElementById("modalLuckTypeSelect").value || "FIFTH";
       const seasonFilter = document.getElementById("modalLuckSeasonSelect").value || "ALL";
       const meta = getManagerMeta(ownerUid);
+      const usesMedianGame = doesActiveFilterUseMedianGame(seasonFilter);
 
-      const typeLabels = {
-        FIFTH: "5th Place (2nd W Cutoff)",
-        SIXTH: "6th Place (Extra L Cutoff)",
-        EXTRA_UNLUCKY: "6th + H2H Loss (Extra Unlucky)",
-        SECOND_LOST: "2nd in Pts & Lost H2H"
-      };
+      const typeLabels = usesMedianGame
+        ? {
+            FIFTH: "5th Place (2nd W Cutoff)",
+            SIXTH: "6th Place (Extra L Cutoff)",
+            EXTRA_UNLUCKY: "6th + H2H Loss (Extra Unlucky)",
+            SECOND_LOST: "2nd in Pts & Lost H2H"
+          }
+        : {
+            FIFTH: "Above League Median (Top Half)",
+            SIXTH: "Below League Median (Bottom Half)",
+            EXTRA_UNLUCKY: "Above Median & Lost H2H",
+            SECOND_LOST: "2nd in Pts & Lost H2H"
+          };
 
-      document.getElementById("luckModalTitle").textContent = `${meta.name} — ${typeLabels[eventType] || "Cutoff Weeks"}`;
-      document.getElementById("luckModalSub").textContent =
-        "Sleeper awards an extra W/L using the League Median (midpoint of 5th & 6th highest scores)";
+      const typeSel = document.getElementById("modalLuckTypeSelect");
+      if (typeSel) {
+        Array.from(typeSel.options).forEach(opt => {
+          if (typeLabels[opt.value]) opt.textContent = typeLabels[opt.value];
+        });
+      }
 
-      const { events } = computeWeeklyRankLuck(seasonFilter);
+      document.getElementById("luckModalTitle").textContent = `${meta.name} — ${typeLabels[eventType] || "Weekly Breakdown"}`;
+      document.getElementById("luckModalSub").textContent = usesMedianGame
+        ? "League awards an extra W/L each week against the League Median"
+        : "Standard 1-game/week H2H league (comparing weekly score against League Median)";
+
+      const { events } = usesMedianGame
+        ? computeWeeklyRankLuck(seasonFilter)
+        : computeStandardH2HMedianLuck(seasonFilter);
       const matching = events.filter(ev => ev.ownerId === ownerUid && ev.type === eventType);
 
       const avgDiffMedian = matching.length > 0
@@ -5868,7 +6705,7 @@
                   </div>
                 </div>
                 <div style="font-size:11px; color:var(--text-secondary); margin-top:6px; padding-top:5px; border-top:1px dashed var(--border);">
-                  5th/6th Cutoff: ${ev.fifthPts.toFixed(2)} / ${ev.sixthPts.toFixed(2)} • ${h2hStatus}
+                  Median Cutoff: ${ev.fifthPts.toFixed(2)} / ${ev.sixthPts.toFixed(2)} • ${h2hStatus}
                 </div>
               </div>
             `;
@@ -6678,14 +7515,39 @@
       const activeId = getActiveLeagueId();
 
       if (activeId && (force || !appData.waiverIntel.liveRostersLoaded)) {
-        tasks.push(
-          fetchJson(`/league/${activeId}/rosters`)
-            .then(liveRosters => {
-              rebuildLeagueRosterLookup(liveRosters, latestSeason?.roster_owner_map);
-              appData.waiverIntel.liveRostersLoaded = true;
-            })
-            .catch(() => {})
-        );
+        if (activeLeagueSourceState === "ESPN") {
+          const yr = latestSeason?.season || appData.nflState?.season || new Date().getFullYear();
+          tasks.push(
+            fetchEspnJson(`${ESPN_BASE}/seasons/${yr}/segments/0/leagues/${activeId}?view=mRoster&view=mTeam`)
+              .then(espnData => {
+                const liveRosters = (espnData.teams || []).map(t => {
+                  const entries = t.roster?.entries || [];
+                  const players = [];
+                  for (const ent of entries) {
+                    const pid = registerEspnPlayerMeta(ent.playerPoolEntry?.player);
+                    if (pid) players.push(pid);
+                  }
+                  return {
+                    roster_id: t.id,
+                    owner_id: latestSeason?.roster_owner_map?.[t.id] || null,
+                    players
+                  };
+                });
+                rebuildLeagueRosterLookup(liveRosters, latestSeason?.roster_owner_map);
+                appData.waiverIntel.liveRostersLoaded = true;
+              })
+              .catch(() => {})
+          );
+        } else {
+          tasks.push(
+            fetchJson(`/league/${activeId}/rosters`)
+              .then(liveRosters => {
+                rebuildLeagueRosterLookup(liveRosters, latestSeason?.roster_owner_map);
+                appData.waiverIntel.liveRostersLoaded = true;
+              })
+              .catch(() => {})
+          );
+        }
       }
 
       if (force || !appData.waiverIntel.trendingLoaded) {
@@ -6872,7 +7734,13 @@
       const vBadge = document.getElementById("appVersionBadge");
       if (vBadge) vBadge.textContent = APP_VERSION;
 
-      activeLeagueIdState = extractLeagueIdFromLocation();
+      initFontScale();
+
+      const spec = extractLeagueSpecFromLocation();
+      activeLeagueIdState = spec.id;
+      preferredLeagueSourceHint = spec.sourceHint;
+      activeLeagueSourceState = spec.sourceHint;
+
       if (activeLeagueIdState) {
         document.getElementById("headerSub").textContent = `League ${activeLeagueIdState}`;
         syncUrlWithLeagueId(activeLeagueIdState);
@@ -6890,9 +7758,9 @@
     });
 
     window.addEventListener("hashchange", () => {
-      const urlId = extractLeagueIdFromLocation();
-      if (urlId && urlId !== activeLeagueIdState) {
-        setActiveLeagueId(urlId);
+      const spec = extractLeagueSpecFromLocation();
+      if (spec.id && spec.id !== activeLeagueIdState) {
+        setActiveLeagueId(spec.id, "leagueIdError", spec.sourceHint);
       }
     });
   </script>
