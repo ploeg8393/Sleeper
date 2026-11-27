@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="League Vault" />
-  <title>Fantasy Insights V3.0 — Multi-Season Analytics</title>
+  <title>Fantasy Insights V3.1 — Multi-Season Analytics</title>
   <style>
     :root {
       color-scheme: dark;
@@ -1379,7 +1379,7 @@
 
   <div class="app-top-banner" id="topAppBanner">
     <span>Fantasy Insights</span>
-    <span class="version-pill" id="appVersionBadge">V3.0</span>
+    <span class="version-pill" id="appVersionBadge">V3.1</span>
   </div>
 
   <div id="loadingSplashScreen" class="loading-splash hidden" role="status" aria-live="polite">
@@ -1439,7 +1439,7 @@
     </div>
 
     <div id="dashboardRoot" class="hidden">
-      <!-- TAB 1: STANDINGS & LINEUP EFFICIENCY -->
+      <!-- TAB 1: STANDINGS, LINEUP EFFICIENCY & PLAYOFF HISTORY -->
       <section id="tab-standings" class="tab-panel">
         <div class="card">
           <div class="card-header">
@@ -1464,10 +1464,7 @@
             </table>
           </div>
         </div>
-      </section>
 
-      <!-- TAB 2: PLAYOFF & CHAMPIONSHIP HISTORY -->
-      <section id="tab-playoffs" class="tab-panel hidden">
         <div class="card">
           <div class="card-header">
             <div class="card-title">All-Time Playoff & Championship Leaderboard</div>
@@ -1534,7 +1531,7 @@
             <div class="card-title">Lineup Efficiency & Bench Blunders</div>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
-            Compares <strong>Actual PF</strong> against <strong>Optimal Max PF</strong> (best legal starting lineup possible from each week's roster) to measure points left on the bench.
+            Compares <strong>Actual PPG</strong> against <strong>Optimal Max PPG</strong> (best legal starting lineup possible each week) to measure points per game left on the bench.
           </p>
           <div id="effHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
           <div class="table-wrap">
@@ -1543,10 +1540,9 @@
                 <tr>
                   <th data-col="name" onclick="sortTable('efficiency', 'name')">Manager</th>
                   <th class="num" data-col="efficiencyPct" onclick="sortTable('efficiency', 'efficiencyPct')">Eff%</th>
-                  <th class="num" data-col="pf" onclick="sortTable('efficiency', 'pf')">Actual PF</th>
-                  <th class="num" data-col="maxPf" onclick="sortTable('efficiency', 'maxPf')">Max PF</th>
-                  <th class="num" data-col="benchLeft" onclick="sortTable('efficiency', 'benchLeft')">Bench Left</th>
-                  <th class="num" data-col="avgBenchLeft" onclick="sortTable('efficiency', 'avgBenchLeft')">Avg/Wk</th>
+                  <th class="num" data-col="actualPpg" onclick="sortTable('efficiency', 'actualPpg')">Actual PPG</th>
+                  <th class="num" data-col="maxPpg" onclick="sortTable('efficiency', 'maxPpg')">Max PPG</th>
+                  <th class="num" data-col="avgBenchLeft" onclick="sortTable('efficiency', 'avgBenchLeft')">Bench PPG</th>
                   <th class="num" data-col="perfectWeeks" onclick="sortTable('efficiency', 'perfectWeeks')">Perfect Wks</th>
                   <th data-col="worstBenchDiff" onclick="sortTable('efficiency', 'worstBenchDiff')">Worst Bench Wk</th>
                 </tr>
@@ -1829,7 +1825,7 @@
       <section id="tab-h2h" class="tab-panel hidden">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">Full Rivalry Matrix</div>
+            <div class="card-title">Rivalry Matrix</div>
           </div>
           <div class="controls-row">
             <select id="h2hManagerSelect" class="grow" onchange="renderH2H()"></select>
@@ -1842,7 +1838,7 @@
           <div id="h2hGrid" class="h2h-grid"></div>
         </div>
 
-        <div class="card">
+        <div class="card" id="versusInspectorCard">
           <div class="card-header">
             <div class="card-title">Two-Team Matchup Inspector</div>
             <select id="versusScopeSelect" onchange="renderTwoTeamMatchup()">
@@ -2353,9 +2349,13 @@
       <span class="nav-icon">📊</span>
       <span>Standings</span>
     </button>
-    <button class="nav-btn" data-tab="playoffs" onclick="switchTab('playoffs')">
-      <span class="nav-icon">🏆</span>
-      <span>Playoffs</span>
+    <button class="nav-btn" data-tab="h2h" onclick="switchTab('h2h')">
+      <span class="nav-icon">⚔️</span>
+      <span>H2H</span>
+    </button>
+    <button class="nav-btn" data-tab="luck" onclick="switchTab('luck')">
+      <span class="nav-icon">🍀</span>
+      <span>Luck</span>
     </button>
     <button class="nav-btn" data-tab="positions" onclick="switchTab('positions')">
       <span class="nav-icon">📋</span>
@@ -2372,14 +2372,6 @@
     <button class="nav-btn" data-tab="injuries" onclick="switchTab('injuries')">
       <span class="nav-icon">🚑</span>
       <span>Injuries</span>
-    </button>
-    <button class="nav-btn" data-tab="luck" onclick="switchTab('luck')">
-      <span class="nav-icon">🍀</span>
-      <span>Luck</span>
-    </button>
-    <button class="nav-btn" data-tab="h2h" onclick="switchTab('h2h')">
-      <span class="nav-icon">⚔️</span>
-      <span>H2H</span>
     </button>
     <button class="nav-btn" id="rulesNavBtn" data-tab="rules" onclick="switchTab('rules')">
       <span class="nav-icon">📜</span>
@@ -2399,7 +2391,7 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V3.0";
+    const APP_VERSION = "V3.1";
     const CUSTOM_RULES_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     const ESPN_BASE = "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl";
@@ -3829,6 +3821,8 @@
         const luck = r.wins - (apPct * games);
         const benchLeft = Math.max(0, r.maxPf - r.pf);
         const efficiencyPct = r.maxPf > 0 ? (r.pf / r.maxPf) * 100 : 0;
+        const actualPpg = r.weeksLogged > 0 ? r.pf / r.weeksLogged : 0;
+        const maxPpg = r.weeksLogged > 0 ? r.maxPf / r.weeksLogged : 0;
         const avgBenchLeft = r.weeksLogged > 0 ? benchLeft / r.weeksLogged : 0;
         return {
           ...r,
@@ -3838,6 +3832,8 @@
           luck,
           benchLeft,
           efficiencyPct,
+          actualPpg,
+          maxPpg,
           avgBenchLeft
         };
       });
@@ -5240,12 +5236,12 @@
       const active = rows.filter(r => r.weeksLogged > 0);
       if (active.length > 0) {
         const mostEfficient = [...active].sort((a, b) => b.efficiencyPct - a.efficiencyPct)[0];
-        const mostBenchLeft = [...active].sort((a, b) => b.benchLeft - a.benchLeft)[0];
+        const mostBenchPpg = [...active].sort((a, b) => b.avgBenchLeft - a.avgBenchLeft)[0];
         const worstSingle = [...active].sort((a, b) => b.worstBench.diff - a.worstBench.diff)[0];
 
         document.getElementById("effHighlightStrip").innerHTML = `
           <span class="badge badge-win">Sharpest Manager: ${mostEfficient.name} (${mostEfficient.efficiencyPct.toFixed(1)}%)</span>
-          <span class="badge badge-loss">Most Bench Left: ${mostBenchLeft.name} (${mostBenchLeft.benchLeft.toFixed(1)} pts)</span>
+          <span class="badge badge-loss">Most Bench PPG: ${mostBenchPpg.name} (${mostBenchPpg.avgBenchLeft.toFixed(1)} PPG)</span>
           <span class="badge badge-neutral">Biggest Single-Wk Miss: ${worstSingle.name} (-${worstSingle.worstBench.diff.toFixed(1)} in ${worstSingle.worstBench.season} W${worstSingle.worstBench.week})</span>
         `;
       } else {
@@ -5270,10 +5266,9 @@
               </div>
             </td>
             <td class="num"><span class="badge ${effBadge}">${r.efficiencyPct.toFixed(1)}%</span></td>
-            <td class="num">${r.pf.toFixed(1)}</td>
-            <td class="num">${r.maxPf.toFixed(1)}</td>
-            <td class="num"><strong style="color:var(--loss);">${r.benchLeft.toFixed(1)}</strong></td>
-            <td class="num">${r.avgBenchLeft.toFixed(1)}</td>
+            <td class="num">${r.actualPpg.toFixed(1)}</td>
+            <td class="num">${r.maxPpg.toFixed(1)}</td>
+            <td class="num"><strong style="color:var(--loss);">${r.avgBenchLeft.toFixed(1)}</strong></td>
             <td class="num">${r.perfectWeeks}</td>
             <td style="font-size:12px; color:var(--text-secondary);">${worstLabel}</td>
           </tr>
@@ -7217,6 +7212,7 @@
         const avgDiff = games ? ((r.pf - r.pa) / games).toFixed(1) : "0.0";
         const badgeCls = r.wins > r.losses ? "badge-win" : r.wins < r.losses ? "badge-loss" : "badge-neutral";
 
+        const recordTxt = `${r.wins}-${r.losses}${r.ties ? `-${r.ties}` : ""}`;
         return `
           <div class="h2h-card">
             <div class="manager-cell">
@@ -7229,7 +7225,10 @@
               </div>
             </div>
             <div style="text-align:right;">
-              <span class="badge ${badgeCls}" style="font-size:12px;">${r.wins}-${r.losses}${r.ties ? `-${r.ties}` : ""}</span>
+              <button type="button" class="badge ${badgeCls}"
+                style="font-size:12px; cursor:pointer; text-decoration:underline; border:1px solid currentColor;"
+                onclick="openTwoTeamMatchupFromRivalry('${targetUid}', '${r.oppId}', '${scope}')"
+                title="Open Two-Team Matchup Inspector">${recordTxt}</button>
               <div style="font-size:11px; color:var(--text-secondary); margin-top:3px;">
                 ${r.pf.toFixed(0)} – ${r.pa.toFixed(0)}
               </div>
@@ -7237,6 +7236,20 @@
           </div>
         `;
       }).join("");
+    }
+
+    function openTwoTeamMatchupFromRivalry(uidA, uidB, scope = "all") {
+      const selA = document.getElementById("versusTeamASelect");
+      const selB = document.getElementById("versusTeamBSelect");
+      const selScope = document.getElementById("versusScopeSelect");
+      if (selA) selA.value = uidA;
+      if (selB) selB.value = uidB;
+      if (selScope) selScope.value = scope || "all";
+      renderTwoTeamMatchup();
+      const card = document.getElementById("versusInspectorCard");
+      if (card && card.scrollIntoView) {
+        card.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
 
     /* ==========================================================================
