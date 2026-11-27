@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="League Vault" />
-  <title>Fantasy Insights V3.2 — Multi-Season Analytics</title>
+  <title>Fantasy Insights V3.3 — Multi-Season Analytics</title>
   <style>
     :root {
       color-scheme: dark;
@@ -1448,7 +1448,7 @@
 
   <div class="app-top-banner" id="topAppBanner">
     <span>Fantasy Insights</span>
-    <span class="version-pill" id="appVersionBadge">V3.2</span>
+    <span class="version-pill" id="appVersionBadge">V3.3</span>
   </div>
 
   <div id="loadingSplashScreen" class="loading-splash hidden" role="status" aria-live="polite">
@@ -1888,6 +1888,40 @@
             </table>
           </div>
         </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Close Games &amp; Comeback Wins</div>
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <label for="closeGameThresholdInput" style="font-size:11.5px; color:var(--text-secondary); font-weight:600;">Margin &lt;</label>
+              <input type="range" id="closeGameThresholdSlider" min="0" max="5" step="0.5" value="5"
+                oninput="onCloseGameThresholdChange(this.value)"
+                style="width:82px; accent-color:var(--accent); cursor:pointer;" aria-label="Close game threshold slider" />
+              <input type="number" id="closeGameThresholdInput" min="0" max="5" step="0.1" value="5"
+                oninput="onCloseGameThresholdChange(this.value)" onchange="onCloseGameThresholdChange(this.value)"
+                style="width:56px; padding:4px 6px; font-size:12px; text-align:center;" aria-label="Close game threshold points" />
+              <span style="font-size:11.5px; color:var(--text-secondary); font-weight:600;">pts</span>
+            </div>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;" id="closeGamesCardDesc">
+            Tracks games decided by less than <strong>5.0 pts</strong> and <strong>Comeback Wins</strong> (trailing entering Monday Night Football and winning after MNF games). Tap any count to view the games.
+          </p>
+          <div id="closeGamesHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+          <div class="table-wrap">
+            <table data-sort-table="closeGames">
+              <thead>
+                <tr>
+                  <th data-col="name" onclick="sortTable('closeGames', 'name')">Manager</th>
+                  <th class="num" data-col="closeWins" onclick="sortTable('closeGames', 'closeWins')">Close W</th>
+                  <th class="num" data-col="closeLosses" onclick="sortTable('closeGames', 'closeLosses')">Close L</th>
+                  <th class="num" data-col="closeWinPct" onclick="sortTable('closeGames', 'closeWinPct')">Close W%</th>
+                  <th class="num" data-col="comebackWins" onclick="sortTable('closeGames', 'comebackWins')">Comeback W</th>
+                </tr>
+              </thead>
+              <tbody id="closeGamesBody"></tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <!-- TAB 8: HEAD-TO-HEAD -->
@@ -2321,6 +2355,32 @@
     </div>
   </div>
 
+  <!-- MODAL WINDOW 3B: CLOSE GAMES & MNF COMEBACK WINS POPUP -->
+  <div id="closeGamesModalBackdrop" class="modal-backdrop hidden" onclick="closeCloseGamesModalOnBackdrop(event)">
+    <div class="modal-window" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div>
+          <div class="card-title" id="closeGamesModalTitle">Close Games &amp; Comeback Wins</div>
+          <div style="font-size:11px; color:var(--text-secondary);" id="closeGamesModalSub">Matchups decided within close-game margin</div>
+        </div>
+        <button class="btn-icon" onclick="closeCloseGamesModal()">✕ Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="controls-row">
+          <select id="modalCloseOwnerSelect" class="grow" onchange="renderCloseGamesModalContent()"></select>
+          <select id="modalCloseTypeSelect" class="grow" onchange="renderCloseGamesModalContent()">
+            <option value="CLOSE_WIN">Close Wins (&lt; 5 pts)</option>
+            <option value="CLOSE_LOSS">Close Losses (&lt; 5 pts)</option>
+            <option value="COMEBACK_WIN">Comeback Wins (MNF)</option>
+          </select>
+          <select id="modalCloseSeasonSelect" onchange="renderCloseGamesModalContent()"></select>
+        </div>
+        <div id="closeGamesModalSummary" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+        <div id="closeGamesModalContainer"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL WINDOW 4: COMMISSIONER TRANSACTIONS DETAILS POPUP -->
   <div id="commishModalBackdrop" class="modal-backdrop hidden" onclick="closeCommishModalOnBackdrop(event)">
     <div class="modal-window" onclick="event.stopPropagation()">
@@ -2460,7 +2520,7 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V3.2";
+    const APP_VERSION = "V3.3";
     const CUSTOM_RULES_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     const ESPN_BASE = "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl";
@@ -2768,8 +2828,10 @@
       applyLeagueModeUI();
     }
     const ARCHIVE_CACHE_KEY = "sleeper_vault_seasons_cache_v7";
-    const PLAYERS_CACHE_KEY = "sleeper_vault_players_compact_v4";
-    const PLAYERS_TS_KEY = "sleeper_vault_players_ts_v4";
+    const PLAYERS_CACHE_KEY = "sleeper_vault_players_compact_v5";
+    const PLAYERS_TS_KEY = "sleeper_vault_players_ts_v5";
+    const MNF_SCHEDULE_CACHE_KEY = "sleeper_vault_mnf_schedule_v1";
+    const CLOSE_GAME_THRESHOLD_KEY = "sleeper_vault_close_threshold_v1";
     const GEMINI_KEY_STORAGE = "sleeper_vault_gemini_api_key";
 
     let appData = {
@@ -2778,6 +2840,8 @@
       managers: {},
       currentTeamIds: new Set(),
       players: {},
+      mnfTeamsBySeasonWeek: {},
+      closeGameThreshold: 5,
       tableSorts: {
         standings: { col: "winPct", dir: "desc" },
         playoffs: { col: "titles", dir: "desc" },
@@ -2790,7 +2854,8 @@
         draft: { col: "draftOnlyPf", dir: "desc" },
         injuries: { col: "seasonEndingCount", dir: "desc" },
         luck: { col: "luck", dir: "desc" },
-        cutoffLuck: { col: "sixthAndLossCount", dir: "desc" }
+        cutoffLuck: { col: "sixthAndLossCount", dir: "desc" },
+        closeGames: { col: "closeWins", dir: "desc" }
       },
       modalInjuryDir: "asc",
       waiverIntel: {
@@ -2828,6 +2893,10 @@
         document.getElementById("modalLuckSeasonSelect").value = yr;
         renderLuckModalContent();
       }
+      if (!document.getElementById("closeGamesModalBackdrop").classList.contains("hidden")) {
+        document.getElementById("modalCloseSeasonSelect").value = yr;
+        renderCloseGamesModalContent();
+      }
       if (!document.getElementById("commishModalBackdrop").classList.contains("hidden")) {
         document.getElementById("modalCommishSeasonSelect").value = yr;
         renderCommishModalContent();
@@ -2852,6 +2921,9 @@
       if (!document.getElementById("luckModalBackdrop").classList.contains("hidden")) {
         renderLuckModalContent();
       }
+      if (!document.getElementById("closeGamesModalBackdrop").classList.contains("hidden")) {
+        renderCloseGamesModalContent();
+      }
       if (!document.getElementById("commishModalBackdrop").classList.contains("hidden")) {
         renderCommishModalContent();
       }
@@ -2874,7 +2946,7 @@
       else if (tableKey === "activity" || tableKey === "commish" || tableKey === "pickTrades" || tableKey === "waiverRoi") renderActivityAndWaivers();
       else if (tableKey === "draft") renderDraftAnalysis();
       else if (tableKey === "injuries") renderInjuries();
-      else if (tableKey === "luck" || tableKey === "cutoffLuck") renderLuck();
+      else if (tableKey === "luck" || tableKey === "cutoffLuck" || tableKey === "closeGames") renderLuck();
     }
 
     function updateTableSortHeaders(tableKey) {
@@ -2978,6 +3050,7 @@
           compact[pid] = {
             n: name,
             p: p.position,
+            t: normalizeNflTeamAbbr(p.team || (p.position === "DEF" ? pid : "")),
             inj: p.injury_status || null,
             eid: p.espn_id ? String(p.espn_id) : null
           };
@@ -3016,6 +3089,111 @@
     function getPlayerLiveInjury(pid) {
       const entry = appData.players[pid];
       return (entry && typeof entry === "object") ? (entry.inj || null) : null;
+    }
+
+    const NFL_TEAM_ALIAS_MAP = {
+      WSH: "WAS",
+      JAC: "JAX",
+      LA: "LAR",
+      SD: "LAC",
+      OAK: "LV",
+      STL: "LAR"
+    };
+
+    const ESPN_PRO_TEAM_MAP = {
+      1: "ATL", 2: "BUF", 3: "CHI", 4: "CIN", 5: "CLE", 6: "DAL", 7: "DEN", 8: "DET",
+      9: "GB", 10: "TEN", 11: "IND", 12: "KC", 13: "LV", 14: "LAR", 15: "MIA", 16: "MIN",
+      17: "NE", 18: "NO", 19: "NYG", 20: "NYJ", 21: "PHI", 22: "ARI", 23: "PIT", 24: "LAC",
+      25: "SF", 26: "SEA", 27: "TB", 28: "WAS", 29: "CAR", 30: "JAX", 33: "BAL", 34: "HOU"
+    };
+
+    function normalizeNflTeamAbbr(raw) {
+      const code = String(raw || "").trim().toUpperCase();
+      if (!code) return "";
+      return NFL_TEAM_ALIAS_MAP[code] || code;
+    }
+
+    function getPlayerNflTeam(pid) {
+      if (!pid) return "";
+      const entry = appData.players[pid];
+      if (entry && typeof entry === "object" && entry.t) {
+        return normalizeNflTeamAbbr(entry.t);
+      }
+      if (/^[A-Z]{2,3}$/.test(String(pid))) {
+        return normalizeNflTeamAbbr(pid);
+      }
+      return "";
+    }
+
+    async function ensureMnfSchedulesForSeasons(seasons) {
+      if (!Array.isArray(seasons) || seasons.length === 0) return;
+      let cache = {};
+      try {
+        cache = JSON.parse(localStorage.getItem(MNF_SCHEDULE_CACHE_KEY) || "{}");
+      } catch (e) {}
+
+      const currentYr = String(appData.nflState?.season || new Date().getFullYear());
+      const currentWk = Number(appData.nflState?.week || 18);
+      const jobs = [];
+
+      for (const s of seasons) {
+        const yr = String(s.season);
+        for (const [wkStr, entries] of Object.entries(s.matchups_by_week || {})) {
+          const wk = Number(wkStr);
+          if (!wk || !Array.isArray(entries) || entries.every(e => Number(e.points || 0) === 0)) continue;
+
+          const key = `${yr}_${wk}`;
+          const isActiveWeek = yr === currentYr && wk >= currentWk;
+          const cachedEntry = cache[key];
+          if (cachedEntry && Array.isArray(cachedEntry.teams) && (!isActiveWeek || (Date.now() - (cachedEntry.ts || 0) < 6 * 3600 * 1000))) {
+            appData.mnfTeamsBySeasonWeek[key] = cachedEntry.teams;
+            continue;
+          }
+
+          jobs.push({ yr, wk, key });
+        }
+      }
+
+      if (jobs.length === 0) return;
+
+      const etWeekdayFmt = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York",
+        weekday: "short"
+      });
+
+      await Promise.all(jobs.map(async ({ yr, wk, key }) => {
+        try {
+          const seasonType = wk <= 18 ? 2 : 3;
+          const espnWk = wk <= 18 ? wk : wk - 18;
+          const url = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${yr}&seasontype=${seasonType}&week=${espnWk}`;
+          const res = await fetch(url, { credentials: "omit" });
+          if (!res.ok) return;
+          const data = await res.json();
+          const mnfTeams = new Set();
+
+          for (const ev of (data.events || [])) {
+            if (!ev.date) continue;
+            const dayName = etWeekdayFmt.format(new Date(ev.date));
+            if (dayName === "Mon") {
+              const comps = ev.competitions?.[0]?.competitors || [];
+              for (const c of comps) {
+                const abbr = normalizeNflTeamAbbr(c.team?.abbreviation);
+                if (abbr) mnfTeams.add(abbr);
+              }
+            }
+          }
+
+          const arr = Array.from(mnfTeams);
+          appData.mnfTeamsBySeasonWeek[key] = arr;
+          cache[key] = { teams: arr, ts: Date.now() };
+        } catch (e) {
+          // Skip gracefully if offline or rate-limited
+        }
+      }));
+
+      try {
+        localStorage.setItem(MNF_SCHEDULE_CACHE_KEY, JSON.stringify(cache));
+      } catch (e) {}
     }
 
     function computeAllPlay(weekMatchups) {
@@ -3255,6 +3433,7 @@
       appData.players[pid] = {
         n: fullName,
         p: pos,
+        t: ESPN_PRO_TEAM_MAP[playerObj.proTeamId] || "",
         inj,
         eid: rawId
       };
@@ -3732,6 +3911,12 @@
         updateAiModeBadge();
         populateFilters();
         renderAll();
+        ensureMnfSchedulesForSeasons(seasons).then(() => {
+          renderLuck();
+          if (!document.getElementById("closeGamesModalBackdrop").classList.contains("hidden")) {
+            renderCloseGamesModalContent();
+          }
+        });
         if (isWaiverUnlocked()) {
           refreshWaiverWireIntel(false);
         }
@@ -5208,6 +5393,8 @@
       document.getElementById("playoffSeasonSelect").innerHTML = singleSeasonOpts;
       document.getElementById("modalInjurySeasonSelect").innerHTML = seasonOpts;
       document.getElementById("modalLuckSeasonSelect").innerHTML = seasonOpts;
+      const closeSeasonEl = document.getElementById("modalCloseSeasonSelect");
+      if (closeSeasonEl) closeSeasonEl.innerHTML = seasonOpts;
       document.getElementById("modalCommishSeasonSelect").innerHTML = seasonOpts;
 
       populateManagerDropdowns();
@@ -5239,6 +5426,7 @@
       applySelect("modalOwnerBSelect", `<option value="ALL">All Trade Partners</option>` + managerOpts, 0, true);
       applySelect("modalInjuryOwnerSelect", managerOpts, 0);
       applySelect("modalLuckOwnerSelect", managerOpts, 0);
+      applySelect("modalCloseOwnerSelect", managerOpts, 0);
       applySelect("modalCommishOwnerSelect", `<option value="ALL">All Managers</option>` + managerOpts, 0, true);
     }
 
@@ -6764,6 +6952,400 @@
           </td>
         </tr>
       `).join("");
+
+      renderCloseGamesCard();
+    }
+
+    function getCloseGameThreshold() {
+      const val = Number(appData.closeGameThreshold);
+      if (Number.isNaN(val)) return 5;
+      return Math.max(0, Math.min(5, val));
+    }
+
+    function onCloseGameThresholdChange(rawVal) {
+      let num = parseFloat(rawVal);
+      if (Number.isNaN(num)) num = 0;
+      num = Math.max(0, Math.min(5, Math.round(num * 10) / 10));
+      appData.closeGameThreshold = num;
+
+      const slider = document.getElementById("closeGameThresholdSlider");
+      const input = document.getElementById("closeGameThresholdInput");
+      if (slider && Number(slider.value) !== num) slider.value = String(num);
+      if (input && document.activeElement !== input) input.value = String(num);
+
+      try {
+        localStorage.setItem(CLOSE_GAME_THRESHOLD_KEY, String(num));
+      } catch (e) {}
+
+      renderCloseGamesCard();
+      if (!document.getElementById("closeGamesModalBackdrop").classList.contains("hidden")) {
+        renderCloseGamesModalContent();
+      }
+    }
+
+    function computeCloseGamesAndComebacks(seasonFilter, threshold) {
+      const targetSeasons = seasonFilter === "ALL"
+        ? appData.seasons
+        : appData.seasons.filter(s => s.season === seasonFilter);
+
+      const managerMap = {};
+      const events = [];
+      let hasAnyMnfData = false;
+
+      const ensure = (uid) => {
+        if (!managerMap[uid]) {
+          const meta = getManagerMeta(uid);
+          managerMap[uid] = {
+            user_id: uid,
+            name: meta.name,
+            avatar: meta.avatar,
+            closeWins: 0,
+            closeLosses: 0,
+            comebackWins: 0
+          };
+        }
+        return managerMap[uid];
+      };
+
+      const evaluateMnfSide = (entry, mnfSet) => {
+        const starters = entry.starters || [];
+        const sPts = entry.starters_points || [];
+        const pPtsMap = entry.players_points || {};
+        let mnfPts = 0;
+        const mnfPlayers = [];
+
+        starters.forEach((pid, idx) => {
+          if (!pid) return;
+          const team = getPlayerNflTeam(pid);
+          if (team && mnfSet.has(team)) {
+            const pts = sPts[idx] !== undefined
+              ? Number(sPts[idx] || 0)
+              : Number(pPtsMap[pid] || 0);
+            mnfPts += pts;
+            mnfPlayers.push(`${getPlayerNameOnly(pid)} (${team}: ${pts.toFixed(1)})`);
+          }
+        });
+
+        const totalPts = Number(entry.points || 0);
+        return {
+          mnfPts,
+          preMnfPts: totalPts - mnfPts,
+          mnfPlayers
+        };
+      };
+
+      for (const s of targetSeasons) {
+        const playoffStart = s.playoff_week_start || 15;
+        const weekKeys = Object.keys(s.matchups_by_week).sort((a, b) => Number(a) - Number(b));
+
+        for (const wkStr of weekKeys) {
+          const wk = Number(wkStr);
+          const isPlayoff = wk >= playoffStart;
+          const entries = (s.matchups_by_week[wkStr] || []).filter(
+            e => e.matchup_id !== null && e.matchup_id !== undefined
+          );
+          if (entries.length === 0 || entries.every(e => e.points === 0)) continue;
+
+          const mnfTeamsArr = appData.mnfTeamsBySeasonWeek[`${s.season}_${wk}`] || [];
+          const mnfSet = new Set(mnfTeamsArr);
+          if (mnfSet.size > 0) hasAnyMnfData = true;
+
+          const byMatchup = {};
+          for (const e of entries) {
+            if (!byMatchup[e.matchup_id]) byMatchup[e.matchup_id] = [];
+            byMatchup[e.matchup_id].push(e);
+          }
+
+          for (const pair of Object.values(byMatchup)) {
+            if (pair.length !== 2) continue;
+            const [a, b] = pair;
+            if (!a.owner_id || !b.owner_id || (a.points === 0 && b.points === 0)) continue;
+
+            ensure(a.owner_id);
+            ensure(b.owner_id);
+
+            const margin = Math.abs(a.points - b.points);
+            if (margin === 0) continue; // tie
+
+            const winner = a.points > b.points ? a : b;
+            const loser = a.points > b.points ? b : a;
+            const wRec = ensure(winner.owner_id);
+            const lRec = ensure(loser.owner_id);
+
+            // Check MNF Comeback Win
+            let isMnfComeback = false;
+            let preMnfWinner = winner.points;
+            let preMnfLoser = loser.points;
+            let deficitOvercome = 0;
+            let mnfWinnerPlayers = [];
+            let mnfLoserPlayers = [];
+
+            if (mnfSet.size > 0) {
+              const wMnf = evaluateMnfSide(winner, mnfSet);
+              const lMnf = evaluateMnfSide(loser, mnfSet);
+              preMnfWinner = wMnf.preMnfPts;
+              preMnfLoser = lMnf.preMnfPts;
+              mnfWinnerPlayers = wMnf.mnfPlayers;
+              mnfLoserPlayers = lMnf.mnfPlayers;
+
+              if (preMnfWinner < preMnfLoser - 0.001 && (mnfWinnerPlayers.length > 0 || mnfLoserPlayers.length > 0)) {
+                isMnfComeback = true;
+                deficitOvercome = preMnfLoser - preMnfWinner;
+                wRec.comebackWins += 1;
+                events.push({
+                  type: "COMEBACK_WIN",
+                  season: s.season,
+                  week: wk,
+                  isPlayoff,
+                  ownerId: winner.owner_id,
+                  ownerName: wRec.name,
+                  oppId: loser.owner_id,
+                  oppName: lRec.name,
+                  pts: winner.points,
+                  oppPts: loser.points,
+                  margin,
+                  preMnfPts: preMnfWinner,
+                  preMnfOppPts: preMnfLoser,
+                  deficitOvercome,
+                  mnfPlayers: mnfWinnerPlayers,
+                  mnfOppPlayers: mnfLoserPlayers
+                });
+              }
+            }
+
+            // Check Close Win & Close Loss (margin < threshold)
+            if (threshold > 0 && margin < threshold) {
+              wRec.closeWins += 1;
+              lRec.closeLosses += 1;
+
+              events.push({
+                type: "CLOSE_WIN",
+                season: s.season,
+                week: wk,
+                isPlayoff,
+                ownerId: winner.owner_id,
+                ownerName: wRec.name,
+                oppId: loser.owner_id,
+                oppName: lRec.name,
+                pts: winner.points,
+                oppPts: loser.points,
+                margin,
+                isMnfComeback,
+                preMnfPts: preMnfWinner,
+                preMnfOppPts: preMnfLoser,
+                deficitOvercome,
+                mnfPlayers: mnfWinnerPlayers
+              });
+
+              events.push({
+                type: "CLOSE_LOSS",
+                season: s.season,
+                week: wk,
+                isPlayoff,
+                ownerId: loser.owner_id,
+                ownerName: lRec.name,
+                oppId: winner.owner_id,
+                oppName: wRec.name,
+                pts: loser.points,
+                oppPts: winner.points,
+                margin,
+                isMnfComeback,
+                preMnfPts: preMnfLoser,
+                preMnfOppPts: preMnfWinner,
+                deficitOvercome,
+                mnfPlayers: mnfLoserPlayers
+              });
+            }
+          }
+        }
+      }
+
+      const rows = Object.values(managerMap).map(r => {
+        const totalClose = r.closeWins + r.closeLosses;
+        const closeWinPct = totalClose > 0 ? (r.closeWins / totalClose) * 100 : -1;
+        return {
+          ...r,
+          totalClose,
+          closeWinPct
+        };
+      });
+
+      return { rows, events: events.reverse(), hasAnyMnfData };
+    }
+
+    function renderCloseGamesCard() {
+      const filter = getSelectedSeason();
+      const threshold = getCloseGameThreshold();
+      const descEl = document.getElementById("closeGamesCardDesc");
+      if (descEl) {
+        descEl.innerHTML = `Tracks games decided by less than <strong>${threshold.toFixed(1)} pt${threshold === 1 ? "" : "s"}</strong> and <strong>Comeback Wins</strong> (trailed entering Monday Night Football and won after MNF). Tap any count to view the games.`;
+      }
+
+      const { rows: rawRows, hasAnyMnfData } = computeCloseGamesAndComebacks(filter, threshold);
+      const rows = sortRowsGeneric(rawRows.filter(r => isIncludedTeam(r.user_id)), "closeGames", {
+        closeWinPct: r => (r.closeWins + r.closeLosses) > 0 ? r.closeWinPct : -1
+      });
+
+      if (rows.length > 0) {
+        const mostCloseW = [...rows].sort((a, b) => b.closeWins - a.closeWins)[0];
+        const mostCloseL = [...rows].sort((a, b) => b.closeLosses - a.closeLosses)[0];
+        const mostComebacks = [...rows].sort((a, b) => b.comebackWins - a.comebackWins)[0];
+
+        document.getElementById("closeGamesHighlightStrip").innerHTML = `
+          ${mostCloseW.closeWins > 0 ? `<span class="badge badge-win">Most Close Wins: ${mostCloseW.name} (${mostCloseW.closeWins})</span>` : ""}
+          ${mostCloseL.closeLosses > 0 ? `<span class="badge badge-loss">Most Close Losses: ${mostCloseL.name} (${mostCloseL.closeLosses})</span>` : ""}
+          ${hasAnyMnfData && mostComebacks.comebackWins > 0 ? `<span class="badge badge-gold">Most MNF Comebacks: ${mostComebacks.name} (${mostComebacks.comebackWins})</span>` : ""}
+        `;
+      } else {
+        document.getElementById("closeGamesHighlightStrip").innerHTML = "";
+      }
+
+      document.getElementById("closeGamesBody").innerHTML = rows.map(r => {
+        const totalClose = r.closeWins + r.closeLosses;
+        const pctLabel = totalClose > 0 ? `${r.closeWinPct.toFixed(0)}%` : "-";
+        return `
+          <tr>
+            <td>
+              <div class="manager-cell">
+                ${renderAvatar(r)}
+                <span class="manager-name">${r.name}</span>
+              </div>
+            </td>
+            <td class="num">
+              <button type="button" class="luck-pill-btn ${r.closeWins > 0 ? "win" : "zero"}"
+                onclick="openCloseGamesModal('${r.user_id}', 'CLOSE_WIN')">${r.closeWins}</button>
+            </td>
+            <td class="num">
+              <button type="button" class="luck-pill-btn ${r.closeLosses > 0 ? "loss" : "zero"}"
+                onclick="openCloseGamesModal('${r.user_id}', 'CLOSE_LOSS')">${r.closeLosses}</button>
+            </td>
+            <td class="num">${pctLabel}</td>
+            <td class="num">
+              <button type="button" class="luck-pill-btn ${r.comebackWins > 0 ? "gold" : "zero"}"
+                onclick="openCloseGamesModal('${r.user_id}', 'COMEBACK_WIN')">${r.comebackWins}</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function openCloseGamesModal(ownerUid, eventType = "CLOSE_WIN") {
+      const currentSeasonFilter = getSelectedSeason();
+      document.getElementById("modalCloseOwnerSelect").value = ownerUid;
+      document.getElementById("modalCloseTypeSelect").value = eventType;
+      document.getElementById("modalCloseSeasonSelect").value = currentSeasonFilter;
+      document.getElementById("closeGamesModalBackdrop").classList.remove("hidden");
+      renderCloseGamesModalContent();
+    }
+
+    function closeCloseGamesModal() {
+      document.getElementById("closeGamesModalBackdrop").classList.add("hidden");
+    }
+
+    function closeCloseGamesModalOnBackdrop(e) {
+      if (e.target.id === "closeGamesModalBackdrop") closeCloseGamesModal();
+    }
+
+    function renderCloseGamesModalContent() {
+      const ownerUid = document.getElementById("modalCloseOwnerSelect").value;
+      const eventType = document.getElementById("modalCloseTypeSelect").value || "CLOSE_WIN";
+      const seasonFilter = document.getElementById("modalCloseSeasonSelect").value || "ALL";
+      const threshold = getCloseGameThreshold();
+      const meta = getManagerMeta(ownerUid);
+
+      const typeLabels = {
+        CLOSE_WIN: `Close Wins (< ${threshold.toFixed(1)} pts)`,
+        CLOSE_LOSS: `Close Losses (< ${threshold.toFixed(1)} pts)`,
+        COMEBACK_WIN: "Comeback Wins (MNF)"
+      };
+
+      const typeSel = document.getElementById("modalCloseTypeSelect");
+      if (typeSel) {
+        Array.from(typeSel.options).forEach(opt => {
+          if (typeLabels[opt.value]) opt.textContent = typeLabels[opt.value];
+        });
+      }
+
+      document.getElementById("closeGamesModalTitle").textContent = `${meta.name} — ${typeLabels[eventType] || "Close Games"}`;
+      document.getElementById("closeGamesModalSub").textContent = eventType === "COMEBACK_WIN"
+        ? "Games where the team trailed entering Monday Night Football and came back to win"
+        : `Matchups decided by less than ${threshold.toFixed(1)} point${threshold === 1 ? "" : "s"}`;
+
+      const { events } = computeCloseGamesAndComebacks(seasonFilter, threshold);
+      const matching = events.filter(ev => ev.ownerId === ownerUid && ev.type === eventType);
+
+      if (matching.length > 0) {
+        if (eventType === "COMEBACK_WIN") {
+          const avgDeficit = matching.reduce((sum, ev) => sum + ev.deficitOvercome, 0) / matching.length;
+          const maxDeficit = Math.max(...matching.map(ev => ev.deficitOvercome));
+          document.getElementById("closeGamesModalSummary").innerHTML = `
+            <span class="badge badge-gold">${matching.length} Comeback Win${matching.length === 1 ? "" : "s"}</span>
+            <span class="badge badge-win">Avg Deficit Overcome: ${avgDeficit.toFixed(2)} pts</span>
+            <span class="badge badge-neutral">Biggest Comeback: ${maxDeficit.toFixed(2)} pts</span>
+          `;
+        } else {
+          const avgMargin = matching.reduce((sum, ev) => sum + ev.margin, 0) / matching.length;
+          const tightest = Math.min(...matching.map(ev => ev.margin));
+          document.getElementById("closeGamesModalSummary").innerHTML = `
+            <span class="badge ${eventType === "CLOSE_WIN" ? "badge-win" : "badge-loss"}">${matching.length} Game${matching.length === 1 ? "" : "s"}</span>
+            <span class="badge badge-neutral">Avg Margin: ${avgMargin.toFixed(2)} pts</span>
+            <span class="badge badge-neutral">Tightest: ${tightest.toFixed(2)} pts</span>
+          `;
+        }
+      } else {
+        document.getElementById("closeGamesModalSummary").innerHTML = `
+          <span class="badge badge-neutral">0 Games</span>
+        `;
+      }
+
+      document.getElementById("closeGamesModalContainer").innerHTML = matching.length > 0
+        ? matching.map(ev => {
+            const isWin = ev.type === "CLOSE_WIN" || ev.type === "COMEBACK_WIN";
+            const badgeCls = ev.type === "COMEBACK_WIN" ? "badge-gold" : isWin ? "badge-win" : "badge-loss";
+            const badgeTxt = ev.type === "COMEBACK_WIN"
+              ? `Came back from -${ev.deficitOvercome.toFixed(2)}`
+              : `${isWin ? "+" : "-"}${ev.margin.toFixed(2)} pts`;
+
+            const mnfDetailsHtml = ev.type === "COMEBACK_WIN"
+              ? `
+                <div style="font-size:11px; color:var(--text-secondary); margin-top:6px; padding-top:5px; border-top:1px dashed var(--border);">
+                  Entering MNF: <strong>${ev.preMnfPts.toFixed(2)} – ${ev.preMnfOppPts.toFixed(2)}</strong> (trailed by ${ev.deficitOvercome.toFixed(2)} pts)
+                  ${ev.mnfPlayers.length > 0 ? `<div style="margin-top:2px; color:var(--gold);">MNF Starters: ${ev.mnfPlayers.join(", ")}</div>` : ""}
+                </div>
+              `
+              : (ev.isMnfComeback && ev.type === "CLOSE_WIN"
+                ? `<div style="font-size:11px; color:var(--gold); margin-top:5px; padding-top:4px; border-top:1px dashed var(--border);">⚡ MNF Comeback Win (trailed by ${ev.deficitOvercome.toFixed(2)} entering Monday Night)</div>`
+                : "");
+
+            return `
+              <div class="inj-detail-card" style="cursor:pointer;" onclick="openMatchupDetailModal('${ev.season}', ${ev.week}, '${ev.ownerId}', '${ev.oppId}')" title="View full box score">
+                <div class="inj-detail-top">
+                  <div>
+                    <strong style="font-size:13px;">${ev.season} • Week ${ev.week}</strong>
+                    ${ev.isPlayoff ? `<span class="badge badge-gold" style="margin-left:5px;">Playoff</span>` : ""}
+                    <span style="font-size:11.5px; color:var(--text-secondary); margin-left:6px;">vs ${ev.oppName}</span>
+                  </div>
+                  <span class="badge ${badgeCls}">${badgeTxt}</span>
+                </div>
+                <div class="inj-detail-grid">
+                  <div>
+                    <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">${ev.ownerName}</div>
+                    <strong style="${isWin ? "color:var(--win);" : ""}">${ev.pts.toFixed(2)} pts</strong>
+                  </div>
+                  <div>
+                    <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">${ev.oppName}</div>
+                    <strong style="${!isWin ? "color:var(--win);" : ""}">${ev.oppPts.toFixed(2)} pts</strong>
+                  </div>
+                  <div>
+                    <div style="color:var(--text-secondary); font-size:10px; text-transform:uppercase;">Margin</div>
+                    <strong>${ev.margin.toFixed(2)} pts</strong>
+                  </div>
+                </div>
+                ${mnfDetailsHtml}
+              </div>
+            `;
+          }).join("")
+        : `<p style="font-size:13px; color:var(--text-secondary);">No ${typeLabels[eventType]?.toLowerCase() || "games"} recorded for ${meta.name} in this filter.</p>`;
     }
 
     function openLuckModal(ownerUid, eventType = "FIFTH") {
@@ -7405,7 +7987,7 @@
       }
 
       function isOverlayOpen() {
-        const ids = ["tradeModalBackdrop", "injuryModalBackdrop", "luckModalBackdrop", "commishModalBackdrop", "leagueIdModalBackdrop", "matchupDetailModalBackdrop", "aiDrawer"];
+        const ids = ["tradeModalBackdrop", "injuryModalBackdrop", "luckModalBackdrop", "commishModalBackdrop", "closeGamesModalBackdrop", "leagueIdModalBackdrop", "matchupDetailModalBackdrop", "aiDrawer"];
         return ids.some(id => {
           const el = document.getElementById(id);
           return el && !el.classList.contains("hidden");
@@ -7921,6 +8503,16 @@
       if (vBadge) vBadge.textContent = APP_VERSION;
 
       initFontScale();
+
+      const savedCloseThresh = localStorage.getItem(CLOSE_GAME_THRESHOLD_KEY);
+      if (savedCloseThresh !== null && !Number.isNaN(parseFloat(savedCloseThresh))) {
+        const clampedThresh = Math.max(0, Math.min(5, parseFloat(savedCloseThresh)));
+        appData.closeGameThreshold = clampedThresh;
+        const slider = document.getElementById("closeGameThresholdSlider");
+        const inp = document.getElementById("closeGameThresholdInput");
+        if (slider) slider.value = String(clampedThresh);
+        if (inp) inp.value = String(clampedThresh);
+      }
 
       const spec = extractLeagueSpecFromLocation();
       activeLeagueIdState = spec.id;
