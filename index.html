@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Fantasy Insights" />
-  <title>Fantasy Insights V3.7 — Multi-Season Analytics</title>
+  <title>Fantasy Insights V3.8 — Multi-Season Analytics</title>
   <style>
     :root {
       color-scheme: dark;
@@ -1650,7 +1650,7 @@
 
   <div class="app-top-banner" id="topAppBanner">
     <span>Fantasy Insights</span>
-    <span class="version-pill" id="appVersionBadge">V3.7</span>
+    <span class="version-pill" id="appVersionBadge">V3.8</span>
   </div>
 
   <div id="loadingSplashScreen" class="loading-splash hidden" role="status" aria-live="polite">
@@ -1742,19 +1742,14 @@
         <div class="card" id="weeklyRankChartCard">
           <div class="card-header">
             <div class="card-title" id="weeklyRankCardTitle">📈 Weekly Standings Rank Progression</div>
-            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-              <select id="weeklyRankMetricSelect" onchange="renderWeeklyRankChart()" aria-label="Weekly Progression Metric">
-                <option value="RANK" selected>By Rank</option>
-                <option value="CUM_PTS_RANK">Cumulative Points Rank</option>
-                <option value="CUM_PTS">Cumulative Points</option>
-              </select>
-              <select id="weeklyRankSeasonSelect" onchange="renderWeeklyRankChart()" aria-label="Weekly Rank Season"></select>
-            </div>
           </div>
-          <div class="controls-row">
-            <select id="weeklyRankHighlightSelect" class="grow" onchange="renderWeeklyRankChart()" aria-label="Neon Highlight Team">
-              <option value="NONE">Highlight Team: None (All Teams)</option>
+          <div class="controls-row" style="flex-wrap:nowrap;">
+            <select id="weeklyRankMetricSelect" onchange="renderWeeklyRankChart()" aria-label="Weekly Progression Metric" style="flex:1 1 0; min-width:0;">
+              <option value="RANK" selected>By Rank</option>
+              <option value="CUM_PTS_RANK">Cumulative Points Rank</option>
+              <option value="CUM_PTS">Cumulative Points</option>
             </select>
+            <select id="weeklyRankSeasonSelect" onchange="renderWeeklyRankChart()" aria-label="Weekly Rank Season" style="flex:0 0 auto;"></select>
           </div>
           <div id="weeklyRankChartArea"></div>
         </div>
@@ -2789,7 +2784,7 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V3.7";
+    const APP_VERSION = "V3.8";
     const CUSTOM_RULES_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     const ESPN_BASE = "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl";
@@ -5711,7 +5706,6 @@
       applySelect("modalLuckOwnerSelect", managerOpts, 0);
       applySelect("modalCloseOwnerSelect", managerOpts, 0);
       applySelect("modalCommishOwnerSelect", `<option value="ALL">All Managers</option>` + managerOpts, 0, true);
-      applySelect("weeklyRankHighlightSelect", `<option value="NONE">Highlight Team: None (All Teams)</option>` + managerOpts, 0, true);
       applySelect("modalTeamProfileSelect", managerOpts, 0);
     }
 
@@ -5901,17 +5895,16 @@
       return { season: s, weeks, teamSeries, numTeams: allUids.length };
     }
 
+    let weeklyRankHighlightUid = "NONE";
+
     function selectWeeklyRankHighlight(uid) {
-      const sel = document.getElementById("weeklyRankHighlightSelect");
-      if (!sel) return;
-      sel.value = (sel.value === uid) ? "NONE" : uid;
+      weeklyRankHighlightUid = (weeklyRankHighlightUid === uid) ? "NONE" : uid;
       renderWeeklyRankChart();
     }
 
     function renderWeeklyRankChart() {
       const area = document.getElementById("weeklyRankChartArea");
       const seasonSel = document.getElementById("weeklyRankSeasonSelect");
-      const highlightSel = document.getElementById("weeklyRankHighlightSelect");
       const metricSel = document.getElementById("weeklyRankMetricSelect");
       const titleEl = document.getElementById("weeklyRankCardTitle");
       if (!area || !seasonSel) return;
@@ -5940,31 +5933,12 @@
         };
       });
 
-      // Keep highlight dropdown populated with teams in this season (respecting scope filter)
-      if (highlightSel) {
-        const prevVal = highlightSel.value || "NONE";
-        const visibleTeams = enrichedSeries.filter(t => isIncludedTeam(t.uid));
-        const optsHtml = `<option value="NONE">Highlight Team: None (All Teams)</option>` +
-          [...visibleTeams]
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map(t => {
-              const tag = isCumPts
-                ? `${t.latestPf.toFixed(1)} PF`
-                : isCumPtsRank
-                  ? `#${t.latestPtsRank} (${t.latestPf.toFixed(1)} PF)`
-                  : `#${t.latestRank}`;
-              return `<option value="${t.uid}">${t.name} (${tag})</option>`;
-            })
-            .join("");
-        highlightSel.innerHTML = optsHtml;
-        if (prevVal === "NONE" || visibleTeams.some(t => t.uid === prevVal)) {
-          highlightSel.value = prevVal;
-        } else {
-          highlightSel.value = "NONE";
-        }
+      const visibleTeams = enrichedSeries.filter(t => isIncludedTeam(t.uid));
+      if (weeklyRankHighlightUid !== "NONE" && !visibleTeams.some(t => t.uid === weeklyRankHighlightUid)) {
+        weeklyRankHighlightUid = "NONE";
       }
 
-      const highlightUid = highlightSel ? highlightSel.value : "NONE";
+      const highlightUid = weeklyRankHighlightUid;
       const hasHighlight = highlightUid && highlightUid !== "NONE";
       const displayedSeries = enrichedSeries
         .filter(t => isIncludedTeam(t.uid))
@@ -6110,7 +6084,7 @@
       const activeTeamObj = hasHighlight ? displayedSeries.find(t => t.uid === highlightUid) : null;
       const defaultStatus = activeTeamObj
         ? `Neon Highlight: <strong>${activeTeamObj.name}</strong> (${isCumPts ? `${activeTeamObj.latestPf.toFixed(1)} PF` : isCumPtsRank ? `Pts Rank #${activeTeamObj.latestPtsRank} (${activeTeamObj.latestPf.toFixed(1)} PF)` : `Rank #${activeTeamObj.latestRank}`}) • Tap any point for week details.`
-        : `Tap a team name or use the dropdown above to highlight their ${isCumPts ? "points" : isCumPtsRank ? "points rank" : "rank"} path in neon.`;
+        : `Tap any team button below to highlight their ${isCumPts ? "points" : isCumPtsRank ? "points rank" : "rank"} path in neon.`;
 
       area.innerHTML = `
         <div class="trade-viz-svg-wrap">
