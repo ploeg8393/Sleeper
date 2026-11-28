@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Fantasy Insights" />
-  <title>Fantasy Insights V3.5 — Multi-Season Analytics</title>
+  <title>Fantasy Insights V3.6 — Multi-Season Analytics</title>
   <style>
     :root {
       color-scheme: dark;
@@ -1277,11 +1277,16 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.58);
-      z-index: 60;
+      width: 100%;
+      height: 100%;
+      max-height: 100dvh;
+      background: rgba(0, 0, 0, 0.64);
+      z-index: 80;
       display: flex;
       align-items: flex-end;
       justify-content: center;
+      padding: calc(env(safe-area-inset-top, 0px) + 12px) 0 0 0;
+      overflow: hidden;
     }
 
     @media (min-width: 640px) {
@@ -1297,31 +1302,39 @@
       border-radius: 14px 14px 0 0;
       width: 100%;
       max-width: 720px;
-      max-height: 86vh;
+      max-height: var(--modal-max-h, calc(100dvh - 20px));
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      margin: 0;
     }
 
     @media (min-width: 640px) {
       .modal-window {
         border-radius: 12px;
+        max-height: var(--modal-max-h, calc(100dvh - 32px));
       }
     }
 
     .modal-head {
-      padding: 12px 14px;
+      padding: 11px 14px;
       background: var(--bg-subtle);
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 8px;
+      flex-shrink: 0;
+      z-index: 2;
     }
 
     .modal-body {
       padding: 14px;
+      flex: 1 1 auto;
+      min-height: 0;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
     }
 
     .bottom-nav {
@@ -1637,7 +1650,7 @@
 
   <div class="app-top-banner" id="topAppBanner">
     <span>Fantasy Insights</span>
-    <span class="version-pill" id="appVersionBadge">V3.5</span>
+    <span class="version-pill" id="appVersionBadge">V3.6</span>
   </div>
 
   <div id="loadingSplashScreen" class="loading-splash hidden" role="status" aria-live="polite">
@@ -1728,8 +1741,14 @@
 
         <div class="card" id="weeklyRankChartCard">
           <div class="card-header">
-            <div class="card-title">📈 Weekly Standings Rank Progression</div>
-            <select id="weeklyRankSeasonSelect" onchange="renderWeeklyRankChart()" aria-label="Weekly Rank Season"></select>
+            <div class="card-title" id="weeklyRankCardTitle">📈 Weekly Standings Rank Progression</div>
+            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+              <select id="weeklyRankMetricSelect" onchange="renderWeeklyRankChart()" aria-label="Weekly Progression Metric">
+                <option value="RANK" selected>By Rank</option>
+                <option value="CUM_PTS">Cumulative Points</option>
+              </select>
+              <select id="weeklyRankSeasonSelect" onchange="renderWeeklyRankChart()" aria-label="Weekly Rank Season"></select>
+            </div>
           </div>
           <div class="controls-row">
             <select id="weeklyRankHighlightSelect" class="grow" onchange="renderWeeklyRankChart()" aria-label="Neon Highlight Team">
@@ -2716,7 +2735,7 @@
 
   <!-- MODAL WINDOW 7: TEAM VISUALIZATIONS & CAREER ANALYTICS PAGE -->
   <div id="teamProfileModalBackdrop" class="modal-backdrop hidden" onclick="closeTeamProfileModalOnBackdrop(event)">
-    <div class="modal-window" onclick="event.stopPropagation()" style="max-width:780px; max-height:92vh;">
+    <div class="modal-window" onclick="event.stopPropagation()" style="max-width:780px;">
       <div class="modal-head">
         <div style="display:flex; align-items:center; gap:8px; min-width:0;">
           <div id="teamProfileHeaderAvatar"></div>
@@ -2782,7 +2801,7 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V3.5";
+    const APP_VERSION = "V3.6";
     const CUSTOM_RULES_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     const ESPN_BASE = "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl";
@@ -2964,8 +2983,10 @@
 
       if ("zoom" in document.documentElement.style) {
         document.documentElement.style.zoom = String(factor);
+        document.documentElement.style.setProperty("--modal-max-h", `calc((100dvh - 20px) / ${factor})`);
       } else {
         document.documentElement.style.fontSize = `${clamped}%`;
+        document.documentElement.style.setProperty("--modal-max-h", "calc(100dvh - 20px)");
       }
 
       const lbl = document.getElementById("fontScaleLabel");
@@ -5897,19 +5918,38 @@
       const area = document.getElementById("weeklyRankChartArea");
       const seasonSel = document.getElementById("weeklyRankSeasonSelect");
       const highlightSel = document.getElementById("weeklyRankHighlightSelect");
+      const metricSel = document.getElementById("weeklyRankMetricSelect");
+      const titleEl = document.getElementById("weeklyRankCardTitle");
       if (!area || !seasonSel) return;
+
+      const metricMode = metricSel ? metricSel.value : "RANK";
+      const isCumPts = metricMode === "CUM_PTS";
+      if (titleEl) {
+        titleEl.textContent = isCumPts
+          ? "📈 Weekly Cumulative Points Progression"
+          : "📈 Weekly Standings Rank Progression";
+      }
 
       const seasonYr = seasonSel.value;
       const { weeks, teamSeries, numTeams } = computeWeeklyStandingsProgression(seasonYr);
 
+      // Attach latest cumulative PF to each series
+      const enrichedSeries = teamSeries.map(ts => {
+        const lastH = ts.history[ts.history.length - 1];
+        return {
+          ...ts,
+          latestPf: lastH ? Number(lastH.pf || 0) : 0
+        };
+      });
+
       // Keep highlight dropdown populated with teams in this season (respecting scope filter)
       if (highlightSel) {
         const prevVal = highlightSel.value || "NONE";
-        const visibleTeams = teamSeries.filter(t => isIncludedTeam(t.uid));
+        const visibleTeams = enrichedSeries.filter(t => isIncludedTeam(t.uid));
         const optsHtml = `<option value="NONE">Highlight Team: None (All Teams)</option>` +
           [...visibleTeams]
             .sort((a, b) => a.name.localeCompare(b.name))
-            .map(t => `<option value="${t.uid}">${t.name} (Currently #${t.latestRank})</option>`)
+            .map(t => `<option value="${t.uid}">${t.name} (${isCumPts ? `${t.latestPf.toFixed(1)} PF` : `#${t.latestRank}`})</option>`)
             .join("");
         highlightSel.innerHTML = optsHtml;
         if (prevVal === "NONE" || visibleTeams.some(t => t.uid === prevVal)) {
@@ -5921,17 +5961,19 @@
 
       const highlightUid = highlightSel ? highlightSel.value : "NONE";
       const hasHighlight = highlightUid && highlightUid !== "NONE";
-      const displayedSeries = teamSeries.filter(t => isIncludedTeam(t.uid));
+      const displayedSeries = enrichedSeries
+        .filter(t => isIncludedTeam(t.uid))
+        .sort((a, b) => isCumPts ? (b.latestPf - a.latestPf) : (a.latestRank - b.latestRank));
 
       if (weeks.length === 0 || displayedSeries.length === 0) {
-        area.innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">No weekly standings progression available for this season.</p>`;
+        area.innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">No weekly progression available for this season.</p>`;
         return;
       }
 
       const W = 700;
-      const H = Math.max(230, numTeams * 22 + 44);
-      const padL = 34;
-      const padR = 96;
+      const H = Math.max(235, numTeams * 22 + 44);
+      const padL = isCumPts ? 46 : 34;
+      const padR = isCumPts ? 108 : 96;
       const padT = 18;
       const padB = 26;
       const plotW = W - padL - padR;
@@ -5941,19 +5983,35 @@
         if (weeks.length <= 1) return padL + plotW / 2;
         return padL + (idx / (weeks.length - 1)) * plotW;
       };
+
+      const allPfVals = displayedSeries.flatMap(ts => ts.history.map(h => Number(h.pf || 0)));
+      const maxPf = Math.max(100, Math.ceil((allPfVals.length ? Math.max(...allPfVals) : 200) / 100) * 100);
+      const minPf = 0;
+      const pfSpan = Math.max(1, maxPf - minPf);
+
       const yForRank = (rk) => {
         if (numTeams <= 1) return padT + plotH / 2;
         return padT + ((rk - 1) / (numTeams - 1)) * plotH;
       };
+      const yForPf = (pfVal) => padT + plotH - ((pfVal - minPf) / pfSpan) * plotH;
 
-      // Horizontal rank grid lines (#1 at top, #N at bottom)
-      const gridHtml = Array.from({ length: numTeams }, (_, i) => i + 1).map(rk => {
-        const yy = yForRank(rk).toFixed(1);
-        return `
-          <line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="rgba(162, 174, 188, 0.13)" stroke-width="1" />
-          <text x="${padL - 7}" y="${Number(yy) + 3.5}" text-anchor="end" fill="#7b8896" font-size="10" font-weight="700" font-family="sans-serif">#${rk}</text>
-        `;
-      }).join("");
+      // Horizontal grid lines (#1 at top for Rank, or 0..maxPf for Cumulative Points)
+      const gridHtml = isCumPts
+        ? [0, 0.25, 0.5, 0.75, 1].map(frac => {
+            const val = minPf + pfSpan * frac;
+            const yy = yForPf(val).toFixed(1);
+            return `
+              <line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="rgba(162, 174, 188, 0.14)" stroke-width="1" />
+              <text x="${padL - 7}" y="${Number(yy) + 3.5}" text-anchor="end" fill="#7b8896" font-size="10" font-weight="600" font-family="sans-serif">${Math.round(val)}</text>
+            `;
+          }).join("")
+        : Array.from({ length: numTeams }, (_, i) => i + 1).map(rk => {
+            const yy = yForRank(rk).toFixed(1);
+            return `
+              <line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="rgba(162, 174, 188, 0.13)" stroke-width="1" />
+              <text x="${padL - 7}" y="${Number(yy) + 3.5}" text-anchor="end" fill="#7b8896" font-size="10" font-weight="700" font-family="sans-serif">#${rk}</text>
+            `;
+          }).join("");
 
       const xLabelsHtml = weeks.map((wk, idx) => {
         const xx = xForIdx(idx).toFixed(1);
@@ -5975,7 +6033,7 @@
         const pts = ts.history.map((h, idx) => ({
           ...h,
           x: xForIdx(idx),
-          y: yForRank(h.rank)
+          y: isCumPts ? yForPf(Number(h.pf || 0)) : yForRank(h.rank)
         }));
 
         const polyCoords = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
@@ -5990,7 +6048,7 @@
 
         const dotsHtml = pts.map(p => {
           const recStr = `${p.wins}-${p.losses}${p.ties ? `-${p.ties}` : ""}`;
-          const infoText = `${ts.name} • ${seasonYr} Wk ${p.wk}: Rank #${p.rank} (${recStr}, ${p.pf.toFixed(1)} PF)`.replace(/"/g, "&quot;");
+          const infoText = `${ts.name} • ${seasonYr} Wk ${p.wk}: ${p.pf.toFixed(1)} PF (Rank #${p.rank}, ${recStr})`.replace(/"/g, "&quot;");
           const rDot = isNeon ? "4.6" : "2.8";
           const dotStroke = isNeon ? "#ffffff" : "#161a1f";
           return `
@@ -6001,8 +6059,11 @@
           `;
         }).join("");
 
+        const endLabelText = lastPt
+          ? (isCumPts ? `${lastPt.pf.toFixed(0)} ${ts.name.slice(0, 10)}` : `#${lastPt.rank} ${ts.name.slice(0, 11)}`)
+          : "";
         const endLabel = lastPt
-          ? `<text x="${(lastPt.x + 7).toFixed(1)}" y="${(lastPt.y + 3.5).toFixed(1)}" fill="${isNeon ? "#ffffff" : ts.color}" font-size="${isNeon ? "11" : "10"}" font-weight="${isNeon ? "800" : "600"}" font-family="sans-serif" style="cursor:pointer;" onclick="selectWeeklyRankHighlight('${ts.uid}')">#${lastPt.rank} ${ts.name.slice(0, 11)}</text>`
+          ? `<text x="${(lastPt.x + 7).toFixed(1)}" y="${(lastPt.y + 3.5).toFixed(1)}" fill="${isNeon ? "#ffffff" : ts.color}" font-size="${isNeon ? "11" : "10"}" font-weight="${isNeon ? "800" : "600"}" font-family="sans-serif" style="cursor:pointer;" onclick="selectWeeklyRankHighlight('${ts.uid}')">${endLabelText}</text>`
           : "";
 
         return `
@@ -6017,23 +6078,26 @@
 
       const pillsHtml = displayedSeries.map(ts => {
         const isNeon = hasHighlight && ts.uid === highlightUid;
+        const pillText = isCumPts
+          ? `${ts.name} (${ts.latestPf.toFixed(1)})`
+          : `#${ts.latestRank} ${ts.name}`;
         return `
           <button type="button" class="rank-pill ${isNeon ? "neon-active" : ""}" style="--pill-color:${ts.color};"
             onclick="selectWeeklyRankHighlight('${ts.uid}')">
             <span class="team-color-dot" style="background:${ts.color}; ${isNeon ? `box-shadow:0 0 6px ${ts.color};` : ""}"></span>
-            <span>#${ts.latestRank} ${ts.name}</span>
+            <span>${pillText}</span>
           </button>
         `;
       }).join("");
 
       const activeTeamObj = hasHighlight ? displayedSeries.find(t => t.uid === highlightUid) : null;
       const defaultStatus = activeTeamObj
-        ? `Neon Highlight: <strong>${activeTeamObj.name}</strong> (Currently #${activeTeamObj.latestRank}) • Tap any point for week details.`
-        : `Tap a team name or use the dropdown above to highlight their rank path in neon.`;
+        ? `Neon Highlight: <strong>${activeTeamObj.name}</strong> (${isCumPts ? `${activeTeamObj.latestPf.toFixed(1)} PF` : `Rank #${activeTeamObj.latestRank}`}) • Tap any point for week details.`
+        : `Tap a team name or use the dropdown above to highlight their ${isCumPts ? "points" : "rank"} path in neon.`;
 
       area.innerHTML = `
         <div class="trade-viz-svg-wrap">
-          <svg class="trade-viz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Weekly Standings Rank Line Graph">
+          <svg class="trade-viz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Weekly Standings Progression Line Graph">
             <defs>
               <filter id="neonRankGlow" x="-25%" y="-25%" width="150%" height="150%">
                 <feGaussianBlur stdDeviation="3.2" result="blur" />
