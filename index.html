@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Fantasy Insights" />
-  <title>Fantasy Insights V3.8 — Multi-Season Analytics</title>
+  <title>Fantasy Insights V3.9 — Multi-Season Analytics</title>
   <style>
     :root {
       color-scheme: dark;
@@ -852,6 +852,155 @@
       background: var(--gold-bg);
     }
 
+    /* Visual Tournament Bracket Layout */
+    .bracket-scroll-wrap {
+      overflow-x: auto;
+      padding-bottom: 6px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .bracket-tree {
+      display: flex;
+      align-items: stretch;
+      gap: 22px;
+      min-width: max-content;
+      padding: 4px 2px;
+    }
+
+    .bracket-round-col {
+      display: flex;
+      flex-direction: column;
+      min-width: 205px;
+      max-width: 230px;
+      flex: 1 0 205px;
+    }
+
+    .bracket-round-header {
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-secondary);
+      text-align: center;
+      padding: 5px 8px;
+      margin-bottom: 10px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    .bracket-round-header.final {
+      color: var(--gold);
+      border-color: var(--gold);
+      background: var(--gold-bg);
+    }
+
+    .bracket-matches-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      flex: 1;
+      gap: 14px;
+    }
+
+    .bracket-node {
+      position: relative;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .bracket-node.championship {
+      border-color: var(--gold);
+      box-shadow: 0 0 12px rgba(224, 179, 84, 0.16);
+    }
+
+    .bracket-round-col:not(:last-child) .bracket-node::after {
+      content: "";
+      position: absolute;
+      right: -12px;
+      top: 50%;
+      width: 12px;
+      height: 2px;
+      background: var(--border-strong);
+    }
+
+    .bracket-round-col:not(:first-child) .bracket-node::before {
+      content: "";
+      position: absolute;
+      left: -12px;
+      top: 50%;
+      width: 12px;
+      height: 2px;
+      background: var(--border-strong);
+    }
+
+    .bracket-team-slot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 9px;
+      font-size: 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+
+    .bracket-team-slot:last-child {
+      border-bottom: none;
+    }
+
+    .bracket-team-slot.winner {
+      background: rgba(76, 195, 138, 0.1);
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    .bracket-team-slot.winner .b-score {
+      color: var(--win);
+      font-weight: 800;
+    }
+
+    .bracket-team-slot.champ-win {
+      background: rgba(224, 179, 84, 0.14);
+      color: var(--text-primary);
+      font-weight: 800;
+    }
+
+    .bracket-team-slot.champ-win .b-score {
+      color: var(--gold);
+      font-weight: 800;
+    }
+
+    .bracket-team-slot .b-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 125px;
+    }
+
+    .bracket-team-slot .b-score {
+      font-variant-numeric: tabular-nums;
+      font-size: 11.5px;
+      flex-shrink: 0;
+    }
+
+    .bracket-consolation-wrap {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (min-width: 600px) {
+      .bracket-consolation-wrap {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
     .trade-card {
       background: var(--bg-subtle);
       border: 1px solid var(--border);
@@ -1650,7 +1799,7 @@
 
   <div class="app-top-banner" id="topAppBanner">
     <span>Fantasy Insights</span>
-    <span class="version-pill" id="appVersionBadge">V3.8</span>
+    <span class="version-pill" id="appVersionBadge">V3.9</span>
   </div>
 
   <div id="loadingSplashScreen" class="loading-splash hidden" role="status" aria-live="polite">
@@ -1714,6 +1863,28 @@
       <section id="tab-standings" class="tab-panel">
         <div class="card">
           <div class="card-header">
+            <div class="card-title">All-Time Playoff & Championship Leaderboard</div>
+          </div>
+          <div class="table-wrap">
+            <table data-sort-table="playoffs">
+              <thead>
+                <tr>
+                  <th data-col="name" onclick="sortTable('playoffs', 'name')">Manager</th>
+                  <th class="num" data-col="titles" onclick="sortTable('playoffs', 'titles')">🏆 Titles</th>
+                  <th class="num" data-col="runnerUps" onclick="sortTable('playoffs', 'runnerUps')">🥈 2nd</th>
+                  <th class="num" data-col="thirds" onclick="sortTable('playoffs', 'thirds')">🥉 3rd</th>
+                  <th class="num" data-col="appearances" onclick="sortTable('playoffs', 'appearances')">Apps</th>
+                  <th class="num" data-col="wins" onclick="sortTable('playoffs', 'wins')">Playoff W-L</th>
+                  <th class="num" data-col="avgPf" onclick="sortTable('playoffs', 'avgPf')">Avg PF</th>
+                </tr>
+              </thead>
+              <tbody id="playoffLeaderboardBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
             <div class="card-title">Standings & Lineup Efficiency</div>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
@@ -1752,28 +1923,6 @@
             <select id="weeklyRankSeasonSelect" onchange="renderWeeklyRankChart()" aria-label="Weekly Rank Season" style="flex:0 0 auto;"></select>
           </div>
           <div id="weeklyRankChartArea"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">All-Time Playoff & Championship Leaderboard</div>
-          </div>
-          <div class="table-wrap">
-            <table data-sort-table="playoffs">
-              <thead>
-                <tr>
-                  <th data-col="name" onclick="sortTable('playoffs', 'name')">Manager</th>
-                  <th class="num" data-col="titles" onclick="sortTable('playoffs', 'titles')">🏆 Titles</th>
-                  <th class="num" data-col="runnerUps" onclick="sortTable('playoffs', 'runnerUps')">🥈 2nd</th>
-                  <th class="num" data-col="thirds" onclick="sortTable('playoffs', 'thirds')">🥉 3rd</th>
-                  <th class="num" data-col="appearances" onclick="sortTable('playoffs', 'appearances')">Apps</th>
-                  <th class="num" data-col="wins" onclick="sortTable('playoffs', 'wins')">Playoff W-L</th>
-                  <th class="num" data-col="avgPf" onclick="sortTable('playoffs', 'avgPf')">Avg PF</th>
-                </tr>
-              </thead>
-              <tbody id="playoffLeaderboardBody"></tbody>
-            </table>
-          </div>
         </div>
 
         <div class="card">
@@ -2784,7 +2933,7 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V3.8";
+    const APP_VERSION = "V3.9";
     const CUSTOM_RULES_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     const ESPN_BASE = "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl";
@@ -6010,8 +6159,8 @@
 
       const linesSvg = orderedSeries.map(ts => {
         const isNeon = hasHighlight && ts.uid === highlightUid;
-        const opacity = !hasHighlight ? "0.9" : (isNeon ? "1" : "0.18");
-        const strokeWidth = isNeon ? "4" : (hasHighlight ? "1.8" : "2.4");
+        const opacity = !hasHighlight ? "0.92" : (isNeon ? "1" : "0.50");
+        const strokeWidth = isNeon ? "4.2" : (hasHighlight ? "2" : "2.4");
 
         const pts = ts.history.map((h, idx) => ({
           ...h,
@@ -6081,11 +6230,6 @@
         `;
       }).join("");
 
-      const activeTeamObj = hasHighlight ? displayedSeries.find(t => t.uid === highlightUid) : null;
-      const defaultStatus = activeTeamObj
-        ? `Neon Highlight: <strong>${activeTeamObj.name}</strong> (${isCumPts ? `${activeTeamObj.latestPf.toFixed(1)} PF` : isCumPtsRank ? `Pts Rank #${activeTeamObj.latestPtsRank} (${activeTeamObj.latestPf.toFixed(1)} PF)` : `Rank #${activeTeamObj.latestRank}`}) • Tap any point for week details.`
-        : `Tap any team button below to highlight their ${isCumPts ? "points" : isCumPtsRank ? "points rank" : "rank"} path in neon.`;
-
       area.innerHTML = `
         <div class="trade-viz-svg-wrap">
           <svg class="trade-viz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Weekly Standings Progression Line Graph">
@@ -6104,16 +6248,14 @@
           </svg>
         </div>
         <div class="rank-legend-pills">${pillsHtml}</div>
-        <div class="trade-viz-tooltip" id="weeklyRankTooltip" style="margin-top:8px;">
-          <span>${defaultStatus}</span>
-          <span class="badge badge-neutral">${seasonYr} Season</span>
-        </div>
+        <div class="trade-viz-tooltip hidden" id="weeklyRankTooltip" style="margin-top:8px;"></div>
       `;
     }
 
     function selectWeeklyRankTooltip(text) {
       const el = document.getElementById("weeklyRankTooltip");
       if (el) {
+        el.classList.remove("hidden");
         el.innerHTML = `<strong>${text}</strong>`;
       }
     }
@@ -6617,52 +6759,136 @@
       const maxRound = Math.max(...bracket.map(m => m.r || 0));
       const playoffStart = s.playoff_week_start || 15;
 
-      document.getElementById("seasonBracketList").innerHTML = bracket.map(m => {
+      const getTeamDisplay = (rosterId, fromObj, weekEntries) => {
+        if (typeof rosterId === "number") {
+          const uid = ownerMap[rosterId];
+          const meta = getManagerMeta(uid);
+          const wkRow = weekEntries.find(e => e.roster_id === rosterId);
+          return {
+            uid,
+            name: meta.name,
+            avatarHtml: renderAvatar(meta),
+            pts: wkRow && wkRow.points > 0 ? wkRow.points.toFixed(2) : "-"
+          };
+        }
+        if (fromObj?.w) return { uid: null, name: `Winner G#${fromObj.w}`, avatarHtml: "", pts: "-" };
+        if (fromObj?.l) return { uid: null, name: `Loser G#${fromObj.l}`, avatarHtml: "", pts: "-" };
+        return { uid: null, name: "TBD", avatarHtml: "", pts: "-" };
+      };
+
+      // Separate Main Championship Bracket rounds from Placement/Consolation games (3rd Place, 5th Place, etc.)
+      const mainMatches = [];
+      const placementMatches = [];
+
+      for (const m of bracket) {
+        const isTitleGame = m.p === 1 || (m.r === maxRound && !m.t1_from?.l && !m.t2_from?.l);
+        const isPlacementGame = (typeof m.p === "number" && m.p > 1) || (!isTitleGame && (m.t1_from?.l || m.t2_from?.l));
+        if (isPlacementGame) {
+          placementMatches.push(m);
+        } else {
+          mainMatches.push({ ...m, isTitleGame });
+        }
+      }
+
+      const roundsMap = new Map();
+      for (const m of mainMatches) {
+        const rNum = Number(m.r || 1);
+        if (!roundsMap.has(rNum)) roundsMap.set(rNum, []);
+        roundsMap.get(rNum).push(m);
+      }
+
+      const sortedRoundNums = Array.from(roundsMap.keys()).sort((a, b) => a - b);
+
+      const renderBracketMatchNode = (m, isChampionship = false) => {
         const weekNum = playoffStart + (m.r - 1);
         const weekEntries = s.matchups_by_week[String(weekNum)] || [];
+        const t1Info = getTeamDisplay(m.t1, m.t1_from, weekEntries);
+        const t2Info = getTeamDisplay(m.t2, m.t2_from, weekEntries);
+        const t1Won = Boolean(m.w && m.w === m.t1);
+        const t2Won = Boolean(m.w && m.w === m.t2);
 
-        const getTeamDisplay = (rosterId, fromObj) => {
-          if (typeof rosterId === "number") {
-            const uid = ownerMap[rosterId];
-            const meta = getManagerMeta(uid);
-            const wkRow = weekEntries.find(e => e.roster_id === rosterId);
-            return {
-              name: meta.name,
-              avatarHtml: renderAvatar(meta),
-              pts: wkRow ? wkRow.points.toFixed(2) : "-"
-            };
-          }
-          if (fromObj?.w) return { name: `Winner of Game #${fromObj.w}`, avatarHtml: "", pts: "-" };
-          if (fromObj?.l) return { name: `Loser of Game #${fromObj.l}`, avatarHtml: "", pts: "-" };
-          return { name: "TBD", avatarHtml: "", pts: "-" };
-        };
+        const canOpenDetail = t1Info.uid && t2Info.uid && (t1Info.pts !== "-" || t2Info.pts !== "-");
+        const clickAttr = canOpenDetail
+          ? `onclick="openMatchupDetailModal('${s.season}', ${weekNum}, '${t1Info.uid}', '${t2Info.uid}')" style="cursor:pointer;" title="View playoff box score"`
+          : "";
 
-        const t1Info = getTeamDisplay(m.t1, m.t1_from);
-        const t2Info = getTeamDisplay(m.t2, m.t2_from);
-        const t1Won = m.w && m.w === m.t1;
-        const t2Won = m.w && m.w === m.t2;
-
-        let roundLabel = `Round ${m.r} (Week ${weekNum})`;
-        if (m.p === 1 || (m.r === maxRound && !m.t1_from?.l)) roundLabel = `🏆 Championship (Week ${weekNum})`;
-        else if (m.p === 3) roundLabel = `🥉 3rd Place Game (Week ${weekNum})`;
-        else if (m.p === 5) roundLabel = `5th Place Game (Week ${weekNum})`;
+        const t1Cls = t1Won ? (isChampionship ? "champ-win" : "winner") : "";
+        const t2Cls = t2Won ? (isChampionship ? "champ-win" : "winner") : "";
 
         return `
-          <div class="matchup-card">
-            <div style="font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase;">
-              ${roundLabel}
+          <div class="bracket-node ${isChampionship ? "championship" : ""}" ${clickAttr}>
+            <div class="bracket-team-slot ${t1Cls}">
+              <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+                ${t1Info.avatarHtml}
+                <span class="b-name">${t1Won && isChampionship ? "🏆 " : ""}${t1Info.name}</span>
+              </div>
+              <span class="b-score">${t1Info.pts}</span>
             </div>
-            <div class="matchup-row ${t1Won ? "winner" : ""}">
-              <div class="manager-cell">${t1Info.avatarHtml}<span class="m-team">${t1Info.name}</span></div>
-              <div class="m-score">${t1Info.pts}</div>
+            <div class="bracket-team-slot ${t2Cls}">
+              <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+                ${t2Info.avatarHtml}
+                <span class="b-name">${t2Won && isChampionship ? "🏆 " : ""}${t2Info.name}</span>
+              </div>
+              <span class="b-score">${t2Info.pts}</span>
             </div>
-            <div class="matchup-row ${t2Won ? "winner" : ""}">
-              <div class="manager-cell">${t2Info.avatarHtml}<span class="m-team">${t2Info.name}</span></div>
-              <div class="m-score">${t2Info.pts}</div>
+          </div>
+        `;
+      };
+
+      const treeColsHtml = sortedRoundNums.map((rNum, idx) => {
+        const weekNum = playoffStart + (rNum - 1);
+        const rMatches = roundsMap.get(rNum) || [];
+        const isFinalCol = idx === sortedRoundNums.length - 1;
+        const isSemiCol = sortedRoundNums.length >= 3 && idx === sortedRoundNums.length - 2;
+
+        const colTitle = isFinalCol
+          ? `🏆 Championship • Wk ${weekNum}`
+          : isSemiCol
+            ? `Semifinals • Wk ${weekNum}`
+            : `Round ${rNum} • Wk ${weekNum}`;
+
+        const nodesHtml = rMatches.map(m => renderBracketMatchNode(m, isFinalCol)).join("");
+
+        return `
+          <div class="bracket-round-col">
+            <div class="bracket-round-header ${isFinalCol ? "final" : ""}">${colTitle}</div>
+            <div class="bracket-matches-col">
+              ${nodesHtml}
             </div>
           </div>
         `;
       }).join("");
+
+      const placementHtml = placementMatches.length > 0
+        ? `
+          <div class="bracket-consolation-wrap">
+            ${placementMatches.map(m => {
+              const weekNum = playoffStart + (m.r - 1);
+              let label = `Placement Game • Wk ${weekNum}`;
+              if (m.p === 3) label = `🥉 3rd Place Game • Wk ${weekNum}`;
+              else if (m.p === 5) label = `5th Place Game • Wk ${weekNum}`;
+              else if (m.p) label = `${formatOrdinalRank(m.p)} Place Game • Wk ${weekNum}`;
+              return `
+                <div>
+                  <div style="font-size:10.5px; font-weight:800; color:var(--text-secondary); text-transform:uppercase; margin-bottom:5px;">
+                    ${label}
+                  </div>
+                  ${renderBracketMatchNode(m, false)}
+                </div>
+              `;
+            }).join("")}
+          </div>
+        `
+        : "";
+
+      document.getElementById("seasonBracketList").innerHTML = `
+        <div class="bracket-scroll-wrap">
+          <div class="bracket-tree">
+            ${treeColsHtml}
+          </div>
+        </div>
+        ${placementHtml}
+      `;
     }
 
     function renderPositions() {
