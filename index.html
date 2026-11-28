@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Fantasy Insights" />
-  <title>Fantasy Insights V3.4 — Multi-Season Analytics</title>
+  <title>Fantasy Insights V3.5 — Multi-Season Analytics</title>
   <style>
     :root {
       color-scheme: dark;
@@ -1002,6 +1002,114 @@
       gap: 8px;
     }
 
+    /* Weekly Standings Rank Chart & Team Visualizations */
+    .rank-legend-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .rank-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .rank-pill:hover {
+      border-color: var(--border-strong);
+      color: var(--text-primary);
+    }
+
+    .rank-pill.neon-active {
+      color: #ffffff;
+      font-weight: 800;
+      background: var(--bg-hover);
+      border-color: var(--pill-color, var(--accent));
+      box-shadow: 0 0 10px var(--pill-color, var(--accent));
+    }
+
+    .team-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    @media (min-width: 560px) {
+      .team-kpi-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .team-kpi-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 11px;
+      text-align: center;
+    }
+
+    .team-kpi-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-secondary);
+    }
+
+    .team-kpi-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-top: 3px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .team-kpi-sub {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .team-viz-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 11px 12px;
+      margin-bottom: 11px;
+    }
+
+    .team-viz-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .team-viz-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .team-viz-card-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--text-primary);
+    }
+
     .inj-detail-card {
       background: var(--bg-subtle);
       border: 1px solid var(--border);
@@ -1529,7 +1637,7 @@
 
   <div class="app-top-banner" id="topAppBanner">
     <span>Fantasy Insights</span>
-    <span class="version-pill" id="appVersionBadge">V3.4</span>
+    <span class="version-pill" id="appVersionBadge">V3.5</span>
   </div>
 
   <div id="loadingSplashScreen" class="loading-splash hidden" role="status" aria-live="polite">
@@ -1595,6 +1703,9 @@
           <div class="card-header">
             <div class="card-title">Standings & Lineup Efficiency</div>
           </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            Tap any manager row to open their full career visualizations (average finishing position, yearly finish trend, W-L-T bars, and PPG vs. league average).
+          </p>
           <div class="table-wrap">
             <table data-sort-table="standings">
               <thead>
@@ -1613,6 +1724,19 @@
               <tbody id="standingsBody"></tbody>
             </table>
           </div>
+        </div>
+
+        <div class="card" id="weeklyRankChartCard">
+          <div class="card-header">
+            <div class="card-title">📈 Weekly Standings Rank Progression</div>
+            <select id="weeklyRankSeasonSelect" onchange="renderWeeklyRankChart()" aria-label="Weekly Rank Season"></select>
+          </div>
+          <div class="controls-row">
+            <select id="weeklyRankHighlightSelect" class="grow" onchange="renderWeeklyRankChart()" aria-label="Neon Highlight Team">
+              <option value="NONE">Highlight Team: None (All Teams)</option>
+            </select>
+          </div>
+          <div id="weeklyRankChartArea"></div>
         </div>
 
         <div class="card">
@@ -2590,6 +2714,26 @@
     </div>
   </div>
 
+  <!-- MODAL WINDOW 7: TEAM VISUALIZATIONS & CAREER ANALYTICS PAGE -->
+  <div id="teamProfileModalBackdrop" class="modal-backdrop hidden" onclick="closeTeamProfileModalOnBackdrop(event)">
+    <div class="modal-window" onclick="event.stopPropagation()" style="max-width:780px; max-height:92vh;">
+      <div class="modal-head">
+        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+          <div id="teamProfileHeaderAvatar"></div>
+          <div style="min-width:0;">
+            <div class="card-title" id="teamProfileModalTitle">Team Visualizations</div>
+            <div style="font-size:11px; color:var(--text-secondary);" id="teamProfileModalSub">All-time finishing positions, W-L-T breakdown &amp; scoring trends</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <select id="modalTeamProfileSelect" onchange="renderTeamProfileModal(this.value)" style="padding:5px 8px; font-size:11.5px; max-width:150px;"></select>
+          <button class="btn-icon" onclick="closeTeamProfileModal()">✕ Close</button>
+        </div>
+      </div>
+      <div class="modal-body" id="teamProfileModalBody"></div>
+    </div>
+  </div>
+
   <!-- BOTTOM NAVIGATION (SCROLLABLE TABS + SETTINGS GEAR) -->
   <nav class="bottom-nav">
     <button class="nav-btn active" data-tab="standings" onclick="switchTab('standings')">
@@ -2638,7 +2782,7 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V3.4";
+    const APP_VERSION = "V3.5";
     const CUSTOM_RULES_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     const ESPN_BASE = "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl";
@@ -3001,6 +3145,10 @@
       const playoffSel = document.getElementById("playoffSeasonSelect");
       if (yr !== "ALL" && playoffSel) {
         playoffSel.value = yr;
+      }
+      const rankYrSel = document.getElementById("weeklyRankSeasonSelect");
+      if (yr !== "ALL" && rankYrSel) {
+        rankYrSel.value = yr;
       }
       renderAll();
       if (!document.getElementById("injuryModalBackdrop").classList.contains("hidden")) {
@@ -5509,6 +5657,14 @@
         }
       }
       document.getElementById("playoffSeasonSelect").innerHTML = singleSeasonOpts;
+      const rankSeasonEl = document.getElementById("weeklyRankSeasonSelect");
+      if (rankSeasonEl) {
+        const prevRankYr = rankSeasonEl.value;
+        rankSeasonEl.innerHTML = singleSeasonOpts;
+        if (prevRankYr && Array.from(rankSeasonEl.options).some(o => o.value === prevRankYr)) {
+          rankSeasonEl.value = prevRankYr;
+        }
+      }
       document.getElementById("modalInjurySeasonSelect").innerHTML = seasonOpts;
       document.getElementById("modalLuckSeasonSelect").innerHTML = seasonOpts;
       const closeSeasonEl = document.getElementById("modalCloseSeasonSelect");
@@ -5546,6 +5702,8 @@
       applySelect("modalLuckOwnerSelect", managerOpts, 0);
       applySelect("modalCloseOwnerSelect", managerOpts, 0);
       applySelect("modalCommishOwnerSelect", `<option value="ALL">All Managers</option>` + managerOpts, 0, true);
+      applySelect("weeklyRankHighlightSelect", `<option value="NONE">Highlight Team: None (All Teams)</option>` + managerOpts, 0, true);
+      applySelect("modalTeamProfileSelect", managerOpts, 0);
     }
 
     function renderAll() {
@@ -5581,12 +5739,12 @@
             ? "badge-loss"
             : "badge-neutral";
         return `
-          <tr>
+          <tr class="clickable-row" onclick="openTeamProfileModal('${r.user_id}')" title="Open ${r.name} visualizations">
             <td>${r.rank}</td>
             <td>
               <div class="manager-cell">
                 ${renderAvatar(r)}
-                <span class="manager-name">${r.name}</span>
+                <span class="manager-name" style="color:var(--accent); text-decoration:underline;">${r.name}</span>
               </div>
             </td>
             <td class="num">${r.titles > 0 ? `<span class="badge badge-gold">🏆 ${r.titles}</span>` : "-"}</td>
@@ -5599,6 +5757,693 @@
           </tr>
         `;
       }).join("");
+
+      renderWeeklyRankChart();
+    }
+
+    /* ==========================================================================
+       5A. WEEKLY STANDINGS RANK LINE GRAPH (WITH NEON HIGHLIGHT) & TEAM PAGE
+       ========================================================================== */
+    function computeWeeklyStandingsProgression(seasonYear) {
+      const s = appData.seasons.find(item => String(item.season) === String(seasonYear));
+      if (!s) return { season: null, weeks: [], teamSeries: [], numTeams: 0 };
+
+      const playoffStart = Number(s.playoff_week_start || 15);
+      const allPlayedWeeks = Object.keys(s.matchups_by_week || {})
+        .map(Number)
+        .filter(w => (s.matchups_by_week[String(w)] || []).some(e => Number(e.points || 0) > 0))
+        .sort((a, b) => a - b);
+
+      // Use regular-season weeks if available, otherwise all played weeks
+      const regWeeks = allPlayedWeeks.filter(w => w < playoffStart);
+      const weeks = regWeeks.length > 0 ? regWeeks : allPlayedWeeks;
+
+      const ownerMap = s.roster_owner_map || {};
+      const allUids = [...new Set(Object.values(ownerMap).filter(Boolean))];
+      if (allUids.length === 0 || weeks.length === 0) {
+        return { season: s, weeks: [], teamSeries: [], numTeams: 0 };
+      }
+
+      const cum = {};
+      for (const uid of allUids) {
+        cum[uid] = { wins: 0, losses: 0, ties: 0, pf: 0 };
+      }
+
+      const rankHistoryByUid = {};
+      for (const uid of allUids) rankHistoryByUid[uid] = [];
+
+      for (const wk of weeks) {
+        const entries = (s.matchups_by_week[String(wk)] || []).filter(
+          e => e.matchup_id !== null && e.matchup_id !== undefined
+        );
+
+        // Compute median if league uses median game
+        let leagueMedian = null;
+        if (s.has_median_game && entries.length > 0) {
+          const sortedPts = entries.map(e => Number(e.points || 0)).sort((a, b) => b - a);
+          const n = sortedPts.length;
+          const mid = Math.floor(n / 2);
+          leagueMedian = n % 2 === 0
+            ? (sortedPts[mid - 1] + sortedPts[mid]) / 2
+            : sortedPts[mid];
+        }
+
+        const byMatchup = {};
+        for (const e of entries) {
+          if (!byMatchup[e.matchup_id]) byMatchup[e.matchup_id] = [];
+          byMatchup[e.matchup_id].push(e);
+
+          if (e.owner_id && cum[e.owner_id] && Number(e.points || 0) > 0) {
+            cum[e.owner_id].pf += Number(e.points || 0);
+            if (leagueMedian !== null) {
+              if (Number(e.points) > leagueMedian) cum[e.owner_id].wins += 1;
+              else if (Number(e.points) < leagueMedian) cum[e.owner_id].losses += 1;
+              else cum[e.owner_id].ties += 1;
+            }
+          }
+        }
+
+        for (const pair of Object.values(byMatchup)) {
+          if (pair.length !== 2) continue;
+          const [a, b] = pair;
+          if (!a.owner_id || !b.owner_id || (a.points === 0 && b.points === 0)) continue;
+          if (!cum[a.owner_id]) cum[a.owner_id] = { wins: 0, losses: 0, ties: 0, pf: 0 };
+          if (!cum[b.owner_id]) cum[b.owner_id] = { wins: 0, losses: 0, ties: 0, pf: 0 };
+
+          if (a.points > b.points) {
+            cum[a.owner_id].wins += 1;
+            cum[b.owner_id].losses += 1;
+          } else if (b.points > a.points) {
+            cum[b.owner_id].wins += 1;
+            cum[a.owner_id].losses += 1;
+          } else {
+            cum[a.owner_id].ties += 1;
+            cum[b.owner_id].ties += 1;
+          }
+        }
+
+        const ranked = allUids
+          .map(uid => {
+            const c = cum[uid];
+            const g = c.wins + c.losses + c.ties;
+            const winPct = g > 0 ? (c.wins + 0.5 * c.ties) / g : 0;
+            return { uid, wins: c.wins, losses: c.losses, ties: c.ties, pf: c.pf, winPct };
+          })
+          .sort((a, b) => b.winPct - a.winPct || b.pf - a.pf);
+
+        ranked.forEach((item, idx) => {
+          rankHistoryByUid[item.uid].push({
+            wk,
+            rank: idx + 1,
+            wins: item.wins,
+            losses: item.losses,
+            ties: item.ties,
+            pf: item.pf
+          });
+        });
+      }
+
+      const usedColors = new Set();
+      const teamSeries = allUids.map((uid, idx) => {
+        const meta = getManagerMeta(uid);
+        let col = getTeamColorForOwner(uid);
+        if (usedColors.has(col.hex)) {
+          const alt = TEAM_COLOR_PALETTE.find(p => !usedColors.has(p.hex)) || TEAM_COLOR_PALETTE[idx % TEAM_COLOR_PALETTE.length];
+          col = alt;
+        }
+        usedColors.add(col.hex);
+        const hist = rankHistoryByUid[uid] || [];
+        const latestRank = hist.length > 0 ? hist[hist.length - 1].rank : 99;
+        return {
+          uid,
+          name: meta.name,
+          color: col.hex,
+          history: hist,
+          latestRank
+        };
+      }).sort((a, b) => a.latestRank - b.latestRank);
+
+      return { season: s, weeks, teamSeries, numTeams: allUids.length };
+    }
+
+    function selectWeeklyRankHighlight(uid) {
+      const sel = document.getElementById("weeklyRankHighlightSelect");
+      if (!sel) return;
+      sel.value = (sel.value === uid) ? "NONE" : uid;
+      renderWeeklyRankChart();
+    }
+
+    function renderWeeklyRankChart() {
+      const area = document.getElementById("weeklyRankChartArea");
+      const seasonSel = document.getElementById("weeklyRankSeasonSelect");
+      const highlightSel = document.getElementById("weeklyRankHighlightSelect");
+      if (!area || !seasonSel) return;
+
+      const seasonYr = seasonSel.value;
+      const { weeks, teamSeries, numTeams } = computeWeeklyStandingsProgression(seasonYr);
+
+      // Keep highlight dropdown populated with teams in this season (respecting scope filter)
+      if (highlightSel) {
+        const prevVal = highlightSel.value || "NONE";
+        const visibleTeams = teamSeries.filter(t => isIncludedTeam(t.uid));
+        const optsHtml = `<option value="NONE">Highlight Team: None (All Teams)</option>` +
+          [...visibleTeams]
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map(t => `<option value="${t.uid}">${t.name} (Currently #${t.latestRank})</option>`)
+            .join("");
+        highlightSel.innerHTML = optsHtml;
+        if (prevVal === "NONE" || visibleTeams.some(t => t.uid === prevVal)) {
+          highlightSel.value = prevVal;
+        } else {
+          highlightSel.value = "NONE";
+        }
+      }
+
+      const highlightUid = highlightSel ? highlightSel.value : "NONE";
+      const hasHighlight = highlightUid && highlightUid !== "NONE";
+      const displayedSeries = teamSeries.filter(t => isIncludedTeam(t.uid));
+
+      if (weeks.length === 0 || displayedSeries.length === 0) {
+        area.innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">No weekly standings progression available for this season.</p>`;
+        return;
+      }
+
+      const W = 700;
+      const H = Math.max(230, numTeams * 22 + 44);
+      const padL = 34;
+      const padR = 96;
+      const padT = 18;
+      const padB = 26;
+      const plotW = W - padL - padR;
+      const plotH = H - padT - padB;
+
+      const xForIdx = (idx) => {
+        if (weeks.length <= 1) return padL + plotW / 2;
+        return padL + (idx / (weeks.length - 1)) * plotW;
+      };
+      const yForRank = (rk) => {
+        if (numTeams <= 1) return padT + plotH / 2;
+        return padT + ((rk - 1) / (numTeams - 1)) * plotH;
+      };
+
+      // Horizontal rank grid lines (#1 at top, #N at bottom)
+      const gridHtml = Array.from({ length: numTeams }, (_, i) => i + 1).map(rk => {
+        const yy = yForRank(rk).toFixed(1);
+        return `
+          <line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="rgba(162, 174, 188, 0.13)" stroke-width="1" />
+          <text x="${padL - 7}" y="${Number(yy) + 3.5}" text-anchor="end" fill="#7b8896" font-size="10" font-weight="700" font-family="sans-serif">#${rk}</text>
+        `;
+      }).join("");
+
+      const xLabelsHtml = weeks.map((wk, idx) => {
+        const xx = xForIdx(idx).toFixed(1);
+        return `<text x="${xx}" y="${H - 7}" text-anchor="middle" fill="#7b8896" font-size="10" font-family="sans-serif">W${wk}</text>`;
+      }).join("");
+
+      // Draw non-highlighted teams first, and highlighted team on top so its neon glow shines above all lines
+      const orderedSeries = [...displayedSeries].sort((a, b) => {
+        if (a.uid === highlightUid) return 1;
+        if (b.uid === highlightUid) return -1;
+        return 0;
+      });
+
+      const linesSvg = orderedSeries.map(ts => {
+        const isNeon = hasHighlight && ts.uid === highlightUid;
+        const opacity = !hasHighlight ? "0.9" : (isNeon ? "1" : "0.18");
+        const strokeWidth = isNeon ? "4" : (hasHighlight ? "1.8" : "2.4");
+
+        const pts = ts.history.map((h, idx) => ({
+          ...h,
+          x: xForIdx(idx),
+          y: yForRank(h.rank)
+        }));
+
+        const polyCoords = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+        const lastPt = pts[pts.length - 1];
+
+        const neonUnderlay = isNeon
+          ? `
+            <polyline fill="none" stroke="${ts.color}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" opacity="0.28" points="${polyCoords}" />
+            <polyline fill="none" stroke="${ts.color}" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.55" points="${polyCoords}" />
+          `
+          : "";
+
+        const dotsHtml = pts.map(p => {
+          const recStr = `${p.wins}-${p.losses}${p.ties ? `-${p.ties}` : ""}`;
+          const infoText = `${ts.name} • ${seasonYr} Wk ${p.wk}: Rank #${p.rank} (${recStr}, ${p.pf.toFixed(1)} PF)`.replace(/"/g, "&quot;");
+          const rDot = isNeon ? "4.6" : "2.8";
+          const dotStroke = isNeon ? "#ffffff" : "#161a1f";
+          return `
+            <g style="cursor:pointer;" onclick="selectWeeklyRankTooltip('${infoText}')" onmouseenter="selectWeeklyRankTooltip('${infoText}')">
+              <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="7" fill="transparent" />
+              <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${rDot}" fill="${ts.color}" stroke="${dotStroke}" stroke-width="${isNeon ? "1.6" : "1"}" />
+            </g>
+          `;
+        }).join("");
+
+        const endLabel = lastPt
+          ? `<text x="${(lastPt.x + 7).toFixed(1)}" y="${(lastPt.y + 3.5).toFixed(1)}" fill="${isNeon ? "#ffffff" : ts.color}" font-size="${isNeon ? "11" : "10"}" font-weight="${isNeon ? "800" : "600"}" font-family="sans-serif" style="cursor:pointer;" onclick="selectWeeklyRankHighlight('${ts.uid}')">#${lastPt.rank} ${ts.name.slice(0, 11)}</text>`
+          : "";
+
+        return `
+          <g opacity="${opacity}" ${isNeon ? 'filter="url(#neonRankGlow)"' : ""}>
+            ${neonUnderlay}
+            <polyline fill="none" stroke="${ts.color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" points="${polyCoords}" />
+            ${dotsHtml}
+            ${endLabel}
+          </g>
+        `;
+      }).join("");
+
+      const pillsHtml = displayedSeries.map(ts => {
+        const isNeon = hasHighlight && ts.uid === highlightUid;
+        return `
+          <button type="button" class="rank-pill ${isNeon ? "neon-active" : ""}" style="--pill-color:${ts.color};"
+            onclick="selectWeeklyRankHighlight('${ts.uid}')">
+            <span class="team-color-dot" style="background:${ts.color}; ${isNeon ? `box-shadow:0 0 6px ${ts.color};` : ""}"></span>
+            <span>#${ts.latestRank} ${ts.name}</span>
+          </button>
+        `;
+      }).join("");
+
+      const activeTeamObj = hasHighlight ? displayedSeries.find(t => t.uid === highlightUid) : null;
+      const defaultStatus = activeTeamObj
+        ? `Neon Highlight: <strong>${activeTeamObj.name}</strong> (Currently #${activeTeamObj.latestRank}) • Tap any point for week details.`
+        : `Tap a team name or use the dropdown above to highlight their rank path in neon.`;
+
+      area.innerHTML = `
+        <div class="trade-viz-svg-wrap">
+          <svg class="trade-viz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Weekly Standings Rank Line Graph">
+            <defs>
+              <filter id="neonRankGlow" x="-25%" y="-25%" width="150%" height="150%">
+                <feGaussianBlur stdDeviation="3.2" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            ${gridHtml}
+            ${linesSvg}
+            ${xLabelsHtml}
+          </svg>
+        </div>
+        <div class="rank-legend-pills">${pillsHtml}</div>
+        <div class="trade-viz-tooltip" id="weeklyRankTooltip" style="margin-top:8px;">
+          <span>${defaultStatus}</span>
+          <span class="badge badge-neutral">${seasonYr} Season</span>
+        </div>
+      `;
+    }
+
+    function selectWeeklyRankTooltip(text) {
+      const el = document.getElementById("weeklyRankTooltip");
+      if (el) {
+        el.innerHTML = `<strong>${text}</strong>`;
+      }
+    }
+
+    /* ==========================================================================
+       5A-2. TEAM VISUALIZATIONS MODAL PAGE (AVG FINISH, FINISH BY YR, W-L-T, PPG)
+       ========================================================================== */
+    function computeSeasonFinalPlacements(seasonObj) {
+      const ownerMap = seasonObj.roster_owner_map || {};
+      const allUids = [...new Set(Object.values(ownerMap).filter(Boolean))];
+      const totalTeams = allUids.length;
+      const placementByUid = {};
+
+      if (seasonObj.champion_user_id) placementByUid[seasonObj.champion_user_id] = 1;
+      if (seasonObj.runner_up_user_id) placementByUid[seasonObj.runner_up_user_id] = 2;
+      if (seasonObj.third_place_user_id) placementByUid[seasonObj.third_place_user_id] = 3;
+
+      const bracket = seasonObj.winners_bracket || [];
+      for (const m of bracket) {
+        if (typeof m.p === "number" && m.p > 0) {
+          if (m.w && ownerMap[m.w] && !placementByUid[ownerMap[m.w]]) {
+            placementByUid[ownerMap[m.w]] = m.p;
+          }
+          if (m.l && ownerMap[m.l] && !placementByUid[ownerMap[m.l]]) {
+            placementByUid[ownerMap[m.l]] = m.p + 1;
+          }
+        }
+      }
+
+      // Rank any remaining teams by season standings (winPct desc, PF desc)
+      const { rows } = computeStatsForSeasons(seasonObj.season);
+      const sortedStandings = [...rows].sort((a, b) => b.winPct - a.winPct || b.pf - a.pf);
+      const usedRanks = new Set(Object.values(placementByUid));
+      let nextAvailableRank = 1;
+
+      for (const r of sortedStandings) {
+        if (placementByUid[r.user_id]) continue;
+        while (usedRanks.has(nextAvailableRank)) {
+          nextAvailableRank++;
+        }
+        placementByUid[r.user_id] = nextAvailableRank;
+        usedRanks.add(nextAvailableRank);
+      }
+
+      return { placementByUid, totalTeams };
+    }
+
+    function computeTeamCareerVisualizations(targetUid) {
+      const yearly = [];
+      let totalLeaguePts = 0;
+      let totalLeagueGames = 0;
+
+      for (const s of appData.seasons) {
+        const { rows } = computeStatsForSeasons(s.season);
+        const activeLeagueRows = rows.filter(r => r.weeksLogged > 0);
+        const yrLeaguePts = activeLeagueRows.reduce((sum, r) => sum + r.pf, 0);
+        const yrLeagueGames = activeLeagueRows.reduce((sum, r) => sum + r.weeksLogged, 0);
+        const leagueAvgPpg = yrLeagueGames > 0 ? yrLeaguePts / yrLeagueGames : 0;
+
+        totalLeaguePts += yrLeaguePts;
+        totalLeagueGames += yrLeagueGames;
+
+        const myRow = rows.find(r => r.user_id === targetUid);
+        if (!myRow || myRow.weeksLogged === 0) continue;
+
+        const { placementByUid, totalTeams } = computeSeasonFinalPlacements(s);
+        const finalPos = placementByUid[targetUid] || null;
+        const teamPpg = myRow.weeksLogged > 0 ? myRow.pf / myRow.weeksLogged : 0;
+
+        yearly.push({
+          season: s.season,
+          finalPos,
+          totalTeams,
+          wins: myRow.wins,
+          losses: myRow.losses,
+          ties: myRow.ties,
+          pf: myRow.pf,
+          weeksLogged: myRow.weeksLogged,
+          teamPpg,
+          leagueAvgPpg,
+          isChamp: s.champion_user_id === targetUid
+        });
+      }
+
+      const validFinishes = yearly.filter(y => y.finalPos !== null);
+      const avgFinish = validFinishes.length > 0
+        ? validFinishes.reduce((sum, y) => sum + y.finalPos, 0) / validFinishes.length
+        : null;
+
+      const totalWins = yearly.reduce((sum, y) => sum + y.wins, 0);
+      const totalLosses = yearly.reduce((sum, y) => sum + y.losses, 0);
+      const totalTies = yearly.reduce((sum, y) => sum + y.ties, 0);
+      const totalPf = yearly.reduce((sum, y) => sum + y.pf, 0);
+      const totalWeeks = yearly.reduce((sum, y) => sum + y.weeksLogged, 0);
+      const careerPpg = totalWeeks > 0 ? totalPf / totalWeeks : 0;
+      const overallLeagueAvgPpg = totalLeagueGames > 0 ? totalLeaguePts / totalLeagueGames : 0;
+      const titles = yearly.filter(y => y.isChamp).length;
+      const maxTeamsInLeague = yearly.length > 0 ? Math.max(...yearly.map(y => y.totalTeams), 10) : 10;
+
+      return {
+        yearly,
+        avgFinish,
+        totalWins,
+        totalLosses,
+        totalTies,
+        careerPpg,
+        overallLeagueAvgPpg,
+        titles,
+        maxTeamsInLeague
+      };
+    }
+
+    function openTeamProfileModal(ownerUid) {
+      const sel = document.getElementById("modalTeamProfileSelect");
+      if (sel) sel.value = ownerUid;
+      document.getElementById("teamProfileModalBackdrop").classList.remove("hidden");
+      renderTeamProfileModal(ownerUid);
+    }
+
+    function closeTeamProfileModal() {
+      document.getElementById("teamProfileModalBackdrop").classList.add("hidden");
+    }
+
+    function closeTeamProfileModalOnBackdrop(e) {
+      if (e.target.id === "teamProfileModalBackdrop") closeTeamProfileModal();
+    }
+
+    function formatOrdinalRank(n) {
+      if (n === null || n === undefined) return "-";
+      const s = ["th", "st", "nd", "rd"];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+
+    function renderTeamProfileModal(ownerUid) {
+      const uid = ownerUid || document.getElementById("modalTeamProfileSelect")?.value;
+      const body = document.getElementById("teamProfileModalBody");
+      if (!uid || !body) return;
+
+      const meta = getManagerMeta(uid);
+      const teamColor = getTeamColorForOwner(uid);
+      const avatarBox = document.getElementById("teamProfileHeaderAvatar");
+      if (avatarBox) avatarBox.innerHTML = renderAvatar(meta);
+
+      document.getElementById("teamProfileModalTitle").textContent = `${meta.name} — Team Visualizations`;
+      const data = computeTeamCareerVisualizations(uid);
+      const { yearly, avgFinish, totalWins, totalLosses, totalTies, careerPpg, overallLeagueAvgPpg, titles, maxTeamsInLeague } = data;
+
+      document.getElementById("teamProfileModalSub").textContent =
+        `${yearly.length} Season${yearly.length === 1 ? "" : "s"} • Career Record ${totalWins}-${totalLosses}${totalTies ? `-${totalTies}` : ""}`;
+
+      if (yearly.length === 0) {
+        body.innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">No historical season data found for ${meta.name}.</p>`;
+        return;
+      }
+
+      const avgFinishStr = avgFinish !== null ? `#${avgFinish.toFixed(2)}` : "-";
+      const bestFinish = yearly.reduce((best, y) => (y.finalPos !== null && y.finalPos < best) ? y.finalPos : best, 99);
+      const ppgDiff = careerPpg - overallLeagueAvgPpg;
+
+      // 1. KPI Summary Cards (highlighting Avg Finishing Position)
+      const kpiHtml = `
+        <div class="team-kpi-grid">
+          <div class="team-kpi-box" style="border-color:${teamColor.hex};">
+            <div class="team-kpi-label">Avg Finishing Pos</div>
+            <div class="team-kpi-val" style="color:${teamColor.hex};">${avgFinishStr}</div>
+            <div class="team-kpi-sub">Best: ${bestFinish < 99 ? formatOrdinalRank(bestFinish) : "-"}</div>
+          </div>
+          <div class="team-kpi-box">
+            <div class="team-kpi-label">All-Time Record</div>
+            <div class="team-kpi-val">${totalWins}-${totalLosses}${totalTies ? `-${totalTies}` : ""}</div>
+            <div class="team-kpi-sub">${((totalWins / Math.max(1, totalWins + totalLosses + totalTies)) * 100).toFixed(1)}% Win Rate</div>
+          </div>
+          <div class="team-kpi-box">
+            <div class="team-kpi-label">Career Avg PPG</div>
+            <div class="team-kpi-val">${careerPpg.toFixed(1)}</div>
+            <div class="team-kpi-sub" style="color:${ppgDiff >= 0 ? "var(--win)" : "var(--loss)"};">${ppgDiff >= 0 ? "+" : ""}${ppgDiff.toFixed(1)} vs Lg Avg</div>
+          </div>
+          <div class="team-kpi-box">
+            <div class="team-kpi-label">Championships</div>
+            <div class="team-kpi-val" style="color:var(--gold);">${titles > 0 ? `🏆 ${titles}` : "0"}</div>
+            <div class="team-kpi-sub">${yearly.length} Season${yearly.length === 1 ? "" : "s"} Played</div>
+          </div>
+        </div>
+      `;
+
+      // 2. Line Graph: Final Position by Year
+      const buildFinishByYearSvg = () => {
+        const W = 660, H = 195;
+        const padL = 36, padR = 26, padT = 22, padB = 28;
+        const plotW = W - padL - padR;
+        const plotH = H - padT - padB;
+        const maxRank = Math.max(maxTeamsInLeague, ...yearly.map(y => y.finalPos || 1));
+
+        const xFor = (i) => yearly.length <= 1 ? padL + plotW / 2 : padL + (i / (yearly.length - 1)) * plotW;
+        const yFor = (rk) => maxRank <= 1 ? padT + plotH / 2 : padT + ((rk - 1) / (maxRank - 1)) * plotH;
+
+        const yTicks = [...new Set([1, Math.ceil(maxRank / 2), maxRank])];
+        const grid = yTicks.map(rk => {
+          const yy = yFor(rk).toFixed(1);
+          return `
+            <line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="rgba(162, 174, 188, 0.16)" stroke-width="1" />
+            <text x="${padL - 7}" y="${Number(yy) + 3.5}" text-anchor="end" fill="#7b8896" font-size="10" font-family="sans-serif">#${rk}</text>
+          `;
+        }).join("");
+
+        const avgLine = avgFinish !== null
+          ? `
+            <line x1="${padL}" y1="${yFor(avgFinish).toFixed(1)}" x2="${W - padR}" y2="${yFor(avgFinish).toFixed(1)}" stroke="#e0b354" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.8" />
+            <text x="${W - padR}" y="${(yFor(avgFinish) - 5).toFixed(1)}" text-anchor="end" fill="#e0b354" font-size="9.5" font-weight="700" font-family="sans-serif">Avg #${avgFinish.toFixed(1)}</text>
+          `
+          : "";
+
+        const validPts = yearly
+          .map((y, i) => ({ ...y, i, x: xFor(i), yPos: y.finalPos !== null ? yFor(y.finalPos) : null }))
+          .filter(p => p.yPos !== null);
+
+        const poly = validPts.map(p => `${p.x.toFixed(1)},${p.yPos.toFixed(1)}`).join(" ");
+        const dots = validPts.map(p => {
+          const lbl = p.finalPos === 1 ? `🏆 #1` : `#${p.finalPos}`;
+          const labelY = p.finalPos === 1 ? p.yPos + 15 : p.yPos - 8;
+          return `
+            <circle cx="${p.x.toFixed(1)}" cy="${p.yPos.toFixed(1)}" r="5" fill="${p.finalPos === 1 ? "#e0b354" : teamColor.hex}" stroke="#161a1f" stroke-width="1.6" />
+            <text x="${p.x.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" fill="${p.finalPos === 1 ? "#e0b354" : "#e6ebf0"}" font-size="10.5" font-weight="700" font-family="sans-serif">${lbl}</text>
+          `;
+        }).join("");
+
+        const xLabels = yearly.map((y, i) =>
+          `<text x="${xFor(i).toFixed(1)}" y="${H - 7}" text-anchor="middle" fill="#a2aebc" font-size="10.5" font-weight="600" font-family="sans-serif">${y.season}</text>`
+        ).join("");
+
+        return `
+          <div class="team-viz-card">
+            <div class="team-viz-card-head">
+              <span class="team-viz-card-title">Final Finishing Position by Year</span>
+              <span class="badge badge-neutral">Avg Finish: ${avgFinishStr}</span>
+            </div>
+            <div class="trade-viz-svg-wrap">
+              <svg class="trade-viz-svg" viewBox="0 0 ${W} ${H}">
+                ${grid}
+                ${avgLine}
+                <polyline fill="none" stroke="${teamColor.hex}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="${poly}" />
+                ${dots}
+                ${xLabels}
+              </svg>
+            </div>
+          </div>
+        `;
+      };
+
+      // 3. Vertical Bar Graph: Wins, Losses & Ties per Year
+      const buildRecordBarsSvg = () => {
+        const W = 660, H = 205;
+        const padL = 34, padR = 18, padT = 24, padB = 28;
+        const plotW = W - padL - padR;
+        const plotH = H - padT - padB;
+        const hasAnyTies = yearly.some(y => y.ties > 0);
+        const maxCount = Math.max(10, ...yearly.map(y => Math.max(y.wins, y.losses, y.ties)));
+        const yMax = Math.ceil(maxCount / 2) * 2;
+
+        const yFor = (val) => padT + plotH - (val / yMax) * plotH;
+        const yTicks = [0, Math.round(yMax / 2), yMax];
+        const grid = yTicks.map(tv => {
+          const yy = yFor(tv).toFixed(1);
+          return `
+            <line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="rgba(162, 174, 188, 0.16)" stroke-width="1" />
+            <text x="${padL - 6}" y="${Number(yy) + 3.5}" text-anchor="end" fill="#7b8896" font-size="10" font-family="sans-serif">${tv}</text>
+          `;
+        }).join("");
+
+        const groupW = plotW / yearly.length;
+        const barsPerGroup = hasAnyTies ? 3 : 2;
+        const barW = Math.min(26, Math.max(10, (groupW * 0.68) / barsPerGroup));
+        const gap = 3;
+
+        const groupsHtml = yearly.map((y, idx) => {
+          const centerX = padL + groupW * (idx + 0.5);
+          const totalGroupBarW = barsPerGroup * barW + (barsPerGroup - 1) * gap;
+          const startX = centerX - totalGroupBarW / 2;
+
+          const items = [
+            { val: y.wins, color: "#4cc38a", label: String(y.wins) },
+            { val: y.losses, color: "#e57373", label: String(y.losses) }
+          ];
+          if (hasAnyTies) {
+            items.push({ val: y.ties, color: "#e0b354", label: String(y.ties) });
+          }
+
+          const rects = items.map((it, bIdx) => {
+            const bx = startX + bIdx * (barW + gap);
+            const by = yFor(it.val);
+            const bh = Math.max(2, (padT + plotH) - by);
+            return `
+              <rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${it.color}" />
+              <text x="${(bx + barW / 2).toFixed(1)}" y="${(by - 4).toFixed(1)}" text-anchor="middle" fill="${it.color}" font-size="9.5" font-weight="700" font-family="sans-serif">${it.label}</text>
+            `;
+          }).join("");
+
+          const xLbl = `<text x="${centerX.toFixed(1)}" y="${H - 7}" text-anchor="middle" fill="#a2aebc" font-size="10.5" font-weight="600" font-family="sans-serif">${y.season}</text>`;
+          return rects + xLbl;
+        }).join("");
+
+        return `
+          <div class="team-viz-card">
+            <div class="team-viz-card-head">
+              <span class="team-viz-card-title">Wins, Losses &amp; Ties per Year</span>
+              <div style="display:flex; gap:6px; font-size:10.5px; font-weight:700;">
+                <span style="color:var(--win);">■ Wins</span>
+                <span style="color:var(--loss);">■ Losses</span>
+                ${hasAnyTies ? `<span style="color:var(--gold);">■ Ties</span>` : ""}
+              </div>
+            </div>
+            <div class="trade-viz-svg-wrap">
+              <svg class="trade-viz-svg" viewBox="0 0 ${W} ${H}">
+                ${grid}
+                ${groupsHtml}
+              </svg>
+            </div>
+          </div>
+        `;
+      };
+
+      // 4. Vertical Bar Graph: Average Weekly Points per Year + Dashed League Average Line
+      const buildPpgBarsSvg = () => {
+        const W = 660, H = 205;
+        const padL = 38, padR = 18, padT = 24, padB = 28;
+        const plotW = W - padL - padR;
+        const plotH = H - padT - padB;
+        const maxPpgVal = Math.max(140, ...yearly.map(y => Math.max(y.teamPpg, y.leagueAvgPpg)), overallLeagueAvgPpg);
+        const yMax = Math.ceil(maxPpgVal / 20) * 20;
+
+        const yFor = (val) => padT + plotH - (val / yMax) * plotH;
+        const yTicks = [0, Math.round(yMax / 2), yMax];
+        const grid = yTicks.map(tv => {
+          const yy = yFor(tv).toFixed(1);
+          return `
+            <line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="rgba(162, 174, 188, 0.16)" stroke-width="1" />
+            <text x="${padL - 6}" y="${Number(yy) + 3.5}" text-anchor="end" fill="#7b8896" font-size="10" font-family="sans-serif">${tv}</text>
+          `;
+        }).join("");
+
+        const groupW = plotW / yearly.length;
+        const barW = Math.min(44, Math.max(18, groupW * 0.52));
+
+        const barsHtml = yearly.map((y, idx) => {
+          const centerX = padL + groupW * (idx + 0.5);
+          const bx = centerX - barW / 2;
+          const by = yFor(y.teamPpg);
+          const bh = Math.max(2, (padT + plotH) - by);
+          const aboveAvg = y.teamPpg >= overallLeagueAvgPpg;
+
+          return `
+            <rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" rx="4" fill="${teamColor.hex}" opacity="${aboveAvg ? "0.95" : "0.7"}" />
+            <text x="${centerX.toFixed(1)}" y="${(by - 5).toFixed(1)}" text-anchor="middle" fill="#e6ebf0" font-size="10" font-weight="700" font-family="sans-serif">${y.teamPpg.toFixed(1)}</text>
+            <text x="${centerX.toFixed(1)}" y="${H - 7}" text-anchor="middle" fill="#a2aebc" font-size="10.5" font-weight="600" font-family="sans-serif">${y.season}</text>
+          `;
+        }).join("");
+
+        const lgAvgY = yFor(overallLeagueAvgPpg).toFixed(1);
+        const dashedLeagueLine = overallLeagueAvgPpg > 0
+          ? `
+            <line x1="${padL}" y1="${lgAvgY}" x2="${W - padR}" y2="${lgAvgY}" stroke="#e0b354" stroke-width="2" stroke-dasharray="6 4" />
+            <rect x="${W - padR - 118}" y="${(Number(lgAvgY) - 16).toFixed(1)}" width="118" height="14" rx="4" fill="#1f242b" opacity="0.9" />
+            <text x="${W - padR - 4}" y="${(Number(lgAvgY) - 6).toFixed(1)}" text-anchor="end" fill="#e0b354" font-size="9.5" font-weight="800" font-family="sans-serif">Lg Avg: ${overallLeagueAvgPpg.toFixed(1)} PPG</text>
+          `
+          : "";
+
+        return `
+          <div class="team-viz-card">
+            <div class="team-viz-card-head">
+              <span class="team-viz-card-title">Average Weekly Points per Year</span>
+              <span class="badge badge-gold">--- League Avg: ${overallLeagueAvgPpg.toFixed(1)} PPG</span>
+            </div>
+            <div class="trade-viz-svg-wrap">
+              <svg class="trade-viz-svg" viewBox="0 0 ${W} ${H}">
+                ${grid}
+                ${barsHtml}
+                ${dashedLeagueLine}
+              </svg>
+            </div>
+          </div>
+        `;
+      };
+
+      body.innerHTML = kpiHtml + buildFinishByYearSvg() + buildRecordBarsSvg() + buildPpgBarsSvg();
     }
 
     function renderEfficiencyCard() {
@@ -6073,8 +6918,12 @@
               const hex = `#${[bestR, bestG, bestB].map(v => v.toString(16).padStart(2, "0")).join("")}`;
               avatarTeamColorCache[uid] = { hex, soft: hexToRgba(hex, 0.16), name: "Team" };
               renderInlineTradeVisualizer();
+              renderWeeklyRankChart();
               if (!document.getElementById("tradeVizModalBackdrop").classList.contains("hidden")) {
                 renderModalTradeVisualizer();
+              }
+              if (!document.getElementById("teamProfileModalBackdrop").classList.contains("hidden")) {
+                renderTeamProfileModal();
               }
             }
           } catch (e) {}
@@ -8617,7 +9466,7 @@
       }
 
       function isOverlayOpen() {
-        const ids = ["tradeModalBackdrop", "tradeVizModalBackdrop", "injuryModalBackdrop", "luckModalBackdrop", "commishModalBackdrop", "closeGamesModalBackdrop", "leagueIdModalBackdrop", "matchupDetailModalBackdrop", "aiDrawer"];
+        const ids = ["tradeModalBackdrop", "tradeVizModalBackdrop", "injuryModalBackdrop", "luckModalBackdrop", "commishModalBackdrop", "closeGamesModalBackdrop", "leagueIdModalBackdrop", "matchupDetailModalBackdrop", "teamProfileModalBackdrop", "aiDrawer"];
         return ids.some(id => {
           const el = document.getElementById(id);
           return el && !el.classList.contains("hidden");
