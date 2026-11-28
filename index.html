@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Fantasy Insights" />
-  <title>Fantasy Insights V3.6 — Multi-Season Analytics</title>
+  <title>Fantasy Insights V3.7 — Multi-Season Analytics</title>
   <style>
     :root {
       color-scheme: dark;
@@ -1650,7 +1650,7 @@
 
   <div class="app-top-banner" id="topAppBanner">
     <span>Fantasy Insights</span>
-    <span class="version-pill" id="appVersionBadge">V3.6</span>
+    <span class="version-pill" id="appVersionBadge">V3.7</span>
   </div>
 
   <div id="loadingSplashScreen" class="loading-splash hidden" role="status" aria-live="polite">
@@ -1745,6 +1745,7 @@
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
               <select id="weeklyRankMetricSelect" onchange="renderWeeklyRankChart()" aria-label="Weekly Progression Metric">
                 <option value="RANK" selected>By Rank</option>
+                <option value="CUM_PTS_RANK">Cumulative Points Rank</option>
                 <option value="CUM_PTS">Cumulative Points</option>
               </select>
               <select id="weeklyRankSeasonSelect" onchange="renderWeeklyRankChart()" aria-label="Weekly Rank Season"></select>
@@ -1795,9 +1796,12 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">Avg Weekly Starter Score by Lineup Slot</div>
+            <select id="positionsPieTeamSelect" onchange="selectPositionsPieTeam(this.value)" aria-label="Select Team for Lineup Pie Chart">
+              <option value="">Select Team for Breakdown...</option>
+            </select>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;" id="positionsSubDesc">
-            Average weekly single-starter points for each actual starting lineup slot (e.g., QB, RB1, RB2, WR1, WR2, FLEX, K, DEF).
+            Average weekly single-starter points for each actual starting lineup slot. Tap any manager row to view their lineup score breakdown pie chart.
           </p>
           <div class="table-wrap">
             <table data-sort-table="positions">
@@ -1817,6 +1821,7 @@
               <tbody id="positionsBody"></tbody>
             </table>
           </div>
+          <div id="positionsPieChartArea" class="hidden" style="margin-top:12px;"></div>
         </div>
 
         <div class="card">
@@ -1848,23 +1853,6 @@
 
       <!-- TAB 4: TRADES, PARTNERS & WAIVER WIRE BARGAINS -->
       <section id="tab-activity" class="tab-panel hidden">
-        <div class="card" id="tradeVisualizerCard">
-          <div class="card-header">
-            <div class="card-title">📊 Trade Visualizer</div>
-            <select id="tradeVizMetricSelect" onchange="renderInlineTradeVisualizer()" aria-label="Trade Visualizer Metric">
-              <option value="AVG" selected>Avg Weekly Score (PPG)</option>
-              <option value="TOTAL">Combined Weekly Total</option>
-            </select>
-          </div>
-          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
-            Compares both owners' traded players before and after the trade across two stacked charts—showing each side's weekly score line switch sides at the trade week.
-          </p>
-          <div class="controls-row">
-            <select id="tradeVizSelect" class="grow" onchange="renderInlineTradeVisualizer()"></select>
-          </div>
-          <div id="inlineTradeVisualizerArea"></div>
-        </div>
-
         <div class="card">
           <div class="card-header">
             <div class="card-title">Trades, Partners & Waiver Activity</div>
@@ -2111,7 +2099,7 @@
             <div class="card-title" id="cutoffLuckCardTitle">Weekly Rank Cutoff &amp; Tough-Break Luck</div>
           </div>
           <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;" id="cutoffLuckCardDesc">
-            Tracks <strong>5th</strong> (lowest rank eligible for a 2nd W), <strong>6th</strong> (highest rank stuck with an extra L), <strong>2nd in Pts &amp; Lost</strong>, and <strong>6th + H2H Loss (Extra Unlucky)</strong>.
+            Tracks <strong>5th</strong> (lowest rank eligible for a 2nd W), <strong>6th</strong> (highest rank stuck with an extra L), <strong>2nd in Pts &amp; Lost</strong>, and <strong>6th + H2H Loss</strong>.
           </p>
           <div id="cutoffLuckHighlightStrip" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
           <div class="table-wrap">
@@ -2605,7 +2593,7 @@
           <select id="modalLuckTypeSelect" class="grow" onchange="renderLuckModalContent()">
             <option value="FIFTH">5th Place (2nd W Cutoff)</option>
             <option value="SIXTH">6th Place (Extra L Cutoff)</option>
-            <option value="EXTRA_UNLUCKY">6th + H2H Loss (Extra Unlucky)</option>
+            <option value="EXTRA_UNLUCKY">6th + H2H Loss</option>
             <option value="SECOND_LOST">2nd in Pts &amp; Lost H2H</option>
           </select>
           <select id="modalLuckSeasonSelect" onchange="renderLuckModalContent()"></select>
@@ -2801,7 +2789,7 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V3.6";
+    const APP_VERSION = "V3.7";
     const CUSTOM_RULES_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     const ESPN_BASE = "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl";
@@ -5614,7 +5602,7 @@
               });
               if (lostH2H) {
                 rec.sixthAndLossCount += 1;
-                rec.notes.push(`${s.season} W${wkStr}: 6th + Loss vs ${oppName} (Extra Unlucky)`);
+                rec.notes.push(`${s.season} W${wkStr}: 6th + Loss vs ${oppName}`);
                 events.push({
                   ...baseEvent,
                   type: "EXTRA_UNLUCKY",
@@ -5872,10 +5860,16 @@
           })
           .sort((a, b) => b.winPct - a.winPct || b.pf - a.pf);
 
+        const ptsRankedUids = [...ranked]
+          .sort((a, b) => b.pf - a.pf || b.winPct - a.winPct)
+          .map(x => x.uid);
+        const ptsRankMap = Object.fromEntries(ptsRankedUids.map((u, i) => [u, i + 1]));
+
         ranked.forEach((item, idx) => {
           rankHistoryByUid[item.uid].push({
             wk,
             rank: idx + 1,
+            ptsRank: ptsRankMap[item.uid] || (idx + 1),
             wins: item.wins,
             losses: item.losses,
             ties: item.ties,
@@ -5924,21 +5918,25 @@
 
       const metricMode = metricSel ? metricSel.value : "RANK";
       const isCumPts = metricMode === "CUM_PTS";
+      const isCumPtsRank = metricMode === "CUM_PTS_RANK";
       if (titleEl) {
         titleEl.textContent = isCumPts
           ? "📈 Weekly Cumulative Points Progression"
-          : "📈 Weekly Standings Rank Progression";
+          : isCumPtsRank
+            ? "📈 Weekly Cumulative Points Rank"
+            : "📈 Weekly Standings Rank Progression";
       }
 
       const seasonYr = seasonSel.value;
       const { weeks, teamSeries, numTeams } = computeWeeklyStandingsProgression(seasonYr);
 
-      // Attach latest cumulative PF to each series
+      // Attach latest cumulative PF and cumulative points rank to each series
       const enrichedSeries = teamSeries.map(ts => {
         const lastH = ts.history[ts.history.length - 1];
         return {
           ...ts,
-          latestPf: lastH ? Number(lastH.pf || 0) : 0
+          latestPf: lastH ? Number(lastH.pf || 0) : 0,
+          latestPtsRank: lastH ? Number(lastH.ptsRank || ts.latestRank) : ts.latestRank
         };
       });
 
@@ -5949,7 +5947,14 @@
         const optsHtml = `<option value="NONE">Highlight Team: None (All Teams)</option>` +
           [...visibleTeams]
             .sort((a, b) => a.name.localeCompare(b.name))
-            .map(t => `<option value="${t.uid}">${t.name} (${isCumPts ? `${t.latestPf.toFixed(1)} PF` : `#${t.latestRank}`})</option>`)
+            .map(t => {
+              const tag = isCumPts
+                ? `${t.latestPf.toFixed(1)} PF`
+                : isCumPtsRank
+                  ? `#${t.latestPtsRank} (${t.latestPf.toFixed(1)} PF)`
+                  : `#${t.latestRank}`;
+              return `<option value="${t.uid}">${t.name} (${tag})</option>`;
+            })
             .join("");
         highlightSel.innerHTML = optsHtml;
         if (prevVal === "NONE" || visibleTeams.some(t => t.uid === prevVal)) {
@@ -5963,7 +5968,11 @@
       const hasHighlight = highlightUid && highlightUid !== "NONE";
       const displayedSeries = enrichedSeries
         .filter(t => isIncludedTeam(t.uid))
-        .sort((a, b) => isCumPts ? (b.latestPf - a.latestPf) : (a.latestRank - b.latestRank));
+        .sort((a, b) => isCumPts
+          ? (b.latestPf - a.latestPf)
+          : isCumPtsRank
+            ? (a.latestPtsRank - b.latestPtsRank)
+            : (a.latestRank - b.latestRank));
 
       if (weeks.length === 0 || displayedSeries.length === 0) {
         area.innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">No weekly progression available for this season.</p>`;
@@ -6033,7 +6042,7 @@
         const pts = ts.history.map((h, idx) => ({
           ...h,
           x: xForIdx(idx),
-          y: isCumPts ? yForPf(Number(h.pf || 0)) : yForRank(h.rank)
+          y: isCumPts ? yForPf(Number(h.pf || 0)) : isCumPtsRank ? yForRank(h.ptsRank) : yForRank(h.rank)
         }));
 
         const polyCoords = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
@@ -6048,7 +6057,9 @@
 
         const dotsHtml = pts.map(p => {
           const recStr = `${p.wins}-${p.losses}${p.ties ? `-${p.ties}` : ""}`;
-          const infoText = `${ts.name} • ${seasonYr} Wk ${p.wk}: ${p.pf.toFixed(1)} PF (Rank #${p.rank}, ${recStr})`.replace(/"/g, "&quot;");
+          const infoText = isCumPtsRank
+            ? `${ts.name} • ${seasonYr} Wk ${p.wk}: Pts Rank #${p.ptsRank} (${p.pf.toFixed(1)} PF, Standings #${p.rank}, ${recStr})`.replace(/"/g, "&quot;")
+            : `${ts.name} • ${seasonYr} Wk ${p.wk}: Rank #${p.rank} (${recStr}, ${p.pf.toFixed(1)} PF)`.replace(/"/g, "&quot;");
           const rDot = isNeon ? "4.6" : "2.8";
           const dotStroke = isNeon ? "#ffffff" : "#161a1f";
           return `
@@ -6060,7 +6071,11 @@
         }).join("");
 
         const endLabelText = lastPt
-          ? (isCumPts ? `${lastPt.pf.toFixed(0)} ${ts.name.slice(0, 10)}` : `#${lastPt.rank} ${ts.name.slice(0, 11)}`)
+          ? (isCumPts
+              ? `${lastPt.pf.toFixed(0)} ${ts.name.slice(0, 10)}`
+              : isCumPtsRank
+                ? `#${lastPt.ptsRank} ${ts.name.slice(0, 11)}`
+                : `#${lastPt.rank} ${ts.name.slice(0, 11)}`)
           : "";
         const endLabel = lastPt
           ? `<text x="${(lastPt.x + 7).toFixed(1)}" y="${(lastPt.y + 3.5).toFixed(1)}" fill="${isNeon ? "#ffffff" : ts.color}" font-size="${isNeon ? "11" : "10"}" font-weight="${isNeon ? "800" : "600"}" font-family="sans-serif" style="cursor:pointer;" onclick="selectWeeklyRankHighlight('${ts.uid}')">${endLabelText}</text>`
@@ -6080,7 +6095,9 @@
         const isNeon = hasHighlight && ts.uid === highlightUid;
         const pillText = isCumPts
           ? `${ts.name} (${ts.latestPf.toFixed(1)})`
-          : `#${ts.latestRank} ${ts.name}`;
+          : isCumPtsRank
+            ? `#${ts.latestPtsRank} ${ts.name} (${ts.latestPf.toFixed(0)})`
+            : `#${ts.latestRank} ${ts.name}`;
         return `
           <button type="button" class="rank-pill ${isNeon ? "neon-active" : ""}" style="--pill-color:${ts.color};"
             onclick="selectWeeklyRankHighlight('${ts.uid}')">
@@ -6092,8 +6109,8 @@
 
       const activeTeamObj = hasHighlight ? displayedSeries.find(t => t.uid === highlightUid) : null;
       const defaultStatus = activeTeamObj
-        ? `Neon Highlight: <strong>${activeTeamObj.name}</strong> (${isCumPts ? `${activeTeamObj.latestPf.toFixed(1)} PF` : `Rank #${activeTeamObj.latestRank}`}) • Tap any point for week details.`
-        : `Tap a team name or use the dropdown above to highlight their ${isCumPts ? "points" : "rank"} path in neon.`;
+        ? `Neon Highlight: <strong>${activeTeamObj.name}</strong> (${isCumPts ? `${activeTeamObj.latestPf.toFixed(1)} PF` : isCumPtsRank ? `Pts Rank #${activeTeamObj.latestPtsRank} (${activeTeamObj.latestPf.toFixed(1)} PF)` : `Rank #${activeTeamObj.latestRank}`}) • Tap any point for week details.`
+        : `Tap a team name or use the dropdown above to highlight their ${isCumPts ? "points" : isCumPtsRank ? "points rank" : "rank"} path in neon.`;
 
       area.innerHTML = `
         <div class="trade-viz-svg-wrap">
@@ -6706,19 +6723,39 @@
           : null;
       }
 
-      const posSorted = sortRowsGeneric(rows.filter(r => isIncludedTeam(r.user_id)), "positions");
+      const visiblePosRows = rows.filter(r => isIncludedTeam(r.user_id));
+      const posSorted = sortRowsGeneric(visiblePosRows, "positions");
 
-      const posHtml = posSorted.map(r => `
-        <tr>
-          <td>
-            <div class="manager-cell">
-              ${renderAvatar(r)}
-              <span class="manager-name">${r.name}</span>
-            </div>
-          </td>
-          ${slotKeys.map(k => `<td class="num">${r[k] !== null && r[k] !== undefined ? r[k].toFixed(1) : "-"}</td>`).join("")}
-        </tr>
-      `).join("");
+      const pieSel = document.getElementById("positionsPieTeamSelect");
+      if (pieSel) {
+        const prevPieUid = pieSel.value || "";
+        const sortedForDropdown = [...visiblePosRows].sort((a, b) => a.name.localeCompare(b.name));
+        pieSel.innerHTML = `<option value="">Select Team for Breakdown...</option>` +
+          sortedForDropdown.map(r => `<option value="${r.user_id}">${r.name}</option>`).join("");
+        if (prevPieUid && visiblePosRows.some(r => r.user_id === prevPieUid)) {
+          pieSel.value = prevPieUid;
+        } else {
+          pieSel.value = "";
+        }
+      }
+
+      const selectedPieUid = pieSel ? pieSel.value : "";
+
+      const posHtml = posSorted.map(r => {
+        const isSelected = selectedPieUid === r.user_id;
+        return `
+          <tr class="clickable-row" onclick="selectPositionsPieTeam('${r.user_id}', true)"
+            style="${isSelected ? "background:var(--accent-soft);" : ""}" title="Show ${r.name} starter score pie chart">
+            <td>
+              <div class="manager-cell">
+                ${renderAvatar(r)}
+                <span class="manager-name" style="color:var(--accent); text-decoration:underline;">${r.name}</span>
+              </div>
+            </td>
+            ${slotKeys.map(k => `<td class="num">${r[k] !== null && r[k] !== undefined ? r[k].toFixed(1) : "-"}</td>`).join("")}
+          </tr>
+        `;
+      }).join("");
 
       const summaryRow = `
         <tr class="summary-row">
@@ -6728,6 +6765,147 @@
       `;
 
       document.getElementById("positionsBody").innerHTML = posHtml + summaryRow;
+      renderPositionsPieChart(visiblePosRows, slotDefs, selectedPieUid);
+    }
+
+    const SLOT_PIE_COLORS = {
+      QB: "#63a4db",
+      RB1: "#4cc38a",
+      RB2: "#2dd4bf",
+      RB3: "#34d399",
+      WR1: "#e0b354",
+      WR2: "#f97316",
+      WR3: "#fbbf24",
+      TE: "#a78bfa",
+      TE1: "#a78bfa",
+      TE2: "#c084fc",
+      FLEX: "#e57373",
+      FLEX1: "#e57373",
+      FLEX2: "#f472b6",
+      SFLEX: "#38bdf8",
+      RFLEX: "#fb7185",
+      K: "#94a3b8",
+      DEF: "#64748b"
+    };
+
+    function selectPositionsPieTeam(uid, scrollToChart = false) {
+      const pieSel = document.getElementById("positionsPieTeamSelect");
+      if (pieSel) {
+        pieSel.value = uid || "";
+      }
+      renderPositions();
+      if (uid && scrollToChart) {
+        const area = document.getElementById("positionsPieChartArea");
+        if (area && area.scrollIntoView) {
+          area.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }
+    }
+
+    function renderPositionsPieChart(visibleRows, slotDefs, selectedUid) {
+      const area = document.getElementById("positionsPieChartArea");
+      if (!area) return;
+
+      if (!selectedUid) {
+        area.classList.add("hidden");
+        area.innerHTML = "";
+        return;
+      }
+
+      const row = visibleRows.find(r => r.user_id === selectedUid);
+      if (!row) {
+        area.classList.add("hidden");
+        area.innerHTML = "";
+        return;
+      }
+
+      const slices = slotDefs
+        .map((def, idx) => {
+          const val = Number(row[def.key] || 0);
+          const color = SLOT_PIE_COLORS[def.key] || SLOT_PIE_COLORS[def.base] || TEAM_COLOR_PALETTE[idx % TEAM_COLOR_PALETTE.length].hex;
+          return { key: def.key, label: def.label, val, color };
+        })
+        .filter(s => s.val > 0);
+
+      const totalAvg = slices.reduce((sum, s) => sum + s.val, 0);
+      if (totalAvg <= 0) {
+        area.classList.remove("hidden");
+        area.innerHTML = `<p style="font-size:12.5px; color:var(--text-secondary);">No starter scoring breakdown available for ${row.name}.</p>`;
+        return;
+      }
+
+      const cx = 110, cy = 110, rOuter = 94, rInner = 46;
+      let startAngle = -Math.PI / 2;
+
+      const polarToCart = (r, angle) => ({
+        x: cx + r * Math.cos(angle),
+        y: cy + r * Math.sin(angle)
+      });
+
+      const pathsHtml = slices.map(s => {
+        const pct = s.val / totalAvg;
+        const sweep = pct * Math.PI * 2;
+        const endAngle = startAngle + sweep;
+        const midAngle = startAngle + sweep / 2;
+
+        const p1 = polarToCart(rOuter, startAngle);
+        const p2 = polarToCart(rOuter, endAngle);
+        const p3 = polarToCart(rInner, endAngle);
+        const p4 = polarToCart(rInner, startAngle);
+        const largeArc = sweep > Math.PI ? 1 : 0;
+
+        const d = slices.length === 1
+          ? `M ${cx} ${cy - rOuter} A ${rOuter} ${rOuter} 0 1 1 ${cx - 0.01} ${cy - rOuter} Z`
+          : `M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${rOuter} ${rOuter} 0 ${largeArc} 1 ${p2.x.toFixed(2)} ${p2.y.toFixed(2)} L ${p3.x.toFixed(2)} ${p3.y.toFixed(2)} A ${rInner} ${rInner} 0 ${largeArc} 0 ${p4.x.toFixed(2)} ${p4.y.toFixed(2)} Z`;
+
+        const labelPos = polarToCart((rOuter + rInner) * 0.52, midAngle);
+        const sliceLabel = pct >= 0.065
+          ? `<text x="${labelPos.x.toFixed(1)}" y="${(labelPos.y + 3.5).toFixed(1)}" text-anchor="middle" fill="#11161d" font-size="9.5" font-weight="800" font-family="sans-serif">${s.label}</text>`
+          : "";
+
+        startAngle = endAngle;
+        return `<path d="${d}" fill="${s.color}" stroke="#1f242b" stroke-width="1.8"></path>${sliceLabel}`;
+      }).join("");
+
+      const legendItemsHtml = slices.map(s => {
+        const pct = (s.val / totalAvg) * 100;
+        return `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:4px 8px; background:var(--bg-surface); border:1px solid var(--border); border-radius:7px; font-size:11.5px;">
+            <span style="display:inline-flex; align-items:center; gap:6px; font-weight:700;">
+              <span class="team-color-dot" style="background:${s.color};"></span>
+              <span>${s.label}</span>
+            </span>
+            <span style="font-variant-numeric:tabular-nums; color:var(--text-secondary);">
+              <strong style="color:var(--text-primary);">${s.val.toFixed(1)}</strong> pts (${pct.toFixed(1)}%)
+            </span>
+          </div>
+        `;
+      }).join("");
+
+      area.classList.remove("hidden");
+      area.innerHTML = `
+        <div class="team-viz-card" style="margin-bottom:0;">
+          <div class="team-viz-card-head">
+            <div class="manager-cell">
+              ${renderAvatar(row)}
+              <span class="team-viz-card-title">${row.name} — Starter Score Breakdown</span>
+            </div>
+            <button type="button" class="btn-icon" style="padding:3px 8px; font-size:11px;" onclick="selectPositionsPieTeam('')">✕ Hide</button>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px; align-items:center;">
+            <div style="display:flex; justify-content:center;">
+              <svg width="220" height="220" viewBox="0 0 220 220" role="img" aria-label="${row.name} starter lineup score pie chart">
+                ${pathsHtml}
+                <text x="${cx}" y="${cy - 4}" text-anchor="middle" fill="#e6ebf0" font-size="14" font-weight="800" font-family="sans-serif">${totalAvg.toFixed(1)}</text>
+                <text x="${cx}" y="${cy + 11}" text-anchor="middle" fill="#a2aebc" font-size="9.5" font-weight="700" font-family="sans-serif">AVG PPG</text>
+              </svg>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:6px;">
+              ${legendItemsHtml}
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     function renderActivityAndWaivers() {
@@ -6900,8 +7078,7 @@
           `).join("")
         : `<p style="font-size:13px; color:var(--text-secondary);">No waiver or free-agent starter points recorded for this filter.</p>`;
 
-      populateTradeVisualizerDropdown();
-      renderInlineTradeVisualizer();
+
     }
 
     /* ==========================================================================
@@ -6981,7 +7158,6 @@
             if (bestScore > 0.45) {
               const hex = `#${[bestR, bestG, bestB].map(v => v.toString(16).padStart(2, "0")).join("")}`;
               avatarTeamColorCache[uid] = { hex, soft: hexToRgba(hex, 0.16), name: "Team" };
-              renderInlineTradeVisualizer();
               renderWeeklyRankChart();
               if (!document.getElementById("tradeVizModalBackdrop").classList.contains("hidden")) {
                 renderModalTradeVisualizer();
@@ -7036,24 +7212,6 @@
         }
       }
       return list;
-    }
-
-    function populateTradeVisualizerDropdown() {
-      const sel = document.getElementById("tradeVizSelect");
-      if (!sel) return;
-      const filter = getSelectedSeason();
-      const trades = getAllVisualizableTrades(filter);
-      const prev = sel.value;
-
-      if (trades.length === 0) {
-        sel.innerHTML = `<option value="">No trades available for this filter</option>`;
-        return;
-      }
-
-      sel.innerHTML = trades.map(t => `<option value="${t.key}">${t.label}</option>`).join("");
-      if (prev && trades.some(t => t.key === prev)) {
-        sel.value = prev;
-      }
     }
 
     function findTradeByKey(tradeKey) {
@@ -7362,30 +7520,10 @@
       }
     }
 
-    function renderInlineTradeVisualizer() {
-      const area = document.getElementById("inlineTradeVisualizerArea");
-      const sel = document.getElementById("tradeVizSelect");
-      if (!area || !sel) return;
-
-      const found = findTradeByKey(sel.value);
-      if (!found) {
-        area.innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">No completed trades available to visualize for this filter.</p>`;
-        return;
-      }
-      const metric = document.getElementById("tradeVizMetricSelect")?.value || "AVG";
-      const vizData = buildTradeSeriesData(found.season, found.tx, metric);
-      area.innerHTML = renderTradeVisualizerHtml(vizData, "inlineViz");
-    }
-
     let activeModalTradeVizKey = "";
 
     function openTradeVizModal(tradeKey) {
       activeModalTradeVizKey = tradeKey;
-      const inlineSel = document.getElementById("tradeVizSelect");
-      if (inlineSel && Array.from(inlineSel.options).some(o => o.value === tradeKey)) {
-        inlineSel.value = tradeKey;
-        renderInlineTradeVisualizer();
-      }
       document.getElementById("tradeVizModalBackdrop").classList.remove("hidden");
       renderModalTradeVisualizer();
     }
@@ -8189,7 +8327,7 @@
       if (q.includes("5th") || q.includes("6th") || q.includes("2nd") || q.includes("cutoff") || q.includes("median")) {
         const { rows } = computeWeeklyRankLuck("ALL");
         return `Weekly Rank Cutoff & Tough-Break Luck (All-Time):\n` + rows.map((r, i) =>
-          `${i + 1}. ${r.name}: 5th (2nd W)=${r.fifthCount}x, 6th (Extra L)=${r.sixthCount}x, 6th+Loss (Extra Unlucky)=${r.sixthAndLossCount}x, 2nd & Lost=${r.secondAndLossCount}x`
+          `${i + 1}. ${r.name}: 5th (2nd W)=${r.fifthCount}x, 6th (Extra L)=${r.sixthCount}x, 6th+Loss=${r.sixthAndLossCount}x, 2nd & Lost=${r.secondAndLossCount}x`
         ).join("\n");
       }
 
@@ -8199,7 +8337,7 @@
         const topUnlucky = [...cRows].sort((a, b) => (b.sixthAndLossCount + b.secondAndLossCount) - (a.sixthAndLossCount + a.secondAndLossCount))[0];
         return `All-Time Schedule Luck Index (Actual Wins minus All-Play Expected Wins):\n` + lk.map((r, i) =>
           `${i + 1}. ${r.name}: ${r.luck >= 0 ? "+" : ""}${r.luck.toFixed(1)} wins (${r.wins}-${r.losses} actual vs ${(r.apPct * 100).toFixed(1)}% all-play)`
-        ).join("\n") + (topUnlucky ? `\n\nMost Tough-Break Weeks (6th+Loss / 2nd&Lost): ${topUnlucky.name} (${topUnlucky.sixthAndLossCount}x 6th+Loss Extra Unlucky, ${topUnlucky.secondAndLossCount}x 2nd & Lost)` : "");
+        ).join("\n") + (topUnlucky ? `\n\nMost Tough-Break Weeks (6th+Loss / 2nd&Lost): ${topUnlucky.name} (${topUnlucky.sixthAndLossCount}x 6th+Loss, ${topUnlucky.secondAndLossCount}x 2nd & Lost)` : "");
       }
 
       return `I can answer questions about player highs by position (QB, RB, WR, TE, K, DEF), worst 1st/2nd/3rd round picks, late-round sleepers, waiver wire bargains, lineup efficiency & bench points left, championships, trades, injuries/IR, and schedule luck.\n\nTip: Tap "🔑 Key" above if you want to connect a free Gemini key for open-ended questions.`;
@@ -8419,7 +8557,7 @@
       if (usesMedianGame) {
         if (titleEl) titleEl.textContent = "Weekly Rank Cutoff & Tough-Break Luck";
         if (descEl) {
-          descEl.innerHTML = `Tracks <strong>5th</strong> (lowest rank eligible for a 2nd W), <strong>6th</strong> (highest rank stuck with an extra L), <strong>2nd in Pts &amp; Lost</strong>, and <strong>6th + H2H Loss (Extra Unlucky)</strong>.`;
+          descEl.innerHTML = `Tracks <strong>5th</strong> (lowest rank eligible for a 2nd W), <strong>6th</strong> (highest rank stuck with an extra L), <strong>2nd in Pts &amp; Lost</strong>, and <strong>6th + H2H Loss</strong>.`;
         }
         if (col1El) col1El.textContent = "5th (2nd W)";
         if (col2El) col2El.textContent = "6th (Extra L)";
@@ -8451,7 +8589,7 @@
           document.getElementById("cutoffLuckHighlightStrip").innerHTML = `
             ${most5th.fifthCount > 0 ? `<span class="badge badge-win">Most 5th (Clutch 2nd W): ${most5th.name} (${most5th.fifthCount}x)</span>` : ""}
             ${most6th.sixthCount > 0 ? `<span class="badge badge-neutral">Most 6th (Extra L): ${most6th.name} (${most6th.sixthCount}x)</span>` : ""}
-            ${mostExtraUnlucky.sixthAndLossCount > 0 ? `<span class="badge badge-loss">Extra Unlucky (6th + Loss): ${mostExtraUnlucky.name} (${mostExtraUnlucky.sixthAndLossCount}x)</span>` : ""}
+            ${mostExtraUnlucky.sixthAndLossCount > 0 ? `<span class="badge badge-loss">Most 6th + Loss: ${mostExtraUnlucky.name} (${mostExtraUnlucky.sixthAndLossCount}x)</span>` : ""}
             ${most2ndLost.secondAndLossCount > 0 ? `<span class="badge badge-loss">2nd in Pts &amp; Lost: ${most2ndLost.name} (${most2ndLost.secondAndLossCount}x)</span>` : ""}
           `;
         } else {
@@ -8486,7 +8624,7 @@
           <td class="num">
             <button type="button" class="luck-pill-btn ${r.sixthAndLossCount > 0 ? "loss" : "zero"}"
               onclick="openLuckModal('${r.user_id}', 'EXTRA_UNLUCKY')">
-              ${r.sixthAndLossCount > 0 ? (usesMedianGame ? `${r.sixthAndLossCount} (Extra Unlucky)` : `${r.sixthAndLossCount}`) : "0"}
+              ${r.sixthAndLossCount}
             </button>
           </td>
           <td class="num">
@@ -8919,7 +9057,7 @@
         ? {
             FIFTH: "5th Place (2nd W Cutoff)",
             SIXTH: "6th Place (Extra L Cutoff)",
-            EXTRA_UNLUCKY: "6th + H2H Loss (Extra Unlucky)",
+            EXTRA_UNLUCKY: "6th + H2H Loss",
             SECOND_LOST: "2nd in Pts & Lost H2H"
           }
         : {
@@ -9458,6 +9596,7 @@
        ========================================================================== */
     function getTabOrder() {
       return Array.from(document.querySelectorAll(".bottom-nav .nav-btn[data-tab]"))
+        .filter(btn => !btn.classList.contains("hidden") && !(btn.dataset.tab === "rules" && !hasCustomLeagueRules()))
         .map(btn => btn.dataset.tab);
     }
 
@@ -9466,6 +9605,9 @@
     }
 
     function switchTab(tabName, direction = null) {
+      if (tabName === "rules" && !hasCustomLeagueRules()) {
+        tabName = "standings";
+      }
       const targetPanel = document.getElementById(`tab-${tabName}`);
       if (!targetPanel) return;
 
@@ -9786,13 +9928,40 @@
       syncWaiverGateUI();
     }
 
-    function rebuildLeagueRosterLookup(rostersList, rosterOwnerMap) {
+    function resolveRosterDisplayName(rosterObj, rosterOwnerMap, liveUsersMap = {}) {
+      const candidateUids = [
+        rosterObj?.owner_id,
+        rosterOwnerMap ? rosterOwnerMap[rosterObj?.roster_id] : null,
+        ...(Array.isArray(rosterObj?.co_owners) ? rosterObj.co_owners : [])
+      ].filter(Boolean);
+
+      for (const uid of candidateUids) {
+        if (appData.managers[uid]?.name) {
+          return appData.managers[uid].name;
+        }
+        if (liveUsersMap[uid]) {
+          return liveUsersMap[uid];
+        }
+      }
+
+      // Check latest season user list directly in case appData.managers hasn't populated yet
+      const latestSeason = appData.seasons[appData.seasons.length - 1];
+      if (latestSeason && Array.isArray(latestSeason.users)) {
+        for (const uid of candidateUids) {
+          const foundUser = latestSeason.users.find(u => String(u.user_id) === String(uid));
+          if (foundUser?.display_name) return foundUser.display_name;
+        }
+      }
+
+      return `Team #${rosterObj?.roster_id || "?"}`;
+    }
+
+    function rebuildLeagueRosterLookup(rostersList, rosterOwnerMap, liveUsersMap = {}) {
       const ownerByPid = {};
       const ownerByNormName = {};
 
       for (const r of (rostersList || [])) {
-        const uid = r.owner_id || (rosterOwnerMap ? rosterOwnerMap[r.roster_id] : null);
-        const ownerName = uid ? getManagerMeta(uid).name : `Team #${r.roster_id}`;
+        const ownerName = resolveRosterDisplayName(r, rosterOwnerMap, liveUsersMap);
         const allIds = [...new Set([...(r.players || []), ...(r.reserve || []), ...(r.taxi || [])])];
 
         for (const pid of allIds) {
@@ -9831,7 +10000,18 @@
           tasks.push(
             fetchEspnJson(`${ESPN_BASE}/seasons/${yr}/segments/0/leagues/${activeId}?view=mRoster&view=mTeam`)
               .then(espnData => {
+                const membersById = Object.fromEntries((espnData.members || []).map(m => [m.id, m]));
+                const liveUsersMap = {};
                 const liveRosters = (espnData.teams || []).map(t => {
+                  const primaryOwner = Array.isArray(t.owners) && t.owners.length > 0 ? t.owners[0] : null;
+                  const ownerId = primaryOwner ? `espn_owner_${primaryOwner}` : (latestSeason?.roster_owner_map?.[t.id] || null);
+                  const member = primaryOwner ? membersById[primaryOwner] : null;
+                  const teamName = (t.name || `${t.location || ""} ${t.nickname || ""}`.trim() || `Team #${t.id}`).trim();
+                  const dispName = member
+                    ? (`${member.firstName || ""} ${member.lastName || ""}`.trim() || member.displayName || teamName)
+                    : teamName;
+                  if (ownerId) liveUsersMap[ownerId] = dispName;
+
                   const entries = t.roster?.entries || [];
                   const players = [];
                   for (const ent of entries) {
@@ -9840,20 +10020,36 @@
                   }
                   return {
                     roster_id: t.id,
-                    owner_id: latestSeason?.roster_owner_map?.[t.id] || null,
+                    owner_id: ownerId,
                     players
                   };
                 });
-                rebuildLeagueRosterLookup(liveRosters, latestSeason?.roster_owner_map);
+                rebuildLeagueRosterLookup(liveRosters, latestSeason?.roster_owner_map, liveUsersMap);
                 appData.waiverIntel.liveRostersLoaded = true;
               })
               .catch(() => {})
           );
         } else {
           tasks.push(
-            fetchJson(`/league/${activeId}/rosters`)
-              .then(liveRosters => {
-                rebuildLeagueRosterLookup(liveRosters, latestSeason?.roster_owner_map);
+            Promise.all([
+              fetchJson(`/league/${activeId}/rosters`),
+              fetchJson(`/league/${activeId}/users`).catch(() => [])
+            ])
+              .then(([liveRosters, liveUsers]) => {
+                const liveUsersMap = {};
+                for (const u of (liveUsers || [])) {
+                  if (!u.user_id) continue;
+                  liveUsersMap[u.user_id] = u.display_name || u.metadata?.team_name || u.user_id;
+                  if (!appData.managers[u.user_id]) {
+                    appData.managers[u.user_id] = {
+                      user_id: u.user_id,
+                      name: liveUsersMap[u.user_id],
+                      avatar: u.avatar || null,
+                      teamsBySeason: {}
+                    };
+                  }
+                }
+                rebuildLeagueRosterLookup(liveRosters, latestSeason?.roster_owner_map, liveUsersMap);
                 appData.waiverIntel.liveRostersLoaded = true;
               })
               .catch(() => {})
