@@ -7,10 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Fantasy Insights" />
-  <link rel="manifest" href="./manifest.json" />
-  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
-  <link rel="apple-touch-icon" href="./icon-192.png" />
-  <title>Fantasy Insights V3.3 — Multi-Season Analytics</title>
+  <title>Fantasy Insights V3.4 — Multi-Season Analytics</title>
   <style>
     :root {
       color-scheme: dark;
@@ -924,6 +921,87 @@
       font-variant-numeric: tabular-nums;
     }
 
+    /* Trade Visualizer Stacked Charts */
+    .trade-viz-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .trade-viz-panel {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--team-color, var(--accent));
+      border-radius: 9px;
+      padding: 10px 12px;
+    }
+
+    .trade-viz-panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+
+    .trade-viz-team-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    .team-color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .trade-viz-svg-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .trade-viz-svg {
+      width: 100%;
+      min-width: 320px;
+      height: auto;
+      display: block;
+      user-select: none;
+    }
+
+    .trade-viz-legend {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .trade-viz-tooltip {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 8px 11px;
+      font-size: 11.5px;
+      color: var(--text-primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
     .inj-detail-card {
       background: var(--bg-subtle);
       border: 1px solid var(--border);
@@ -1451,7 +1529,7 @@
 
   <div class="app-top-banner" id="topAppBanner">
     <span>Fantasy Insights</span>
-    <span class="version-pill" id="appVersionBadge">V3.3</span>
+    <span class="version-pill" id="appVersionBadge">V3.4</span>
   </div>
 
   <div id="loadingSplashScreen" class="loading-splash hidden" role="status" aria-live="polite">
@@ -1627,6 +1705,23 @@
 
       <!-- TAB 4: TRADES, PARTNERS & WAIVER WIRE BARGAINS -->
       <section id="tab-activity" class="tab-panel hidden">
+        <div class="card" id="tradeVisualizerCard">
+          <div class="card-header">
+            <div class="card-title">📊 Trade Visualizer</div>
+            <select id="tradeVizMetricSelect" onchange="renderInlineTradeVisualizer()" aria-label="Trade Visualizer Metric">
+              <option value="AVG" selected>Avg Weekly Score (PPG)</option>
+              <option value="TOTAL">Combined Weekly Total</option>
+            </select>
+          </div>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+            Compares both owners' traded players before and after the trade across two stacked charts—showing each side's weekly score line switch sides at the trade week.
+          </p>
+          <div class="controls-row">
+            <select id="tradeVizSelect" class="grow" onchange="renderInlineTradeVisualizer()"></select>
+          </div>
+          <div id="inlineTradeVisualizerArea"></div>
+        </div>
+
         <div class="card">
           <div class="card-header">
             <div class="card-title">Trades, Partners & Waiver Activity</div>
@@ -2296,6 +2391,26 @@
     </div>
   </div>
 
+  <!-- MODAL WINDOW 1B: TRADE VISUALIZER POPUP -->
+  <div id="tradeVizModalBackdrop" class="modal-backdrop hidden" onclick="closeTradeVizModalOnBackdrop(event)">
+    <div class="modal-window" onclick="event.stopPropagation()" style="max-width:780px;">
+      <div class="modal-head">
+        <div>
+          <div class="card-title" id="tradeVizModalTitle">📊 Trade Visualizer</div>
+          <div style="font-size:11px; color:var(--text-secondary);" id="tradeVizModalSub">Pre-trade vs. post-trade weekly average performance</div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <select id="modalTradeVizMetricSelect" onchange="renderModalTradeVisualizer()" style="padding:5px 8px; font-size:11.5px;">
+            <option value="AVG" selected>Avg Weekly Score</option>
+            <option value="TOTAL">Combined Total</option>
+          </select>
+          <button class="btn-icon" onclick="closeTradeVizModal()">✕ Close</button>
+        </div>
+      </div>
+      <div class="modal-body" id="tradeVizModalBody"></div>
+    </div>
+  </div>
+
   <!-- MODAL WINDOW 2: ROSTERED PLAYERS LOST TO IR / SEASON-ENDING INJURY (SORTABLE) -->
   <div id="injuryModalBackdrop" class="modal-backdrop hidden" onclick="closeInjuryModalOnBackdrop(event)">
     <div class="modal-window" onclick="event.stopPropagation()">
@@ -2523,7 +2638,7 @@
     /* ==========================================================================
        1. HARDCODED LEAGUE ID, CACHE KEYS & AUTOMATIC THEME SYNC
        ========================================================================== */
-    const APP_VERSION = "V3.3";
+    const APP_VERSION = "V3.4";
     const CUSTOM_RULES_LEAGUE_ID = "1389754082821947392";
     const SLEEPER_BASE = "https://api.sleeper.app/v1";
     const ESPN_BASE = "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl";
@@ -2988,11 +3103,40 @@
     }
 
     /* ==========================================================================
-       2. PWA SERVICE WORKER REGISTRATION (STATIC MANIFEST + SW.JS)
+       2. INLINE PWA MANIFEST & SERVICE WORKER
        ========================================================================== */
     (function initPWA() {
+      const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="36" fill="#223547"/><text x="96" y="122" font-size="88" text-anchor="middle" fill="#e6ebf0" font-family="sans-serif" font-weight="bold">FI</text></svg>`;
+      const iconUrl = "data:image/svg+xml;base64," + btoa(svgIcon);
+      const manifest = {
+        name: "Fantasy Insights",
+        short_name: "Fantasy Insights",
+        start_url: ".",
+        display: "standalone",
+        background_color: "#161a1f",
+        theme_color: "#1f242b",
+        icons: [{ src: iconUrl, sizes: "192x192", type: "image/svg+xml" }]
+      };
+      const manifestBlob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
+      const link = document.createElement("link");
+      link.rel = "manifest";
+      link.href = URL.createObjectURL(manifestBlob);
+      document.head.appendChild(link);
+
       if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-        navigator.serviceWorker.register("./sw.js").catch(() => {});
+        const swCode = `
+          const CACHE = 'fantasy-insights-shell-v3-4';
+          self.addEventListener('install', e => {
+            e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./'])));
+            self.skipWaiting();
+          });
+          self.addEventListener('fetch', e => {
+            if (e.request.url.includes('api.sleeper.app') || e.request.url.includes('espn.com') || e.request.url.includes('generativelanguage.googleapis.com')) return;
+            e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+          });
+        `;
+        const swBlob = new Blob([swCode], { type: "application/javascript" });
+        navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
       }
     })();
 
@@ -5846,6 +5990,516 @@
             </div>
           `).join("")
         : `<p style="font-size:13px; color:var(--text-secondary);">No waiver or free-agent starter points recorded for this filter.</p>`;
+
+      populateTradeVisualizerDropdown();
+      renderInlineTradeVisualizer();
+    }
+
+    /* ==========================================================================
+       5B. TRADE VISUALIZER (STACKED TWO-OWNER LINE GRAPHS THAT SWITCH SIDES)
+       ========================================================================== */
+    const TEAM_COLOR_PALETTE = [
+      { hex: "#63a4db", soft: "rgba(99, 164, 219, 0.16)", name: "Blue" },
+      { hex: "#e0b354", soft: "rgba(224, 179, 84, 0.16)", name: "Gold" },
+      { hex: "#4cc38a", soft: "rgba(76, 195, 138, 0.16)", name: "Emerald" },
+      { hex: "#e57373", soft: "rgba(229, 115, 115, 0.16)", name: "Crimson" },
+      { hex: "#a78bfa", soft: "rgba(167, 139, 250, 0.16)", name: "Purple" },
+      { hex: "#f97316", soft: "rgba(249, 115, 22, 0.16)", name: "Orange" },
+      { hex: "#2dd4bf", soft: "rgba(45, 212, 191, 0.16)", name: "Teal" },
+      { hex: "#f472b6", soft: "rgba(244, 114, 182, 0.16)", name: "Magenta" }
+    ];
+
+    const avatarTeamColorCache = {};
+
+    function hexToRgba(hex, alpha) {
+      const clean = hex.replace("#", "");
+      const num = parseInt(clean, 16);
+      const r = (num >> 16) & 255;
+      const g = (num >> 8) & 255;
+      const b = num & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function getTeamColorForOwner(uid, avoidHex = "") {
+      if (avatarTeamColorCache[uid] && avatarTeamColorCache[uid].hex !== avoidHex) {
+        return avatarTeamColorCache[uid];
+      }
+      // Deterministic hash index across TEAM_COLOR_PALETTE
+      let hash = 0;
+      const str = String(uid || "team");
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      let idx = Math.abs(hash) % TEAM_COLOR_PALETTE.length;
+      let chosen = TEAM_COLOR_PALETTE[idx];
+      if (chosen.hex === avoidHex) {
+        chosen = TEAM_COLOR_PALETTE[(idx + 1) % TEAM_COLOR_PALETTE.length];
+      }
+
+      // Kick off async avatar dominant-color extraction if avatar image exists
+      const meta = getManagerMeta(uid);
+      if (meta.avatar && !avatarTeamColorCache[uid]) {
+        const srcUrl = /^https?:\/\//i.test(meta.avatar)
+          ? meta.avatar
+          : `https://sleepercdn.com/avatars/thumbs/${meta.avatar}`;
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = 16;
+            canvas.height = 16;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, 16, 16);
+            const data = ctx.getImageData(0, 0, 16, 16).data;
+            let bestR = 0, bestG = 0, bestB = 0, bestScore = -1;
+            for (let p = 0; p < data.length; p += 4) {
+              const r = data[p], g = data[p + 1], b = data[p + 2], a = data[p + 3];
+              if (a < 180) continue;
+              const maxC = Math.max(r, g, b);
+              const minC = Math.min(r, g, b);
+              const sat = maxC === 0 ? 0 : (maxC - minC) / maxC;
+              const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+              // Prefer vibrant, readable colors against dark slate background
+              if (lum < 0.25 || lum > 0.88) continue;
+              const score = sat * 2 + (1 - Math.abs(lum - 0.58));
+              if (score > bestScore) {
+                bestScore = score;
+                bestR = r; bestG = g; bestB = b;
+              }
+            }
+            if (bestScore > 0.45) {
+              const hex = `#${[bestR, bestG, bestB].map(v => v.toString(16).padStart(2, "0")).join("")}`;
+              avatarTeamColorCache[uid] = { hex, soft: hexToRgba(hex, 0.16), name: "Team" };
+              renderInlineTradeVisualizer();
+              if (!document.getElementById("tradeVizModalBackdrop").classList.contains("hidden")) {
+                renderModalTradeVisualizer();
+              }
+            }
+          } catch (e) {}
+        };
+        img.src = srcUrl;
+      }
+
+      return chosen;
+    }
+
+    function getAllVisualizableTrades(seasonFilter = "ALL") {
+      const targetSeasons = seasonFilter === "ALL"
+        ? [...appData.seasons].reverse()
+        : appData.seasons.filter(s => s.season === seasonFilter);
+
+      const list = [];
+      for (const s of targetSeasons) {
+        const ownerMap = s.roster_owner_map || {};
+        for (const tx of (s.trades || [])) {
+          if (!Array.isArray(tx.roster_ids) || tx.roster_ids.length < 2) continue;
+          const uids = tx.roster_ids.map(rid => ownerMap[rid]).filter(Boolean);
+          if (uids.length < 2) continue;
+          if (!uids.some(uid => isIncludedTeam(uid))) continue;
+
+          const ridA = tx.roster_ids[0];
+          const ridB = tx.roster_ids[1];
+          const uidA = ownerMap[ridA];
+          const uidB = ownerMap[ridB];
+          const nameA = getManagerMeta(uidA).name;
+          const nameB = getManagerMeta(uidB).name;
+
+          const gotA = Object.entries(tx.adds || {}).filter(([, dest]) => dest === ridA).map(([pid]) => getPlayerNameOnly(pid));
+          const gotB = Object.entries(tx.adds || {}).filter(([, dest]) => dest === ridB).map(([pid]) => getPlayerNameOnly(pid));
+          const picksA = (tx.draft_picks || []).filter(p => p.owner_id === ridA).map(p => `${p.season} Rd ${p.round}`);
+          const picksB = (tx.draft_picks || []).filter(p => p.owner_id === ridB).map(p => `${p.season} Rd ${p.round}`);
+
+          const sideALabel = [...gotA, ...picksA].slice(0, 2).join(", ") || "Assets";
+          const sideBLabel = [...gotB, ...picksB].slice(0, 2).join(", ") || "Assets";
+
+          list.push({
+            key: `${s.season}__${tx.transaction_id}`,
+            season: s,
+            tx,
+            label: `${s.season} Wk ${tx.week}: ${nameA} ↔ ${nameB} (${sideBLabel} ⇄ ${sideALabel})`
+          });
+        }
+      }
+      return list;
+    }
+
+    function populateTradeVisualizerDropdown() {
+      const sel = document.getElementById("tradeVizSelect");
+      if (!sel) return;
+      const filter = getSelectedSeason();
+      const trades = getAllVisualizableTrades(filter);
+      const prev = sel.value;
+
+      if (trades.length === 0) {
+        sel.innerHTML = `<option value="">No trades available for this filter</option>`;
+        return;
+      }
+
+      sel.innerHTML = trades.map(t => `<option value="${t.key}">${t.label}</option>`).join("");
+      if (prev && trades.some(t => t.key === prev)) {
+        sel.value = prev;
+      }
+    }
+
+    function findTradeByKey(tradeKey) {
+      if (!tradeKey) return null;
+      const [seasonStr, txId] = String(tradeKey).split("__");
+      const s = appData.seasons.find(item => String(item.season) === String(seasonStr));
+      if (!s) return null;
+      const tx = (s.trades || []).find(t => String(t.transaction_id) === String(txId));
+      if (!tx) return null;
+      return { season: s, tx };
+    }
+
+    function buildTradeSeriesData(seasonObj, tx, metricMode = "AVG") {
+      const ownerMap = seasonObj.roster_owner_map || {};
+      const ridA = tx.roster_ids[0];
+      const ridB = tx.roster_ids[1];
+      const uidA = ownerMap[ridA];
+      const uidB = ownerMap[ridB];
+      const metaA = getManagerMeta(uidA);
+      const metaB = getManagerMeta(uidB);
+
+      const colorA = getTeamColorForOwner(uidA);
+      const colorB = getTeamColorForOwner(uidB, colorA.hex);
+
+      // Players originally on A's side (acquired by B in the trade)
+      const pkgAPlayerIds = Object.entries(tx.adds || {})
+        .filter(([, destRid]) => destRid === ridB)
+        .map(([pid]) => pid);
+
+      // Players originally on B's side (acquired by A in the trade)
+      const pkgBPlayerIds = Object.entries(tx.adds || {})
+        .filter(([, destRid]) => destRid === ridA)
+        .map(([pid]) => pid);
+
+      const pkgAPicks = (tx.draft_picks || [])
+        .filter(p => p.owner_id === ridB)
+        .map(p => `${p.season} Rd ${p.round}`);
+
+      const pkgBPicks = (tx.draft_picks || [])
+        .filter(p => p.owner_id === ridA)
+        .map(p => `${p.season} Rd ${p.round}`);
+
+      const weekNums = Object.keys(seasonObj.matchups_by_week)
+        .map(Number)
+        .filter(w => (seasonObj.matchups_by_week[String(w)] || []).some(e => Number(e.points || 0) > 0))
+        .sort((a, b) => a - b);
+
+      const allWeeks = weekNums.length > 0 ? weekNums : Array.from({ length: 17 }, (_, i) => i + 1);
+      const tradeWeek = Number(tx.week || 1);
+
+      // Build lookup of every player's weekly score across the league
+      const weeklyPlayerPts = {};
+      for (const wk of allWeeks) {
+        weeklyPlayerPts[wk] = {};
+        for (const entry of (seasonObj.matchups_by_week[String(wk)] || [])) {
+          for (const [pid, pts] of Object.entries(entry.players_points || {})) {
+            if (weeklyPlayerPts[wk][pid] === undefined || Number(pts || 0) !== 0) {
+              weeklyPlayerPts[wk][pid] = Number(pts || 0);
+            }
+          }
+        }
+      }
+
+      const evalPackageWeek = (pids, wk) => {
+        if (!pids || pids.length === 0) return { val: null, details: [] };
+        let sum = 0;
+        let activeCount = 0;
+        const details = [];
+        for (const pid of pids) {
+          const raw = weeklyPlayerPts[wk]?.[pid];
+          if (raw !== undefined && raw !== 0) {
+            sum += raw;
+            activeCount++;
+            details.push(`${getPlayerNameOnly(pid)}: ${raw.toFixed(1)}`);
+          } else {
+            details.push(`${getPlayerNameOnly(pid)}: BYE/0`);
+          }
+        }
+        if (activeCount === 0) return { val: null, details };
+        const val = metricMode === "TOTAL" ? sum : (sum / activeCount);
+        return { val, details };
+      };
+
+      const seriesPkgA = allWeeks.map(wk => ({ wk, ...evalPackageWeek(pkgAPlayerIds, wk) }));
+      const seriesPkgB = allWeeks.map(wk => ({ wk, ...evalPackageWeek(pkgBPlayerIds, wk) }));
+
+      const avgRange = (series, pred) => {
+        const vals = series.filter(d => pred(d.wk) && d.val !== null).map(d => d.val);
+        return vals.length > 0 ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
+      };
+
+      // Top Chart = Owner A's side (Pre-trade: Package A; Post-trade: Package B)
+      const topPreAvg = avgRange(seriesPkgA, wk => wk < tradeWeek);
+      const topPostAvg = avgRange(seriesPkgB, wk => wk >= tradeWeek);
+
+      // Bottom Chart = Owner B's side (Pre-trade: Package B; Post-trade: Package A)
+      const botPreAvg = avgRange(seriesPkgB, wk => wk < tradeWeek);
+      const botPostAvg = avgRange(seriesPkgA, wk => wk >= tradeWeek);
+
+      return {
+        season: seasonObj.season,
+        tradeWeek,
+        allWeeks,
+        metaA,
+        metaB,
+        colorA,
+        colorB,
+        pkgALabels: [...pkgAPlayerIds.map(getPlayerNameOnly), ...pkgAPicks],
+        pkgBLabels: [...pkgBPlayerIds.map(getPlayerNameOnly), ...pkgBPicks],
+        seriesPkgA,
+        seriesPkgB,
+        topPreAvg,
+        topPostAvg,
+        botPreAvg,
+        botPostAvg,
+        metricMode
+      };
+    }
+
+    function renderTradeVisualizerHtml(vizData, containerPrefix) {
+      const {
+        season, tradeWeek, allWeeks, metaA, metaB, colorA, colorB,
+        pkgALabels, pkgBLabels, seriesPkgA, seriesPkgB,
+        topPreAvg, topPostAvg, botPreAvg, botPostAvg, metricMode
+      } = vizData;
+
+      const allVals = [
+        ...seriesPkgA.map(d => d.val),
+        ...seriesPkgB.map(d => d.val)
+      ].filter(v => v !== null && !Number.isNaN(v));
+
+      const maxY = Math.max(20, Math.ceil((allVals.length ? Math.max(...allVals) : 25) / 5) * 5);
+      const minY = Math.min(0, Math.floor((allVals.length ? Math.min(...allVals) : 0) / 5) * 5);
+      const ySpan = Math.max(1, maxY - minY);
+
+      const W = 680;
+      const H = 195;
+      const padL = 38;
+      const padR = 16;
+      const padT = 18;
+      const padB = 26;
+      const plotW = W - padL - padR;
+      const plotH = H - padT - padB;
+
+      const xForIdx = (idx) => {
+        if (allWeeks.length <= 1) return padL + plotW / 2;
+        return padL + (idx / (allWeeks.length - 1)) * plotW;
+      };
+      const yForVal = (v) => padT + plotH - ((v - minY) / ySpan) * plotH;
+
+      // Position vertical Trade divider line cleanly between (tradeWeek - 1) and tradeWeek
+      const tradeIdx = allWeeks.findIndex(w => w >= tradeWeek);
+      const tradeX = tradeIdx <= 0
+        ? padL
+        : tradeIdx >= allWeeks.length
+          ? padL + plotW
+          : (xForIdx(tradeIdx - 1) + xForIdx(tradeIdx)) / 2;
+
+      const buildPolylineSegments = (points) => {
+        const segs = [];
+        let cur = [];
+        points.forEach(pt => {
+          if (pt.val === null) {
+            if (cur.length > 0) { segs.push(cur); cur = []; }
+          } else {
+            cur.push(pt);
+          }
+        });
+        if (cur.length > 0) segs.push(cur);
+        return segs;
+      };
+
+      const renderSingleOwnerChart = (sideRole, ownerMeta, ownColor, otherColor, preSeries, postSeries, preAvg, postAvg, sentLabels, gotLabels) => {
+        const yTicks = [minY, minY + ySpan * 0.5, maxY];
+        const gridHtml = yTicks.map(tv => {
+          const yy = yForVal(tv).toFixed(1);
+          return `
+            <line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="rgba(162, 174, 188, 0.16)" stroke-width="1" />
+            <text x="${padL - 6}" y="${Number(yy) + 3.5}" text-anchor="end" fill="#7b8896" font-size="10" font-family="sans-serif">${tv.toFixed(0)}</text>
+          `;
+        }).join("");
+
+        const xLabelsHtml = allWeeks.map((wk, idx) => {
+          const xx = xForIdx(idx).toFixed(1);
+          const showLbl = allWeeks.length <= 12 || idx % 2 === 0 || wk === tradeWeek;
+          return showLbl
+            ? `<text x="${xx}" y="${H - 7}" text-anchor="middle" fill="${wk === tradeWeek ? "#e6ebf0" : "#7b8896"}" font-weight="${wk === tradeWeek ? "700" : "400"}" font-size="10" font-family="sans-serif">W${wk}</text>`
+            : "";
+        }).join("");
+
+        const prePts = preSeries
+          .map((d, idx) => ({ ...d, idx, x: xForIdx(idx), y: d.val !== null ? yForVal(d.val) : null }))
+          .filter(d => d.wk < tradeWeek);
+
+        const postPts = postSeries
+          .map((d, idx) => ({ ...d, idx, x: xForIdx(idx), y: d.val !== null ? yForVal(d.val) : null }))
+          .filter(d => d.wk >= tradeWeek);
+
+        // Average reference lines (Before Avg & After Avg)
+        const preAvgLine = preAvg !== null && tradeX > padL + 8
+          ? `<line x1="${padL}" y1="${yForVal(preAvg).toFixed(1)}" x2="${tradeX.toFixed(1)}" y2="${yForVal(preAvg).toFixed(1)}" stroke="${ownColor.hex}" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.7" />`
+          : "";
+        const postAvgLine = postAvg !== null && tradeX < (W - padR - 8)
+          ? `<line x1="${tradeX.toFixed(1)}" y1="${yForVal(postAvg).toFixed(1)}" x2="${W - padR}" y2="${yForVal(postAvg).toFixed(1)}" stroke="${otherColor.hex}" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.7" />`
+          : "";
+
+        // Dashed handoff bridge across trade week showing the switch
+        const lastPreValid = [...prePts].reverse().find(p => p.val !== null);
+        const firstPostValid = postPts.find(p => p.val !== null);
+        const switchBridge = (lastPreValid && firstPostValid)
+          ? `<line x1="${lastPreValid.x.toFixed(1)}" y1="${lastPreValid.y.toFixed(1)}" x2="${firstPostValid.x.toFixed(1)}" y2="${firstPostValid.y.toFixed(1)}" stroke="#a2aebc" stroke-width="1.5" stroke-dasharray="2 3" opacity="0.65" />`
+          : "";
+
+        const renderLinesAndDots = (ptsList, strokeHex, phaseLabel) => {
+          const segs = buildPolylineSegments(ptsList);
+          const polylines = segs.map(seg => {
+            const coords = seg.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+            return `<polyline fill="none" stroke="${strokeHex}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" points="${coords}" />`;
+          }).join("");
+
+          const dots = ptsList.filter(p => p.val !== null).map(p => {
+            const safeDetails = `${ownerMeta.name} (${phaseLabel}) • ${season} Wk ${p.wk}: ${p.val.toFixed(1)} pts (${p.details.join(", ")})`.replace(/"/g, "&quot;");
+            return `
+              <g style="cursor:pointer;" onclick="selectTradeVizWeek('${containerPrefix}', '${safeDetails}')" onmouseenter="selectTradeVizWeek('${containerPrefix}', '${safeDetails}')">
+                <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="8" fill="transparent" />
+                <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.8" fill="${strokeHex}" stroke="#161a1f" stroke-width="1.4" />
+              </g>
+            `;
+          }).join("");
+
+          return polylines + dots;
+        };
+
+        const preStr = preAvg !== null ? `${preAvg.toFixed(1)} PPG` : "N/A";
+        const postStr = postAvg !== null ? `${postAvg.toFixed(1)} PPG` : "N/A";
+        const delta = (preAvg !== null && postAvg !== null) ? (postAvg - preAvg) : null;
+        const deltaBadge = delta !== null
+          ? `<span class="badge ${delta >= 0 ? "badge-win" : "badge-loss"}">${delta >= 0 ? "+" : ""}${delta.toFixed(1)} PPG</span>`
+          : "";
+
+        return `
+          <div class="trade-viz-panel" style="--team-color:${ownColor.hex};">
+            <div class="trade-viz-panel-head">
+              <div class="trade-viz-team-tag">
+                <span class="team-color-dot" style="background:${ownColor.hex};"></span>
+                <span>${ownerMeta.name}</span>
+                <span style="font-size:10.5px; font-weight:600; color:var(--text-secondary);">(${sideRole})</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <span class="badge badge-neutral" style="border-color:${ownColor.hex}; color:${ownColor.hex};">Pre: ${preStr}</span>
+                <span style="color:var(--text-muted); font-size:11px;">→</span>
+                <span class="badge badge-neutral" style="border-color:${otherColor.hex}; color:${otherColor.hex};">Post: ${postStr}</span>
+                ${deltaBadge}
+              </div>
+            </div>
+
+            <div class="trade-viz-svg-wrap">
+              <svg class="trade-viz-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${ownerMeta.name} trade weekly line chart">
+                <!-- Pre/Post Background Shading -->
+                <rect x="${padL}" y="${padT}" width="${Math.max(0, tradeX - padL)}" height="${plotH}" fill="${ownColor.soft}" opacity="0.45" />
+                <rect x="${tradeX}" y="${padT}" width="${Math.max(0, (W - padR) - tradeX)}" height="${plotH}" fill="${otherColor.soft}" opacity="0.45" />
+                ${gridHtml}
+                ${preAvgLine}
+                ${postAvgLine}
+                <!-- Vertical Trade Line -->
+                <line x1="${tradeX.toFixed(1)}" y1="${padT - 4}" x2="${tradeX.toFixed(1)}" y2="${padT + plotH}" stroke="#e6ebf0" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.85" />
+                <text x="${Math.min(W - 44, Math.max(padL + 34, tradeX)).toFixed(1)}" y="${padT - 6}" text-anchor="middle" fill="#e6ebf0" font-size="9.5" font-weight="700" font-family="sans-serif">⇄ TRADE WK ${tradeWeek}</text>
+                ${switchBridge}
+                ${renderLinesAndDots(prePts, ownColor.hex, `Pre-Trade: ${sentLabels.join(", ")}`)}
+                ${renderLinesAndDots(postPts, otherColor.hex, `Post-Trade: ${gotLabels.join(", ")}`)}
+                ${xLabelsHtml}
+              </svg>
+            </div>
+
+            <div class="trade-viz-legend">
+              <span>
+                <span class="team-color-dot" style="background:${ownColor.hex}; margin-right:4px;"></span>
+                <strong>Before Wk ${tradeWeek} (Traded Away):</strong> ${sentLabels.join(", ") || "Draft Picks"}
+              </span>
+              <span>
+                <span class="team-color-dot" style="background:${otherColor.hex}; margin-right:4px;"></span>
+                <strong>Wk ${tradeWeek}+ (Switched In):</strong> ${gotLabels.join(", ") || "Draft Picks"}
+              </span>
+            </div>
+          </div>
+        `;
+      };
+
+      const unitLabel = metricMode === "TOTAL" ? "Combined Weekly Points" : "Average Weekly Points (PPG)";
+      return `
+        <div class="trade-viz-stack">
+          ${renderSingleOwnerChart("Top Owner", metaA, colorA, colorB, seriesPkgA, seriesPkgB, topPreAvg, topPostAvg, pkgALabels, pkgBLabels)}
+          ${renderSingleOwnerChart("Bottom Owner", metaB, colorB, colorA, seriesPkgB, seriesPkgA, botPreAvg, botPostAvg, pkgBLabels, pkgALabels)}
+          <div class="trade-viz-tooltip" id="${containerPrefix}_tooltip">
+            <span>Showing <strong>${unitLabel}</strong> • Tap or hover any dot to inspect that week's player scores.</span>
+            <span class="badge badge-neutral">${season} • Trade Wk ${tradeWeek}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function selectTradeVizWeek(containerPrefix, text) {
+      const el = document.getElementById(`${containerPrefix}_tooltip`);
+      if (el) {
+        el.innerHTML = `<strong>${text}</strong>`;
+      }
+    }
+
+    function renderInlineTradeVisualizer() {
+      const area = document.getElementById("inlineTradeVisualizerArea");
+      const sel = document.getElementById("tradeVizSelect");
+      if (!area || !sel) return;
+
+      const found = findTradeByKey(sel.value);
+      if (!found) {
+        area.innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">No completed trades available to visualize for this filter.</p>`;
+        return;
+      }
+      const metric = document.getElementById("tradeVizMetricSelect")?.value || "AVG";
+      const vizData = buildTradeSeriesData(found.season, found.tx, metric);
+      area.innerHTML = renderTradeVisualizerHtml(vizData, "inlineViz");
+    }
+
+    let activeModalTradeVizKey = "";
+
+    function openTradeVizModal(tradeKey) {
+      activeModalTradeVizKey = tradeKey;
+      const inlineSel = document.getElementById("tradeVizSelect");
+      if (inlineSel && Array.from(inlineSel.options).some(o => o.value === tradeKey)) {
+        inlineSel.value = tradeKey;
+        renderInlineTradeVisualizer();
+      }
+      document.getElementById("tradeVizModalBackdrop").classList.remove("hidden");
+      renderModalTradeVisualizer();
+    }
+
+    function closeTradeVizModal() {
+      document.getElementById("tradeVizModalBackdrop").classList.add("hidden");
+    }
+
+    function closeTradeVizModalOnBackdrop(e) {
+      if (e.target.id === "tradeVizModalBackdrop") closeTradeVizModal();
+    }
+
+    function renderModalTradeVisualizer() {
+      const body = document.getElementById("tradeVizModalBody");
+      if (!body) return;
+      const found = findTradeByKey(activeModalTradeVizKey);
+      if (!found) {
+        body.innerHTML = `<p style="font-size:13px; color:var(--text-secondary);">Unable to load trade visualization.</p>`;
+        return;
+      }
+      const metric = document.getElementById("modalTradeVizMetricSelect")?.value || "AVG";
+      const vizData = buildTradeSeriesData(found.season, found.tx, metric);
+      document.getElementById("tradeVizModalTitle").textContent =
+        `📊 ${vizData.metaA.name} ↔ ${vizData.metaB.name}`;
+      document.getElementById("tradeVizModalSub").textContent =
+        `${vizData.season} Season • Week ${vizData.tradeWeek} Trade Visualizer`;
+      body.innerHTML = renderTradeVisualizerHtml(vizData, "modalViz");
     }
 
     /* ==========================================================================
@@ -6004,11 +6658,13 @@
             ? new Date(tx.created).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
             : "";
 
+          const tradeKey = `${s.season}__${tx.transaction_id}`;
           renderedCards.push(`
             <div class="trade-card">
               <div class="trade-header">
-                <span><strong>${s.season}</strong> • Week ${tx.week}</span>
-                <span>${dateStr}</span>
+                <span><strong>${s.season}</strong> • Week ${tx.week}${dateStr ? ` • ${dateStr}` : ""}</span>
+                <button type="button" class="btn-icon" style="padding:3px 8px; font-size:11px; border-color:var(--accent); color:var(--accent);"
+                  onclick="openTradeVizModal('${tradeKey}')">📊 Visualize</button>
               </div>
               <div class="trade-sides">
                 ${sides.map(side => {
@@ -7961,7 +8617,7 @@
       }
 
       function isOverlayOpen() {
-        const ids = ["tradeModalBackdrop", "injuryModalBackdrop", "luckModalBackdrop", "commishModalBackdrop", "closeGamesModalBackdrop", "leagueIdModalBackdrop", "matchupDetailModalBackdrop", "aiDrawer"];
+        const ids = ["tradeModalBackdrop", "tradeVizModalBackdrop", "injuryModalBackdrop", "luckModalBackdrop", "commishModalBackdrop", "closeGamesModalBackdrop", "leagueIdModalBackdrop", "matchupDetailModalBackdrop", "aiDrawer"];
         return ids.some(id => {
           const el = document.getElementById(id);
           return el && !el.classList.contains("hidden");
